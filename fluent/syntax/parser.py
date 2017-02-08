@@ -135,6 +135,55 @@ def get_identifier(ps):
 
     return ast.Identifier(name)
 
+def get_variant_key(ps):
+    ch = ps.current()
+
+    if ch is None:
+        raise Exception('Expected VariantKey')
+
+    if ps.is_number_start():
+        return get_number(ps)
+
+    return get_keyword(ps)
+
+def get_variants(ps):
+    variants = []
+    has_default = False
+
+    while True:
+        default_index = False
+
+        ps.expect_char('\n')
+        ps.skip_line_ws()
+
+        if ps.current_is('*'):
+            ps.next()
+            default_index = True
+            has_default = True
+
+        ps.expect_char('[')
+
+        key = get_variant_key(ps)
+
+        ps.expect_char(']')
+
+        ps.skip_line_ws()
+
+        value = get_pattern(ps)
+
+        if value is None:
+            raise Exception('ExpectedField')
+
+        variants.append(ast.Variant(key, value, default_index))
+
+        if not ps.is_peek_next_line_variant_start():
+            break
+
+    if not has_default:
+        raise Exception('MissingDefaultVariant')
+
+    return variants
+
 def get_keyword(ps):
     name = ''
 
@@ -148,6 +197,35 @@ def get_keyword(ps):
             break
 
     return ast.Keyword(name.rstrip())
+
+def get_digits(ps):
+    num = ''
+
+    ch = ps.take_digit()
+    while ch:
+        num += ch
+        ch = ps.take_digit()
+
+    if len(num) == 0:
+        raise Exception('ExpectedCharRange')
+
+    return num
+
+def get_number(ps):
+    num = ''
+
+    if ps.current_is('-'):
+        num += '-'
+        ps.next()
+
+    num += get_digits(ps)
+
+    if ps.current_is('.'):
+        num += '.'
+        ps.next()
+        num += get_digits(ps)
+
+    return ast.NumberExpression(num)
 
 def get_pattern(ps):
     buffer = ''
@@ -228,3 +306,143 @@ def get_pattern(ps):
         elements.append(ast.StringExpression(buffer))
 
     return ast.Pattern(elements, quote_delimited)
+
+def get_expression(ps):
+    if ps.is_peek_next_line_variant_start():
+        variants = get_variants(ps)
+
+        ps.expect_char('\n')
+
+        return ast.SelectExpression(None, variants)
+
+    selector = get_selector_expression(ps)
+
+    ps.skip_line_ws()
+
+    if ps.current_is('-'):
+        ps.peek()
+        if not ps.current_peek_is('>'):
+            ps.reset_peek()
+        else:
+            ps.next()
+            ps.next()
+
+            ps.skip_line_ws()
+
+            variants = get_variants(ps)
+
+            if len(variants) == 0:
+                raise Exception('MissingVariables')
+
+            ps.expect_char('\n')
+
+            return ast.SelectExpression(selector, variants)
+
+    return selector
+
+def get_selector_expression(ps):
+    literal = get_literal(ps)
+
+    if not isinstance(literal, ast.MessageReference):
+        return literal
+
+    ch = ps.current()
+
+    if (ch == '.'):
+        ps.next()
+        attr = get_identifier(ps)
+        return ast.AttributeExpression(literal.id, attr)
+
+    if (ch == '['):
+        ps.next()
+        key = get_variant_key(ps)
+        ps.expect_char(']')
+        return ast.VariantExpression(literal.id, key)
+
+    if (ch == '('):
+        ps.next()
+
+        args = get_call_args(ps)
+
+        ps.expect_char(')')
+
+        return ast.CallExpression(literal.id, args)
+
+    return literal
+
+def get_call_args(ps):
+    args = []
+
+    ps.skip_line_ws()
+
+    while True:
+        if ps.current_is(')'):
+            break
+
+        exp = get_selector_expression(ps)
+
+        ps.skip_line_ws()
+
+        if ps.current_is(':'):
+            if not isinstance(exp, ast.MessageReference):
+                raise Exception('ForbiddenKey')
+
+            ps.next()
+            ps.skip_line_ws()
+
+            val = get_arg_val(ps)
+
+            args.append(ast.NamedArgument(exp.id, val))
+        else:
+            args.append(exp)
+
+        ps.skip_line_ws()
+
+        if ps.current_is(','):
+            ps.next()
+            ps.skip_line_ws()
+            continue
+        else:
+            break
+
+    return args
+
+def get_arg_val(ps):
+    if ps.is_number_start():
+        return get_number(ps)
+    elif ps.current_is('"'):
+        return get_string(ps)
+    raise Exception('ExpectedField')
+
+def get_string(ps):
+    val = ''
+
+    ps.expect_char('"')
+
+    ch = ps.take_char(lambda x: x != '"')
+    while ch:
+        val += ch
+        ch = ps.take_char(lambda x: x != '"')
+
+    ps.next()
+
+    return ast.StringExpression(val)
+
+def get_literal(ps):
+    ch = ps.current()
+
+    if ch is None:
+        raise Exception('Expected literal')
+
+    if ps.is_number_start():
+        return get_number(ps)
+    elif ch == '"':
+        return get_pattern(ps)
+    elif ch == '$':
+        ps.next()
+        name = get_identifier(ps)
+        return ast.ExternalArgument(name)
+
+    name = get_identifier(ps)
+    return ast.MessageReference(name)
+

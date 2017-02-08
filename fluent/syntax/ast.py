@@ -120,7 +120,7 @@ class MessageReference(Expression):
         self.id = id
 
 class ExternalArgument(Expression):
-    def __init__(self, name):
+    def __init__(self, id):
         super(ExternalArgument, self).__init__()
         self.id = id
 
@@ -138,7 +138,7 @@ class AttributeExpression(Expression):
 
 class VariantExpression(Expression):
     def __init__(self, id, key):
-        super(Variantxpression, self).__init__()
+        super(VariantExpression, self).__init__()
         self.id = id
         self.key = key
 
@@ -157,7 +157,7 @@ class Attribute(Node):
 class Variant(Node):
     def __init__(self, key, value, default = False):
         super(Variant, self).__init__()
-        self.id = id
+        self.key = key
         self.value = value
         self.default = default
 

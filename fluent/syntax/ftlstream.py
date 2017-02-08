@@ -52,6 +52,28 @@ class FTLParserStream(ParserStream):
                (cc >= 65 and cc <= 90) or \
                 cc == 95
 
+    def is_number_start(self):
+        cc = ord(self.ch)
+
+        return (cc >= 48 and cc <= 57) or cc == 45
+
+    def is_peek_next_line_variant_start(self):
+        if not self.current_peek_is('\n'):
+            return False
+        
+        self.peek()
+
+        self.peek_line_ws()
+        if self.current_peek_is('*'):
+            self.peek()
+
+        if self.current_peek_is('[') and not self.peek_char_is('['):
+            self.reset_peek()
+            return True
+
+        self.reset_peek()
+        return False
+
     def is_peek_next_line_attribute_start(self):
         if not self.current_peek_is('\n'):
             return False
@@ -91,4 +113,10 @@ class FTLParserStream(ParserStream):
                    (cc >= 65 and cc <= 90) or \
                    (cc >= 48 and cc <= 57) or \
                     cc == 95 or cc == 45 or cc == 32
+        return self.take_char(closure)
+
+    def take_digit(self):
+        def closure(ch):
+            cc = ord(ch)
+            return (cc >= 48 and cc <= 57) 
         return self.take_char(closure)

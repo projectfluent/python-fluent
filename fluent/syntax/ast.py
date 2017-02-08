@@ -82,17 +82,37 @@ class Resource(NodeList):
     def __init__(self, body=None, comment=None):
         super(Resource, self).__init__(body, comment)
 
-
-class Section(NodeList):
-    def __init__(self, key, body=None, comment=None):
-        super(Section, self).__init__(body, comment)
-        self.key = key
-
-
 class Entry(Node):
     def __init__(self):
         super(Entry, self).__init__()
 
+class Message(Entry):
+    def __init__(self, id, value=None, attributes=None, comment=None):
+        super(Message, self).__init__()
+        self.id = id
+        self.value = value
+        self.attributes = attributes
+        self.comment = comment
+
+class Pattern(Node):
+    def __init__(self, elements, quoted=False):
+        super(Pattern, self).__init__()
+        self.elements = elements
+        self.quoted = quoted
+
+class Expression(Node):
+    def __init__(self):
+        super(Expression, self).__init__()
+
+class StringExpression(Node):
+    def __init__(self, value):
+        super(StringExpression, self).__init__()
+        self.value = value
+
+class Section(Node):
+    def __init__(self, key, body=None, comment=None):
+        super(Section, self).__init__(body, comment)
+        self.key = key
 
 class Identifier(Node):
     def __init__(self, name):
@@ -100,12 +120,6 @@ class Identifier(Node):
         self.name = name
 
 
-class Pattern(Node):
-    def __init__(self, source, elements, quoted=False):
-        super(Pattern, self).__init__()
-        self.source = source
-        self.elements = elements
-        self.quoted = quoted
 
 
 class Member(Node):
@@ -115,14 +129,6 @@ class Member(Node):
         self.value = value
         self.default = default
 
-
-class Entity(Entry):
-    def __init__(self, id, value=None, traits=None, comment=None):
-        super(Entity, self).__init__()
-        self.id = id
-        self.value = value
-        self.traits = traits or []
-        self.comment = comment
 
 
 class Placeable(Node):

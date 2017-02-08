@@ -71,3 +71,68 @@ def get_identifier(ps):
         ch = ps.take_id_char()
 
     return ast.Identifier(name)
+
+def get_pattern(ps):
+    buffer = ''
+    elements = []
+    quote_delimited = False
+    quote_open = False
+    first_line = True
+    is_indented = False
+
+    if ps.take_char_if('"'):
+        quote_delimited = True
+        quote_open = True
+
+    while ps.current():
+        ch = ps.current()
+        if ch == '\n':
+            if quote_delimited:
+                raise Exception('ExpectedToken')
+
+            if first_line and len(buffer) != 0:
+                break
+
+            ps.peek()
+
+            ps.peek_line_ws()
+
+            first_line = False
+
+            if len(buffer) != 0:
+                buffer += ch 
+            continue
+        elif ch == '\\':
+            ch2 = ps.peek()
+            
+            if ch2 == '{' or ch2 == '"':
+                buffer += ch2
+            else:
+                buffer += ch + ch2
+            ps.next()
+        elif ch == '{':
+            ps.next()
+
+            ps.skip_line_ws()
+
+            if len(buf) != 0:
+                elements.append(ast.StringExpression(buffer))
+
+            buffer = ''
+
+            elements.append(get_expression(ps))
+
+            ps.expect_char('}')
+
+            continue
+        elif ch == '"' and quote_open:
+            ps.next()
+            quote_open = False
+        else:
+            buffer += ps.ch
+        ps.next()
+
+    if len(buffer) != 0:
+        elements.append(ast.StringExpression(buffer))
+
+    return ast.Pattern(elements, quote_delimited)

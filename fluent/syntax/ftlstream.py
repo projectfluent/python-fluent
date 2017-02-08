@@ -25,7 +25,7 @@ class FTLParserStream(ParserStream):
                 break
             self.next()
 
-    def expec_char(self, ch):
+    def expect_char(self, ch):
         if self.ch == ch:
             self.next()
             return True
@@ -82,4 +82,13 @@ class FTLParserStream(ParserStream):
                    (cc >= 65 and cc <= 90) or \
                    (cc >= 48 and cc <= 57) or \
                     cc == 95 or cc == 45
+        return self.take_char(closure)
+
+    def take_kw_char(self):
+        def closure(ch):
+            cc = ord(ch)
+            return (cc >= 97 and cc <= 122) or \
+                   (cc >= 65 and cc <= 90) or \
+                   (cc >= 48 and cc <= 57) or \
+                    cc == 95 or cc == 45 or cc == 32
         return self.take_char(closure)

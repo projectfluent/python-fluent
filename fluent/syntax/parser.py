@@ -38,6 +38,45 @@ def get_entry(ps):
 
     return comment
 
+def get_comment(ps):
+    ps.expect_char('#')
+    ps.take_char_if(' ')
+
+    content = ''
+
+    while True:
+        while ps.take_char(lambda x: x != '\n'):
+            content += ps.current()
+
+        ps.next()
+
+        if ps.current_is('#'):
+            content += '\n'
+            ps.next()
+            ps.take_char_if(' ')
+        else:
+            break
+    return ast.Comment(content)
+
+def get_section(ps, comment):
+    ps.expect_char('[')
+    ps.expect_char('[')
+
+    ps.skip_line_ws()
+
+    key = get_keyword(ps)
+
+    ps.skip_line_ws()
+
+    ps.expect_char(']')
+    ps.expect_char(']')
+
+    ps.skip_line_ws()
+
+    ps.expect_char('\n')
+
+    return ast.Section(key, comment)
+
 def get_message(ps, comment):
     id = get_identifier(ps)
 
@@ -60,6 +99,30 @@ def get_message(ps, comment):
 
     return ast.Message(id, pattern, attrs, comment)
 
+def get_attributes(ps):
+    attrs = []
+
+    while True:
+        ps.expect_char('\n')
+        ps.skip_line_ws()
+
+        ps.expect_char('.')
+
+        key = get_identifier(ps)
+
+        ps.skip_line_ws()
+
+        value = get_pattern(ps)
+
+        if value == None:
+            raise Exception('ExpectedField')
+
+        attrs.append(ast.Attribute(key, value))
+
+        if not ps.is_peek_next_line_attribute_start():
+            break
+    return attrs
+
 def get_identifier(ps):
     name = ''
 
@@ -71,6 +134,20 @@ def get_identifier(ps):
         ch = ps.take_id_char()
 
     return ast.Identifier(name)
+
+def get_keyword(ps):
+    name = ''
+
+    name += ps.take_id_start()
+
+    while True:
+        ch = ps.take_kw_char()
+        if ch:
+            name += ch
+        else:
+            break
+
+    return ast.Keyword(name.rstrip())
 
 def get_pattern(ps):
     buffer = ''
@@ -97,6 +174,20 @@ def get_pattern(ps):
 
             ps.peek_line_ws()
 
+            if not ps.current_peek_is('|'):
+                ps.reset_peek()
+                break
+            else:
+                ps.skip_to_peek()
+                ps.next()
+
+            if first_line:
+                if ps.take_char_if(' '):
+                    is_indented = True
+            else:
+                if is_indented and not ps.take_char_if(' '):
+                    raise Exception('Generic')
+
             first_line = False
 
             if len(buffer) != 0:
@@ -115,7 +206,7 @@ def get_pattern(ps):
 
             ps.skip_line_ws()
 
-            if len(buf) != 0:
+            if len(buffer) != 0:
                 elements.append(ast.StringExpression(buffer))
 
             buffer = ''
@@ -128,6 +219,7 @@ def get_pattern(ps):
         elif ch == '"' and quote_open:
             ps.next()
             quote_open = False
+            break
         else:
             buffer += ps.ch
         ps.next()

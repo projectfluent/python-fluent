@@ -104,106 +104,92 @@ class Expression(Node):
     def __init__(self):
         super(Expression, self).__init__()
 
-class StringExpression(Node):
+class StringExpression(Expression):
     def __init__(self, value):
         super(StringExpression, self).__init__()
         self.value = value
 
-class Section(Node):
-    def __init__(self, key, body=None, comment=None):
-        super(Section, self).__init__(body, comment)
+class NumberExpression(Expression):
+    def __init__(self, value):
+        super(NumberExpression, self).__init__()
+        self.value = value
+
+class MessageReference(Expression):
+    def __init__(self, id):
+        super(MessageReference, self).__init__()
+        self.id = id
+
+class ExternalArgument(Expression):
+    def __init__(self, name):
+        super(ExternalArgument, self).__init__()
+        self.id = id
+
+class SelectExpression(Expression):
+    def __init__(self, expression, variants):
+        super(SelectExpression, self).__init__()
+        self.expression = expression
+        self.variants = variants
+
+class AttributeExpression(Expression):
+    def __init__(self, id, name):
+        super(AttributeExpression, self).__init__()
+        self.id = id
+        self.name = name
+
+class VariantExpression(Expression):
+    def __init__(self, id, key):
+        super(Variantxpression, self).__init__()
+        self.id = id
         self.key = key
+
+class CallExpression(Expression):
+    def __init__(self, callee, args):
+        super(CallExpression, self).__init__()
+        self.callee = callee
+        self.args = args
+
+class Attribute(Node):
+    def __init__(self, id, value):
+        super(Attribute, self).__init__()
+        self.id = id
+        self.value = value
+
+class Variant(Node):
+    def __init__(self, key, value, default = False):
+        super(Variant, self).__init__()
+        self.id = id
+        self.value = value
+        self.default = default
+
+class NamedArgument(Node):
+    def __init__(self, name, val):
+        super(NamedArgument, self).__init__()
+        self.name = name
+        self.val = val
 
 class Identifier(Node):
     def __init__(self, name):
         super(Identifier, self).__init__()
         self.name = name
 
-
-
-
-class Member(Node):
-    def __init__(self, key, value, default=False):
-        super(Member, self).__init__()
-        self.key = key
-        self.value = value
-        self.default = default
-
-
-
-class Placeable(Node):
-    def __init__(self, expressions):
-        super(Placeable, self).__init__()
-        self.expressions = expressions
-
-
-class SelectExpression(Node):
-    def __init__(self, expression, variants=None):
-        super(SelectExpression, self).__init__()
-        self.expression = expression
-        self.variants = variants
-
-
-class MemberExpression(Node):
-    def __init__(self, obj, keyword):
-        super(MemberExpression, self).__init__()
-        self.object = obj
-        self.keyword = keyword
-
-
-class CallExpression(Node):
-    def __init__(self, callee, args):
-        super(CallExpression, self).__init__()
-        self.callee = callee
-        self.args = args
-
-
-class ExternalArgument(Node):
-    def __init__(self, name):
-        super(ExternalArgument, self).__init__()
-        self.name = name
-
-
-class KeyValueArg(Node):
-    def __init__(self, name, value):
-        super(KeyValueArg, self).__init__()
-        self.name = name
-        self.value = value
-
-
-class EntityReference(Identifier):
-    def __init__(self, name):
-        super(EntityReference, self).__init__(name)
-
-
-class FunctionReference(Identifier):
-    def __init__(self, name):
-        super(FunctionReference, self).__init__(name)
-
-
 class Keyword(Identifier):
-    def __init__(self, name, namespace=None):
+    def __init__(self, name):
         super(Keyword, self).__init__(name)
-        self.namespace = namespace
-
-
-class Number(Node):
-    def __init__(self, value):
-        super(Number, self).__init__()
-        self.value = value
-
-
-class TextElement(Node):
-    def __init__(self, value):
-        super(TextElement, self).__init__()
-        self.value = value
-
 
 class Comment(Node):
     def __init__(self, content):
         super(Comment, self).__init__()
         self.content = content
 
+class Section(Node):
+    def __init__(self, key, comment=None):
+        super(Section, self).__init__()
+        self.key = key
+        self.comment = comment
+
+class Function(Identifier):
+    def __init__(self, name):
+        super(Function, self).__init__(name)
 
 class JunkEntry(Node):
     def __init__(self, content):

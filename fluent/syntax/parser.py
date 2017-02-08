@@ -1,26 +1,73 @@
-from . import stream
+from .ftlstream import FTLParserStream
 from . import ast
 
 
 def parse(string):
-    resource = ast.Resource()
     errors = []
 
-    ps = stream.ParserStream(string)
+    ps = FTLParserStream(string)
 
-    return [resource, errors]
+    ps.skip_ws_lines()
 
-class FTLParser():
-    def parse(self, string, with_source=True, pos=False):
-        _pos = ast.Node._pos
-        ast.Node._pos = pos
-        try:
-            [resource, errors] = parse(string)
-        finally:
-            ast.Node._pos = _pos
-        return [resource, errors]
+    entries = []
 
-    def parseResource(self, string, with_source=True, pos=False):
-        [resource, errors] = \
-            self.parse(string, with_source=with_source, pos=pos)
-        return [resource.toJSON(), errors]
+    while ps.current():
+        entry = get_entry(ps)
+
+        if entry:
+            entries.append(entry)
+
+        ps.skip_ws_lines()
+
+    resource = ast.Resource(entries)
+
+
+    return [resource.toJSON(), errors]
+
+def get_entry(ps):
+    comment = None
+
+    if ps.current_is('#'):
+        comment = get_comment(ps)
+
+    if ps.current_is('['):
+        return get_section(ps, comment)
+
+    if ps.is_id_start():
+        return get_message(ps, comment)
+
+    return comment
+
+def get_message(ps, comment):
+    id = get_identifier(ps)
+
+    ps.skip_line_ws()
+
+    pattern = None
+    attrs = None
+
+    if ps.current_is('='):
+        ps.next()
+        ps.skip_line_ws()
+
+        pattern = get_pattern(ps)
+
+    if ps.is_peek_next_line_attribute_start():
+        attrs = get_attributes(ps)
+
+    if pattern is None and attrs is None:
+        raise Exception('MissingField')
+
+    return ast.Message(id, pattern, attrs, comment)
+
+def get_identifier(ps):
+    name = ''
+
+    name += ps.take_id_start()
+
+    ch = ps.take_id_char()
+    while ch:
+        name += ch
+        ch = ps.take_id_char()
+
+    return ast.Identifier(name)

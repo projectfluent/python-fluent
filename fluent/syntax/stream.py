@@ -97,7 +97,7 @@ class ParserStream():
 
         return ret == ch
 
-    def reset_peek(self):
+    def reset_to_peek(self):
         self.peek_index = self.index
         self.peek_end = self.iter_end
 

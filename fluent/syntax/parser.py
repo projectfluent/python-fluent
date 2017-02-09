@@ -1,21 +1,32 @@
 from .ftlstream import FTLParserStream
 from . import ast
+from .errors import get_error_slice
 
 
-def parse(string):
+def parse(source):
     errors = []
+    comment = None
 
-    ps = FTLParserStream(string)
+    ps = FTLParserStream(source)
 
     ps.skip_ws_lines()
 
     entries = []
 
     while ps.current():
-        entry = get_entry(ps)
+        entry_start_pos = ps.get_index()
 
-        if entry:
-            entries.append(entry)
+        try:
+            entry = get_entry(ps)
+            if entry_start_pos == 0 and isinstance(entry, ast.Comment):
+                comment = entry
+            else:
+                entries.append(entry)
+        except Exception as e:
+            error_pos = ps.get_index()
+
+            entries.append(get_junk_entry(ps, source, entry_start_pos))
+            errors.append(e)
 
         ps.skip_ws_lines()
 
@@ -36,7 +47,9 @@ def get_entry(ps):
     if ps.is_id_start():
         return get_message(ps, comment)
 
-    return comment
+    if comment:
+        return comment
+    raise Exception('ExpectedEntry')
 
 def get_comment(ps):
     ps.expect_char('#')
@@ -445,4 +458,11 @@ def get_literal(ps):
 
     name = get_identifier(ps)
     return ast.MessageReference(name)
+
+def get_junk_entry(ps, source, entry_start):
+    ps.skip_to_next_entry_start()
+
+    slice = get_error_slice(source, entry_start, ps.get_index())
+
+    return ast.JunkEntry(slice)
 

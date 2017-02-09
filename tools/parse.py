@@ -19,7 +19,7 @@ def print_ast(fileType, data):
 
     print('Errors:')
     for error in errors:
-        print(error.message)
+        print(error)
 
 if __name__ == "__main__":
     file_type = 'ftl'

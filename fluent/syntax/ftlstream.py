@@ -89,6 +89,15 @@ class FTLParserStream(ParserStream):
         self.reset_peek()
         return False
 
+    def skip_to_next_entry_start(self):
+        while self.next():
+            if self.current_is('\n') and not self.peek_char_is('\n'):
+                self.next()
+
+                if self.ch == None or self.is_id_start() or self.current_is('#') or \
+                   (self.current_is('[') and self.peek_char_is('[')):
+                    break
+
     def take_id_start(self):
         if self.is_id_start():
             ret = self.ch

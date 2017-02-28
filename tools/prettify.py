@@ -5,7 +5,7 @@ import sys
 sys.path.append('./')
 import codecs
 import fluent.syntax.parser
-import json
+import fluent.syntax.serializer
 
 
 def read_file(path):
@@ -14,15 +14,11 @@ def read_file(path):
     return text
 
 
-def print_ast(fileType, data):
-    [ast, errors] = fluent.syntax.parser.parse(data)
-    print(json.dumps(ast.toJSON(), indent=2, ensure_ascii=False))
-
-    print('Errors:')
-    for error in errors:
-        print(error)
+def pretty_print(fileType, data):
+    [ast, _] = fluent.syntax.parser.parse(data)
+    print(fluent.syntax.serializer.serialize(ast))
 
 if __name__ == "__main__":
     file_type = 'ftl'
     f = read_file(sys.argv[1])
-    print_ast(file_type, f)
+    pretty_print(file_type, f)

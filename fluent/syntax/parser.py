@@ -8,7 +8,6 @@ def parse(source):
     comment = None
 
     ps = FTLParserStream(source)
-
     ps.skip_ws_lines()
 
     entries = []
@@ -23,17 +22,13 @@ def parse(source):
             else:
                 entries.append(entry)
         except Exception as e:
-            error_pos = ps.get_index()
-
             entries.append(get_junk_entry(ps, source, entry_start_pos))
             errors.append(e)
 
         ps.skip_ws_lines()
 
-    resource = ast.Resource(entries)
-
-
-    return [resource.toJSON(), errors]
+    resource = ast.Resource(entries, comment)
+    return [resource, errors]
 
 def get_entry(ps):
     comment = None
@@ -57,9 +52,14 @@ def get_comment(ps):
 
     content = ''
 
+    def until_eol(x):
+        return x != '\n'
+
     while True:
-        while ps.take_char(lambda x: x != '\n'):
-            content += ps.current()
+        ch = ps.take_char(until_eol)
+        while ch:
+            content += ch
+            ch = ps.take_char(until_eol)
 
         ps.next()
 
@@ -124,10 +124,12 @@ def get_attributes(ps):
         key = get_identifier(ps)
 
         ps.skip_line_ws()
+        ps.expect_char('=')
+        ps.skip_line_ws()
 
         value = get_pattern(ps)
 
-        if value == None:
+        if value is None:
             raise Exception('ExpectedField')
 
         attrs.append(ast.Attribute(key, value))

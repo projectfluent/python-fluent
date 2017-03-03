@@ -38,7 +38,7 @@ def parse(source):
 def get_entry(ps):
     comment = None
 
-    if ps.current_is('#'):
+    if ps.current_is('/'):
         comment = get_comment(ps)
 
     if ps.current_is('['):
@@ -52,7 +52,8 @@ def get_entry(ps):
     raise Exception('ExpectedEntry')
 
 def get_comment(ps):
-    ps.expect_char('#')
+    ps.expect_char('/')
+    ps.expect_char('/')
     ps.take_char_if(' ')
 
     content = ''
@@ -63,9 +64,10 @@ def get_comment(ps):
 
         ps.next()
 
-        if ps.current_is('#'):
+        if ps.current_is('/'):
             content += '\n'
             ps.next()
+            ps.expect_char('/');
             ps.take_char_if(' ')
         else:
             break
@@ -77,7 +79,7 @@ def get_section(ps, comment):
 
     ps.skip_line_ws()
 
-    key = get_keyword(ps)
+    symb = get_symbol(ps)
 
     ps.skip_line_ws()
 
@@ -88,7 +90,7 @@ def get_section(ps, comment):
 
     ps.expect_char('\n')
 
-    return ast.Section(key, comment)
+    return ast.Section(symb, comment)
 
 def get_message(ps, comment):
     id = get_identifier(ps)
@@ -97,6 +99,7 @@ def get_message(ps, comment):
 
     pattern = None
     attrs = None
+    tags = None
 
     if ps.current_is('='):
         ps.next()
@@ -107,10 +110,13 @@ def get_message(ps, comment):
     if ps.is_peek_next_line_attribute_start():
         attrs = get_attributes(ps)
 
-    if pattern is None and attrs is None:
+    if ps.is_peek_next_line_tag_start():
+        tags = get_tags(ps)
+
+    if pattern is None and attrs is None and tags is None:
         raise Exception('MissingField')
 
-    return ast.Message(id, pattern, attrs, comment)
+    return ast.Message(id, pattern, attrs, tags, comment)
 
 def get_attributes(ps):
     attrs = []
@@ -136,6 +142,23 @@ def get_attributes(ps):
             break
     return attrs
 
+def get_tags(ps):
+    tags = []
+
+    while True:
+        ps.expect_char('\n')
+        ps.skip_line_ws()
+
+        ps.expect_char('#')
+
+        symb = get_symbol(ps)
+
+        tags.append(ast.Tag(symb))
+
+        if not ps.is_peek_next_line_tag_start():
+            break
+    return tags
+
 def get_identifier(ps):
     name = ''
 
@@ -157,7 +180,7 @@ def get_variant_key(ps):
     if ps.is_number_start():
         return get_number(ps)
 
-    return get_keyword(ps)
+    return get_symbol(ps)
 
 def get_variants(ps):
     variants = []
@@ -197,7 +220,7 @@ def get_variants(ps):
 
     return variants
 
-def get_keyword(ps):
+def get_symbol(ps):
     name = ''
 
     name += ps.take_id_start()
@@ -209,7 +232,7 @@ def get_keyword(ps):
         else:
             break
 
-    return ast.Keyword(name.rstrip())
+    return ast.Symbol(name.rstrip())
 
 def get_digits(ps):
     num = ''
@@ -246,7 +269,6 @@ def get_pattern(ps):
     quote_delimited = False
     quote_open = False
     first_line = True
-    is_indented = False
 
     if ps.take_char_if('"'):
         quote_delimited = True
@@ -263,21 +285,12 @@ def get_pattern(ps):
 
             ps.peek()
 
-            ps.peek_line_ws()
-
-            if not ps.current_peek_is('|'):
+            if not ps.current_peek_is(' '):
                 ps.reset_peek()
                 break
-            else:
-                ps.skip_to_peek()
-                ps.next()
 
-            if first_line:
-                if ps.take_char_if(' '):
-                    is_indented = True
-            else:
-                if is_indented and not ps.take_char_if(' '):
-                    raise Exception('Generic')
+            ps.peek_line_ws();
+            ps.skip_to_peek();
 
             first_line = False
 
@@ -450,7 +463,7 @@ def get_literal(ps):
     if ps.is_number_start():
         return get_number(ps)
     elif ch == '"':
-        return get_pattern(ps)
+        return get_string(ps)
     elif ch == '$':
         ps.next()
         name = get_identifier(ps)

@@ -87,11 +87,12 @@ class Entry(Node):
         super(Entry, self).__init__()
 
 class Message(Entry):
-    def __init__(self, id, value=None, attributes=None, comment=None):
+    def __init__(self, id, value=None, attrs=None, tags=None, comment=None):
         super(Message, self).__init__()
         self.id = id
         self.value = value
-        self.attributes = attributes
+        self.attributes = attrs
+        self.tags = tags
         self.comment = comment
 
 class Pattern(Node):
@@ -154,6 +155,11 @@ class Attribute(Node):
         self.id = id
         self.value = value
 
+class Tag(Node):
+    def __init__(self, name):
+        super(Tag, self).__init__()
+        self.name = name
+
 class Variant(Node):
     def __init__(self, key, value, default = False):
         super(Variant, self).__init__()
@@ -172,9 +178,9 @@ class Identifier(Node):
         super(Identifier, self).__init__()
         self.name = name
 
-class Keyword(Identifier):
+class Symbol(Identifier):
     def __init__(self, name):
-        super(Keyword, self).__init__(name)
+        super(Symbol, self).__init__(name)
 
 class Comment(Node):
     def __init__(self, content):
@@ -182,9 +188,9 @@ class Comment(Node):
         self.content = content
 
 class Section(Node):
-    def __init__(self, key, comment=None):
+    def __init__(self, name, comment=None):
         super(Section, self).__init__()
-        self.key = key
+        self.name = name
         self.comment = comment
 
 class Function(Identifier):

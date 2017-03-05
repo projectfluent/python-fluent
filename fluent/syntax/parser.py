@@ -111,6 +111,8 @@ def get_message(ps, comment):
         attrs = get_attributes(ps)
 
     if ps.is_peek_next_line_tag_start():
+        if attrs is not None:
+            raise Exception('Tags cannot be added to a message with attributes.');
         tags = get_tags(ps)
 
     if pattern is None and attrs is None and tags is None:

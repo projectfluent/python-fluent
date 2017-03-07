@@ -96,10 +96,14 @@ class Message(Entry):
         self.comment = comment
 
 class Pattern(Node):
-    def __init__(self, elements, quoted=False):
+    def __init__(self, elements):
         super(Pattern, self).__init__()
         self.elements = elements
-        self.quoted = quoted
+
+class TextElement(Node):
+    def __init__(self, value):
+        super(TextElement, self).__init__()
+        self.value = value
 
 class Expression(Node):
     def __init__(self):

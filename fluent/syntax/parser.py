@@ -270,20 +270,11 @@ def get_number(ps):
 def get_pattern(ps):
     buffer = ''
     elements = []
-    quote_delimited = False
-    quote_open = False
     first_line = True
-
-    if ps.take_char_if('"'):
-        quote_delimited = True
-        quote_open = True
 
     while ps.current():
         ch = ps.current()
         if ch == '\n':
-            if quote_delimited:
-                raise Exception('ExpectedToken')
-
             if first_line and len(buffer) != 0:
                 break
 
@@ -293,17 +284,17 @@ def get_pattern(ps):
                 ps.reset_peek()
                 break
 
-            ps.peek_line_ws();
-            ps.skip_to_peek();
+            ps.peek_line_ws()
+            ps.skip_to_peek()
 
             first_line = False
 
             if len(buffer) != 0:
-                buffer += ch 
+                buffer += ch
             continue
         elif ch == '\\':
             ch2 = ps.peek()
-            
+
             if ch2 == '{' or ch2 == '"':
                 buffer += ch2
             else:
@@ -315,7 +306,7 @@ def get_pattern(ps):
             ps.skip_line_ws()
 
             if len(buffer) != 0:
-                elements.append(ast.StringExpression(buffer))
+                elements.append(ast.TextElement(buffer))
 
             buffer = ''
 
@@ -324,18 +315,14 @@ def get_pattern(ps):
             ps.expect_char('}')
 
             continue
-        elif ch == '"' and quote_open:
-            ps.next()
-            quote_open = False
-            break
         else:
             buffer += ps.ch
         ps.next()
 
     if len(buffer) != 0:
-        elements.append(ast.StringExpression(buffer))
+        elements.append(ast.TextElement(buffer))
 
-    return ast.Pattern(elements, quote_delimited)
+    return ast.Pattern(elements)
 
 def get_expression(ps):
     if ps.is_peek_next_line_variant_start():

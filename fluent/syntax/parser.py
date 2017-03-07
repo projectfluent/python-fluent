@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from .ftlstream import FTLParserStream
 from . import ast
 from .errors import get_error_slice

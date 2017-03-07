@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from . import ast
 
 
@@ -30,7 +31,7 @@ def serialize(resource, with_junk=False):
         if isinstance(entry, ast.Message):
             parts.append(serialize_message(entry))
 
-    return ''.join(parts).strip()
+    return "".join(parts).strip()
 
 
 def serialize_comment(comment):
@@ -104,12 +105,10 @@ def serialize_value(pattern):
 
 
 def serialize_pattern(pattern):
-    return "{}".format(
-        "".join([
-            serialize_element(elem)
-            for elem in pattern.elements
-        ])
-    )
+    return "".join([
+        serialize_element(elem)
+        for elem in pattern.elements
+    ])
 
 
 def serialize_element(element):

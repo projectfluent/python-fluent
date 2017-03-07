@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 class StringIter():
     def __init__(self, source):
         self.source = source

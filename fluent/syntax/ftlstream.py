@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from .stream import ParserStream
 
 class FTLParserStream(ParserStream):
@@ -103,9 +104,10 @@ class FTLParserStream(ParserStream):
         return False
 
     def is_peek_next_line_tag_start(self):
+
         if not self.current_peek_is('\n'):
             return False
-        
+
         self.peek()
 
         self.peek_line_ws()
@@ -122,7 +124,8 @@ class FTLParserStream(ParserStream):
             if self.current_is('\n') and not self.peek_char_is('\n'):
                 self.next()
 
-                if self.ch == None or self.is_id_start() or self.current_is('#') or \
+                if self.ch is None or self.is_id_start() or \
+                   (self.current_is('/') and self.peek_char_is('/')) or \
                    (self.current_is('[') and self.peek_char_is('[')):
                     break
 
@@ -143,8 +146,10 @@ class FTLParserStream(ParserStream):
                     cc == 95 or cc == 45
         return self.take_char(closure)
 
-    def take_kw_char(self):
+    def take_symb_char(self):
         def closure(ch):
+            if ch is None:
+                return False
             cc = ord(ch)
             return (cc >= 97 and cc <= 122) or \
                    (cc >= 65 and cc <= 90) or \

@@ -342,6 +342,8 @@ def get_expression(ps):
         variants = get_variants(ps)
 
         ps.expect_char('\n')
+        ps.expect_char(' ')
+        ps.skip_line_ws()
 
         return ast.SelectExpression(None, variants)
 
@@ -365,6 +367,8 @@ def get_expression(ps):
                 raise Exception('MissingVariables')
 
             ps.expect_char('\n')
+            ps.expect_char(' ')
+            ps.skip_line_ws()
 
             return ast.SelectExpression(selector, variants)
 

@@ -1,10 +1,17 @@
 from . import ast
 
 
-def contains_new_line(elem):
-    return (
-        isinstance(elem, ast.StringExpression) and "\n" in elem.value
+def indent(content):
+    return "    ".join(
+        content.splitlines(True)
     )
+
+
+def contain_new_line(elems):
+    return bool([
+        elem for elem in elems
+        if isinstance(elem, ast.TextElement) and "\n" in elem.value
+    ])
 
 
 def serialize(resource, with_junk=False):

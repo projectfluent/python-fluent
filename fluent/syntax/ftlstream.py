@@ -122,7 +122,8 @@ class FTLParserStream(ParserStream):
             if self.current_is('\n') and not self.peek_char_is('\n'):
                 self.next()
 
-                if self.ch == None or self.is_id_start() or self.current_is('#') or \
+                if self.ch is None or self.is_id_start() or \
+                   (self.current_is('/') and self.peek_char_is('/')) or \
                    (self.current_is('[') and self.peek_char_is('[')):
                     break
 

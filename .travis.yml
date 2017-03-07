@@ -1,0 +1,16 @@
+language: python
+python:
+  - "2.7"
+  - "3.5"
+  - "nightly"
+script: python -m unittest discover
+notifications:
+  irc:
+    channels:
+      - "irc.mozilla.org#l20n"
+    on_success: always
+    on_failure: always
+    use_notice: true
+    template:
+      - "#%{build_number} %{message} %{build_url}"
+      - "Change by %{author}: %{compare_url}"

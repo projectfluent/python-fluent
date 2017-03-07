@@ -230,7 +230,7 @@ def get_symbol(ps):
     name += ps.take_id_start()
 
     while True:
-        ch = ps.take_kw_char()
+        ch = ps.take_symb_char()
         if ch:
             name += ch
         else:

@@ -31,17 +31,11 @@ class TestSerializer(unittest.TestCase):
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    def test_quoted_value(self):
-        input = """\
-            foo = " Foo "
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
-
     def test_multiline_simple(self):
         input = """\
             foo =
-                | Foo
-                | Bar
+                Foo
+                Bar
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
@@ -94,8 +88,8 @@ class TestSerializer(unittest.TestCase):
 
     def test_comment_resource(self):
         input = """\
-            # A multiline
-            # resource comment.
+            // A multiline
+            // resource comment.
 
             foo = Foo
         """
@@ -103,8 +97,8 @@ class TestSerializer(unittest.TestCase):
 
     def test_comment_message(self):
         input = """\
-            # A multiline
-            # message comment.
+            // A multiline
+            // message comment.
             foo = Foo
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
@@ -114,8 +108,8 @@ class TestSerializer(unittest.TestCase):
             foo = Foo
 
 
-            # A multiline
-            # section comment.
+            // A multiline
+            // section comment.
             [[ Section Header ]]
 
             bar = Bar
@@ -126,8 +120,8 @@ class TestSerializer(unittest.TestCase):
     def test_multiline_with_placeable(self):
         input = """\
             foo =
-                | Foo { bar }
-                | Baz
+                Foo { bar }
+                Baz
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
@@ -137,13 +131,37 @@ class TestSerializer(unittest.TestCase):
     def test_multiline_with_placeable_current(self):
         input = """\
             foo =
-                | Foo { bar }
-                | Baz
+                Foo { bar }
+                Baz
         """
         output = """\
             foo = Foo { bar }Baz
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(output))
+
+    def test_tag(self):
+        input = """\
+            foo = Foo
+                #tag
+        """
+        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
+
+    def test_tag_multiple(self):
+        input = """\
+            foo = Foo
+                #tag1
+                #tag2
+        """
+        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
+
+    def test_messages_with_tags(self):
+        input = """\
+            foo = Foo
+                #tag1
+            bar = Bar
+                #tag2
+        """
+        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
     def test_attribute(self):
         input = """\
@@ -152,19 +170,12 @@ class TestSerializer(unittest.TestCase):
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    def test_attribute_quoted(self):
-        input = """\
-            foo
-                .attr = "  Foo Attr  "
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
-
     def test_attribute_multiline(self):
         input = """\
             foo
                 .attr =
-                    | Foo Attr
-                    | Continued
+                    Foo Attr
+                    Continued
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
@@ -187,8 +198,8 @@ class TestSerializer(unittest.TestCase):
     def test_multiline_value_and_attributes(self):
         input = """\
             foo =
-                | Foo Value
-                | Continued
+                Foo Value
+                Continued
                 .attr-a = Foo Attr A
                 .attr-b = Foo Attr B
         """
@@ -197,42 +208,63 @@ class TestSerializer(unittest.TestCase):
     def test_select_expression_no_selector(self):
         input = """\
             foo = {
-               *[a] A
-                [b] B
-            }
+                   *[a] A
+                    [b] B
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
     def test_select_expression(self):
         input = """\
             foo = { sel ->
-               *[a] A
-                [b] B
-            }
+                   *[a] A
+                    [b] B
+                }
+        """
+        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
+
+    @unittest.skip("Parsing error")
+    def test_variant_multiline_first_inline(self):
+        input = """\
+            foo = {
+                   *[a] AAA
+                        BBB
+                }
+        """
+        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
+
+    @unittest.skip("Parsing error")
+    def test_variant_multiline(self):
+        input = """\
+            foo = {
+                   *[a]
+                       AAA
+                       BBB
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
     def test_variant_key_words(self):
         input = """\
             foo = {
-               *[a b c] A B C
-            }
+                   *[a b c] A B C
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
     def test_variant_key_number(self):
         input = """\
             foo = {
-               *[1] 1
-            }
+                   *[1] 1
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    @unittest.skip("The parser throws on the indented }.")
+    @unittest.skip("The serializer doesn't know it's multiline.")
     def test_select_expression_in_simple_multiline(self):
         input = """\
             foo =
-                | Foo { sel ->
+                Foo { sel ->
                    *[a] A
                     [b] B
                 }
@@ -244,123 +276,86 @@ class TestSerializer(unittest.TestCase):
     def test_select_expression_in_simple_multiline_current(self):
         input = """\
             foo =
-                | Foo { sel ->
+                Foo { sel ->
                    *[a] A
                     [b] B
-            }
+                }
         """
         output = """\
             foo = Foo { sel ->
-               *[a] A
-                [b] B
-            }
+                   *[a] A
+                    [b] B
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(output))
 
-    @unittest.skip("The parser throws on the indented }.")
     def test_select_expression_in_multi_multiline(self):
         input = """\
             foo =
-                | Foo
-                | Bar { sel ->
+                Foo
+                Bar { sel ->
                    *[a] A
                     [b] B
                 }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    def test_select_expression_in_multi_multiline_current(self):
-        input = """\
-            foo =
-                | Foo
-                | Bar { sel ->
-                   *[a] A
-                    [b] B
-            }
-        """
-        output = """\
-            foo =
-                | Foo
-                | Bar { sel ->
-                   *[a] A
-                    [b] B
-                }
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(output))
-
-    @unittest.skip("The parser throws on the indented }.")
+    @unittest.skip("Parsing error")
     def test_select_expression_nested(self):
         input = """\
             foo = { sel_a ->
-               *[a] { sel_b ->
-                   *[b] Foo
+                   *[a] { sel_b ->
+                       *[b] Foo
+                    }
                 }
-            }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
-
-    def test_select_expression_nested_current(self):
-        input = """\
-            foo = { sel_a ->
-               *[a] { sel_b ->
-                   *[b] Foo
-            }
-            }
-        """
-        output = """\
-            foo = { sel_a ->
-               *[a] { sel_b ->
-                   *[b] Foo
-                }
-            }
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(output))
 
     def test_selector_message_reference(self):
         input = """\
             foo = { bar ->
-               *[a] A
-            }
+                   *[a] A
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
     def test_selector_external_argument(self):
         input = """\
             foo = { $bar ->
-               *[a] A
-            }
+                   *[a] A
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
     def test_selector_number_expression(self):
         input = """\
             foo = { 1 ->
-               *[a] A
-            }
+                   *[a] A
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
     def test_selector_string_expression(self):
         input = """\
             foo = { "bar" ->
-               *[a] A
-            }
+                   *[a] A
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
     def test_selector_variant_expression(self):
         input = """\
             foo = { bar[baz] ->
-               *[a] A
-            }
+                   *[a] A
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
     def test_selector_attribute_expression(self):
         input = """\
             foo = { bar.baz ->
-               *[a] A
-            }
+                   *[a] A
+                }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
@@ -370,7 +365,7 @@ class TestSerializer(unittest.TestCase):
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    def test_call_expression_with_pattern(self):
+    def test_call_expression_with_string_expression(self):
         input = """\
             foo = { FOO("bar") }
         """

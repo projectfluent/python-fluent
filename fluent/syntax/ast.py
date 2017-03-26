@@ -1,12 +1,27 @@
 from __future__ import unicode_literals
+import sys
 import json
 
 
 def to_json(value):
     if isinstance(value, Node):
-        return value.toJSON()
+        return value.to_json()
     if isinstance(value, list):
         return list(map(to_json, value))
+    else:
+        return value
+
+
+def from_json(value):
+    if isinstance(value, dict):
+        cls = getattr(sys.modules[__name__], value["type"])
+        args = {
+            k: from_json(v)
+            for k, v in value.items() if k != "type"
+        }
+        return cls(**args)
+    if isinstance(value, list):
+        return list(map(from_json, value))
     else:
         return value
 
@@ -41,7 +56,7 @@ class Node(object):
 
         return fun(node)
 
-    def toJSON(self):
+    def to_json(self):
         obj = {
             name: to_json(value)
             for name, value in vars(self).items()
@@ -52,7 +67,7 @@ class Node(object):
         return obj
 
     def __str__(self):
-        return json.dumps(self.toJSON())
+        return json.dumps(self.to_json())
 
     def setPosition(self, start, end):
         if Node._pos is False:
@@ -88,11 +103,12 @@ class Entry(Node):
         super(Entry, self).__init__()
 
 class Message(Entry):
-    def __init__(self, id, value=None, attrs=None, tags=None, comment=None):
+    def __init__(
+            self, id, value=None, attributes=None, tags=None, comment=None):
         super(Message, self).__init__()
         self.id = id
         self.value = value
-        self.attributes = attrs
+        self.attributes = attributes
         self.tags = tags
         self.comment = comment
 

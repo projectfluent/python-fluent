@@ -16,7 +16,7 @@ def read_file(path):
 
 def print_ast(fileType, data):
     [ast, errors] = fluent.syntax.parser.parse(data)
-    print(json.dumps(ast.toJSON(), indent=2, ensure_ascii=False))
+    print(json.dumps(ast.to_json(), indent=2, ensure_ascii=False))
 
     print('Errors:')
     for error in errors:

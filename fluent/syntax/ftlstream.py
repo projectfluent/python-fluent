@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from .stream import ParserStream
+from .errors import ParseError
 
 class FTLParserStream(ParserStream):
     def peek_line_ws(self):
@@ -31,7 +32,7 @@ class FTLParserStream(ParserStream):
             self.next()
             return True
 
-        raise Exception('ExpectedToken')
+        raise ParseError('Expected token "{}"'.format(ch))
 
     def take_char_if(self, ch):
         if self.ch == ch:
@@ -135,7 +136,7 @@ class FTLParserStream(ParserStream):
             self.next()
             return ret
 
-        raise Exception('ExpectedCharRange')
+        raise ParseError('Expected char range')
 
     def take_id_char(self):
         def closure(ch):

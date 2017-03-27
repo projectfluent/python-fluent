@@ -1,11 +1,10 @@
 from __future__ import unicode_literals
 from .ftlstream import FTLParserStream
 from . import ast
-from .errors import get_error_slice
+from .errors import ParseError
 
 
 def parse(source):
-    errors = []
     comment = None
 
     ps = FTLParserStream(source)
@@ -21,15 +20,24 @@ def parse(source):
             if entry_start_pos == 0 and isinstance(entry, ast.Comment):
                 comment = entry
             else:
+                entry.add_span(entry_start_pos, ps.get_index())
                 entries.append(entry)
-        except Exception as e:
-            entries.append(get_junk_entry(ps, source, entry_start_pos))
-            errors.append(e)
+        except ParseError as err:
+            annot = ast.Annotation("ParseError", err.message, ps.get_index())
+
+            ps.skip_to_next_entry_start()
+            next_entry_start = ps.get_index()
+
+            # Create a Junk instance
+            slice = source[entry_start_pos:next_entry_start]
+            junk = ast.Junk(slice)
+            junk.add_span(entry_start_pos, next_entry_start)
+            junk.add_annotation(annot)
+            entries.append(junk)
 
         ps.skip_ws_lines()
 
-    resource = ast.Resource(entries, comment)
-    return [resource, errors]
+    return ast.Resource(entries, comment)
 
 def get_entry(ps):
     comment = None
@@ -45,7 +53,7 @@ def get_entry(ps):
 
     if comment:
         return comment
-    raise Exception('ExpectedEntry')
+    raise ParseError('Expected entry')
 
 def get_comment(ps):
     ps.expect_char('/')
@@ -68,7 +76,7 @@ def get_comment(ps):
         if ps.current_is('/'):
             content += '\n'
             ps.next()
-            ps.expect_char('/');
+            ps.expect_char('/')
             ps.take_char_if(' ')
         else:
             break
@@ -113,11 +121,12 @@ def get_message(ps, comment):
 
     if ps.is_peek_next_line_tag_start():
         if attrs is not None:
-            raise Exception('Tags cannot be added to a message with attributes.');
+            raise ParseError(
+                'Tags cannot be added to messages with attributes')
         tags = get_tags(ps)
 
     if pattern is None and attrs is None and tags is None:
-        raise Exception('MissingField')
+        raise ParseError('Missing field')
 
     return ast.Message(id, pattern, attrs, tags, comment)
 
@@ -139,7 +148,7 @@ def get_attributes(ps):
         value = get_pattern(ps)
 
         if value is None:
-            raise Exception('ExpectedField')
+            raise ParseError('Expected field')
 
         attrs.append(ast.Attribute(key, value))
 
@@ -180,7 +189,7 @@ def get_variant_key(ps):
     ch = ps.current()
 
     if ch is None:
-        raise Exception('Expected VariantKey')
+        raise ParseError('Expected variant key')
 
     if ps.is_number_start():
         return get_number(ps)
@@ -213,7 +222,7 @@ def get_variants(ps):
         value = get_pattern(ps)
 
         if value is None:
-            raise Exception('ExpectedField')
+            raise ParseError('Expected field')
 
         variants.append(ast.Variant(key, value, default_index))
 
@@ -221,7 +230,7 @@ def get_variants(ps):
             break
 
     if not has_default:
-        raise Exception('MissingDefaultVariant')
+        raise ParseError('Missing default variant')
 
     return variants
 
@@ -248,7 +257,7 @@ def get_digits(ps):
         ch = ps.take_digit()
 
     if len(num) == 0:
-        raise Exception('ExpectedCharRange')
+        raise ParseError('Expected char range')
 
     return num
 
@@ -352,7 +361,7 @@ def get_expression(ps):
             variants = get_variants(ps)
 
             if len(variants) == 0:
-                raise Exception('MissingVariables')
+                raise ParseError('Missing variables')
 
             ps.expect_char('\n')
             ps.expect_char(' ')
@@ -407,7 +416,7 @@ def get_call_args(ps):
 
         if ps.current_is(':'):
             if not isinstance(exp, ast.MessageReference):
-                raise Exception('ForbiddenKey')
+                raise ParseError('Forbidden key')
 
             ps.next()
             ps.skip_line_ws()
@@ -434,7 +443,7 @@ def get_arg_val(ps):
         return get_number(ps)
     elif ps.current_is('"'):
         return get_string(ps)
-    raise Exception('ExpectedField')
+    raise ParseError('Expected field')
 
 def get_string(ps):
     val = ''
@@ -454,7 +463,7 @@ def get_literal(ps):
     ch = ps.current()
 
     if ch is None:
-        raise Exception('Expected literal')
+        raise ParseError('Expected literal')
 
     if ps.is_number_start():
         return get_number(ps)
@@ -467,11 +476,3 @@ def get_literal(ps):
 
     name = get_identifier(ps)
     return ast.MessageReference(name)
-
-def get_junk_entry(ps, source, entry_start):
-    ps.skip_to_next_entry_start()
-
-    slice = get_error_slice(source, entry_start, ps.get_index())
-
-    return ast.JunkEntry(slice)
-

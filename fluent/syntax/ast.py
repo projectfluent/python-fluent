@@ -27,8 +27,6 @@ def from_json(value):
 
 
 class Node(object):
-    _pos = False
-
     def traverse(self, fun):
         """Postorder-traverse this node and apply `fun` to all child nodes.
 
@@ -69,43 +67,32 @@ class Node(object):
     def __str__(self):
         return json.dumps(self.to_json())
 
-    def setPosition(self, start, end):
-        if Node._pos is False:
-            return
 
-        self._pos = {
-            "start": start,
-            "end": end
-        }
-
-
-class NodeList(Node):
+class Resource(Node):
     def __init__(self, body=None, comment=None):
-        super(NodeList, self).__init__()
+        super(Resource, self).__init__()
         self.body = body or []
         self.comment = comment
 
-    def entities(self):
-        for entry in self.body:
-            if isinstance(entry, Entity):
-                yield entry
-            if isinstance(entry, Section):
-                for entity in entry.entities():
-                    yield entity
-
-
-class Resource(NodeList):
-    def __init__(self, body=None, comment=None):
-        super(Resource, self).__init__(body, comment)
 
 class Entry(Node):
-    def __init__(self):
+    def __init__(self, span=None, annotations=None):
         super(Entry, self).__init__()
+        self.span = span
+        self.annotations = annotations or []
+
+    def add_span(self, start, end):
+        self.span = Span(start, end)
+
+    def add_annotation(self, annot):
+        self.annotations.append(annot)
+
 
 class Message(Entry):
     def __init__(
-            self, id, value=None, attributes=None, tags=None, comment=None):
-        super(Message, self).__init__()
+            self, id, value=None, attributes=None, tags=None, comment=None,
+            span=None, annotations=None):
+        super(Message, self).__init__(span, annotations)
         self.id = id
         self.value = value
         self.attributes = attributes
@@ -203,14 +190,14 @@ class Symbol(Identifier):
     def __init__(self, name):
         super(Symbol, self).__init__(name)
 
-class Comment(Node):
-    def __init__(self, content):
-        super(Comment, self).__init__()
+class Comment(Entry):
+    def __init__(self, content=None, span=None, annotations=None):
+        super(Comment, self).__init__(span, annotations)
         self.content = content
 
-class Section(Node):
-    def __init__(self, name, comment=None):
-        super(Section, self).__init__()
+class Section(Entry):
+    def __init__(self, name, comment=None, span=None, annotations=None):
+        super(Section, self).__init__(span, annotations)
         self.name = name
         self.comment = comment
 
@@ -218,7 +205,22 @@ class Function(Identifier):
     def __init__(self, name):
         super(Function, self).__init__(name)
 
-class JunkEntry(Node):
-    def __init__(self, content):
-        super(JunkEntry, self).__init__()
+class Junk(Entry):
+    def __init__(self, content=None, span=None, annotations=None):
+        super(Junk, self).__init__(span, annotations)
         self.content = content
+
+
+class Span(Node):
+    def __init__(self, start, end):
+        super(Span, self).__init__()
+        self.start = start
+        self.end = end
+
+
+class Annotation(Node):
+    def __init__(self, name, message, pos):
+        super(Annotation, self).__init__()
+        self.name = name
+        self.message = message
+        self.pos = pos

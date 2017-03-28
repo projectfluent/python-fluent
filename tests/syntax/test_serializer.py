@@ -14,7 +14,7 @@ def dedent_ftl(text):
 
 
 def pretty_ftl(text):
-    [res, errors] = parse(textwrap.dedent(text.rstrip()))
+    res = parse(textwrap.dedent(text.rstrip()))
     return serialize(res)
 
 

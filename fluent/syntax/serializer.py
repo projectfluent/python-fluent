@@ -24,7 +24,7 @@ def serialize(resource, with_junk=False):
             )
         )
     for entry in resource.body:
-        if isinstance(entry, ast.JunkEntry) and with_junk:
+        if isinstance(entry, ast.Junk) and with_junk:
             parts.append(serialize_junk(entry))
         if isinstance(entry, ast.Section):
             parts.append(serialize_section(entry))

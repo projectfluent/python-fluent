@@ -19,7 +19,7 @@ class TestASTJSON(unittest.TestCase):
             foo = Foo
         """
 
-        [ast1, _] = parse(dedent_ftl(input))
+        ast1 = parse(dedent_ftl(input))
         json1 = ast1.to_json()
         ast2 = from_json(json1)
         json2 = ast2.to_json()
@@ -51,7 +51,19 @@ class TestASTJSON(unittest.TestCase):
                 } post.
         """
 
-        [ast1, _] = parse(dedent_ftl(input))
+        ast1 = parse(dedent_ftl(input))
+        json1 = ast1.to_json()
+        ast2 = from_json(json1)
+        json2 = ast2.to_json()
+
+        self.assertEqual(json1, json2)
+
+    def test_syntax_error(self):
+        input = """\
+            foo = Foo {
+        """
+
+        ast1 = parse(dedent_ftl(input))
         json1 = ast1.to_json()
         ast2 = from_json(json1)
         json2 = ast2.to_json()

@@ -24,14 +24,22 @@ def serialize(resource, with_junk=False):
             )
         )
     for entry in resource.body:
-        if isinstance(entry, ast.Junk) and with_junk:
-            parts.append(serialize_junk(entry))
-        if isinstance(entry, ast.Section):
-            parts.append(serialize_section(entry))
-        if isinstance(entry, ast.Message):
-            parts.append(serialize_message(entry))
+        if not isinstance(entry, ast.Junk) or with_junk:
+            parts.append(serialize_entry(entry))
 
-    return "".join(parts).strip()
+    return "".join(parts)
+
+
+def serialize_entry(entry):
+    if isinstance(entry, ast.Message):
+        return serialize_message(entry)
+    if isinstance(entry, ast.Section):
+        return serialize_section(entry)
+    if isinstance(entry, ast.Comment):
+        return serialize_comment(entry)
+    if isinstance(entry, ast.Junk):
+        return serialize_junk(entry)
+    raise Exception('Unknown entry type: {}'.format(entry.type))
 
 
 def serialize_comment(comment):
@@ -143,6 +151,7 @@ def serialize_expression(expression):
         return serialize_variant_expression(expression)
     if isinstance(expression, ast.CallExpression):
         return serialize_call_expression(expression)
+    raise Exception('Unknown expression type: {}'.format(expression.type))
 
 
 def serialize_string_expression(expr):
@@ -229,6 +238,7 @@ def serialize_argument_value(argval):
         return serialize_string_expression(argval)
     if isinstance(argval, ast.NumberExpression):
         return serialize_number_expression(argval)
+    raise Exception('Unknown argument type: {}'.format(argval.type))
 
 
 def serialize_identifier(identifier):
@@ -244,6 +254,7 @@ def serialize_variant_key(key):
         return serialize_symbol(key)
     if isinstance(key, ast.NumberExpression):
         return serialize_number_expression(key)
+    raise Exception('Unknown variant key type: {}'.format(key.type))
 
 
 def serialize_function(function):

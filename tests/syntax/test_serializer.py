@@ -1,20 +1,16 @@
 from __future__ import unicode_literals
 import unittest
-import textwrap
 import sys
 
 sys.path.append('.')
 
+from tests.syntax import dedent_ftl
 from fluent.syntax.parser import parse
 from fluent.syntax.serializer import serialize
 
 
-def dedent_ftl(text):
-    return textwrap.dedent(text.rstrip())
-
-
 def pretty_ftl(text):
-    res = parse(textwrap.dedent(text.rstrip()))
+    res = parse(dedent_ftl(text))
     return serialize(res)
 
 

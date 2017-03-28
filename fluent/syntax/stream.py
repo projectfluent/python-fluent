@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+
 class StringIter():
     def __init__(self, source):
         self.source = source
@@ -12,6 +13,10 @@ class StringIter():
             self.i += 1
             return ret
         return None
+
+    def get_slice(self, start, end):
+        return self.source[start:end]
+
 
 class ParserStream():
     def __init__(self, string):
@@ -110,3 +115,6 @@ class ParserStream():
             self.ch = self.buf.pop(0)
 
         self.index = self.peek_index
+
+    def get_slice(self, start, end):
+        return self.iter.get_slice(start, end)

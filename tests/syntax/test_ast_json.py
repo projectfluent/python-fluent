@@ -1,16 +1,12 @@
 from __future__ import unicode_literals
 import unittest
-import textwrap
 import sys
 
 sys.path.append('.')
 
+from tests.syntax import dedent_ftl
 from fluent.syntax.ast import from_json
 from fluent.syntax.parser import parse
-
-
-def dedent_ftl(text):
-    return textwrap.dedent(text.rstrip())
 
 
 class TestASTJSON(unittest.TestCase):

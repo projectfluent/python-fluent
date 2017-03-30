@@ -13,31 +13,44 @@ def parse(source):
     entries = []
 
     while ps.current():
-        entry_start_pos = ps.get_index()
+        entry = get_entry_or_junk(ps)
 
-        try:
-            entry = get_entry(ps)
-            if entry_start_pos == 0 and isinstance(entry, ast.Comment):
-                comment = entry
-            else:
-                entry.add_span(entry_start_pos, ps.get_index())
-                entries.append(entry)
-        except ParseError as err:
-            annot = ast.Annotation("ParseError", err.message, ps.get_index())
-
-            ps.skip_to_next_entry_start()
-            next_entry_start = ps.get_index()
-
-            # Create a Junk instance
-            slice = source[entry_start_pos:next_entry_start]
-            junk = ast.Junk(slice)
-            junk.add_span(entry_start_pos, next_entry_start)
-            junk.add_annotation(annot)
-            entries.append(junk)
+        if isinstance(entry, ast.Comment) and len(entries) == 0:
+            comment = entry
+        else:
+            entries.append(entry)
 
         ps.skip_ws_lines()
 
     return ast.Resource(entries, comment)
+
+
+def parse_entry(source):
+    ps = FTLParserStream(source)
+    ps.skip_ws_lines()
+    return get_entry_or_junk(ps)
+
+
+def get_entry_or_junk(ps):
+    entry_start_pos = ps.get_index()
+
+    try:
+        entry = get_entry(ps)
+        entry.add_span(entry_start_pos, ps.get_index())
+        return entry
+    except ParseError as err:
+        annot = ast.Annotation("ParseError", err.message, ps.get_index())
+
+        ps.skip_to_next_entry_start()
+        next_entry_start = ps.get_index()
+
+        # Create a Junk instance
+        slice = ps.get_slice(entry_start_pos, next_entry_start)
+        junk = ast.Junk(slice)
+        junk.add_span(entry_start_pos, next_entry_start)
+        junk.add_annotation(annot)
+        return junk
+
 
 def get_entry(ps):
     comment = None

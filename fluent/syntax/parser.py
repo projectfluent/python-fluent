@@ -4,31 +4,31 @@ from . import ast
 from .errors import ParseError
 
 
-def parse(source):
-    comment = None
+class FluentParser(object):
+    def parse(self, source):
+        comment = None
 
-    ps = FTLParserStream(source)
-    ps.skip_ws_lines()
-
-    entries = []
-
-    while ps.current():
-        entry = get_entry_or_junk(ps)
-
-        if isinstance(entry, ast.Comment) and len(entries) == 0:
-            comment = entry
-        else:
-            entries.append(entry)
-
+        ps = FTLParserStream(source)
         ps.skip_ws_lines()
 
-    return ast.Resource(entries, comment)
+        entries = []
 
+        while ps.current():
+            entry = get_entry_or_junk(ps)
 
-def parse_entry(source):
-    ps = FTLParserStream(source)
-    ps.skip_ws_lines()
-    return get_entry_or_junk(ps)
+            if isinstance(entry, ast.Comment) and len(entries) == 0:
+                comment = entry
+            else:
+                entries.append(entry)
+
+            ps.skip_ws_lines()
+
+        return ast.Resource(entries, comment)
+
+    def parse_entry(self, source):
+        ps = FTLParserStream(source)
+        ps.skip_ws_lines()
+        return get_entry_or_junk(ps)
 
 
 def get_entry_or_junk(ps):

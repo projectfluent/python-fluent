@@ -5,8 +5,7 @@ import json
 
 sys.path.append('./')
 import codecs
-import fluent.syntax.ast
-import fluent.syntax.serializer
+from fluent.syntax import ast, serialize
 
 
 def read_json(path):
@@ -15,8 +14,8 @@ def read_json(path):
 
 
 def pretty_print(fileType, data):
-    ast = fluent.syntax.ast.from_json(data)
-    print(fluent.syntax.serializer.serialize(ast))
+    resource = ast.from_json(data)
+    print(serialize(resource))
 
 if __name__ == "__main__":
     file_type = 'ftl'

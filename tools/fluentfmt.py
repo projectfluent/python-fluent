@@ -4,8 +4,7 @@ import sys
 
 sys.path.append('./')
 import codecs
-import fluent.syntax.parser
-import fluent.syntax.serializer
+from fluent.syntax import parse, serialize
 
 
 def read_file(path):
@@ -15,8 +14,8 @@ def read_file(path):
 
 
 def pretty_print(fileType, data):
-    ast = fluent.syntax.parser.parse(data)
-    print(fluent.syntax.serializer.serialize(ast))
+    ast = parse(data)
+    print(serialize(ast))
 
 if __name__ == "__main__":
     file_type = 'ftl'

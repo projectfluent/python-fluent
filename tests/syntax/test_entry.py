@@ -6,11 +6,14 @@ sys.path.append('.')
 
 from tests.syntax import dedent_ftl
 from fluent.syntax.ast import from_json
-from fluent.syntax.parser import parse_entry
-from fluent.syntax.serializer import serialize_entry
+from fluent.syntax.parser import FluentParser
+from fluent.syntax.serializer import FluentSerializer
 
 
 class TestParseEntry(unittest.TestCase):
+    def setUp(self):
+        self.parser = FluentParser()
+
     def test_simple_message(self):
         input = """\
             foo = Foo
@@ -41,11 +44,14 @@ class TestParseEntry(unittest.TestCase):
             }
         }
 
-        message = parse_entry(dedent_ftl(input))
+        message = self.parser.parse_entry(dedent_ftl(input))
         self.assertEqual(message.to_json(), output)
 
 
 class TestSerializeEntry(unittest.TestCase):
+    def setUp(self):
+        self.serializer = FluentSerializer()
+
     def test_simple_message(self):
         input = {
             "comment": None,
@@ -76,5 +82,5 @@ class TestSerializeEntry(unittest.TestCase):
             foo = Foo
         """
 
-        message = serialize_entry(from_json(input))
+        message = self.serializer.serialize_entry(from_json(input))
         self.assertEqual(message, dedent_ftl(output))

@@ -5,6 +5,10 @@ from .errors import ParseError
 
 
 class FluentParser(object):
+    def __init__(self, with_spans=True, with_annotations=True):
+        self.with_spans = with_spans
+        self.with_annotations = with_annotations
+
     def parse(self, source):
         comment = None
 
@@ -14,7 +18,7 @@ class FluentParser(object):
         entries = []
 
         while ps.current():
-            entry = get_entry_or_junk(ps)
+            entry = get_entry_or_junk(self, ps)
 
             if isinstance(entry, ast.Comment) and len(entries) == 0:
                 comment = entry
@@ -28,28 +32,31 @@ class FluentParser(object):
     def parse_entry(self, source):
         ps = FTLParserStream(source)
         ps.skip_ws_lines()
-        return get_entry_or_junk(ps)
+        return get_entry_or_junk(self, ps)
 
 
-def get_entry_or_junk(ps):
+def get_entry_or_junk(self, ps):
     entry_start_pos = ps.get_index()
 
     try:
         entry = get_entry(ps)
-        entry.add_span(entry_start_pos, ps.get_index())
+        if self.with_spans:
+            entry.add_span(entry_start_pos, ps.get_index())
         return entry
     except ParseError as err:
-        annot = ast.Annotation(err.code, err.args, err.message)
-        annot.add_span(ps.get_index(), ps.get_index())
-
+        error_index = ps.get_index()
         ps.skip_to_next_entry_start()
         next_entry_start = ps.get_index()
 
         # Create a Junk instance
         slice = ps.get_slice(entry_start_pos, next_entry_start)
         junk = ast.Junk(slice)
-        junk.add_span(entry_start_pos, next_entry_start)
-        junk.add_annotation(annot)
+        if self.with_spans:
+            junk.add_span(entry_start_pos, next_entry_start)
+        if self.with_annotations:
+            annot = ast.Annotation(err.code, err.args, err.message)
+            annot.add_span(error_index, error_index)
+            junk.add_annotation(annot)
         return junk
 
 

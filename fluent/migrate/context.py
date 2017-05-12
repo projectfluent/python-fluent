@@ -51,7 +51,11 @@ class MergeContext(object):
 
         # An iterable of plural category names relevant to the context's
         # language.  E.g. ('one', 'other') for English.
-        self.plural_categories = get_plural_categories(lang)
+        try:
+            self.plural_categories = get_plural_categories(lang)
+        except RuntimeError as e:
+            print(e.message)
+            self.plural_categories = 'en'
 
         # Paths to directories with input data, relative to CWD.
         self.reference_dir = reference_dir

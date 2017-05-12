@@ -45,6 +45,9 @@ def main(lang, reference_dir, localization_dir, blame, migrations, dry_run):
                 fullpath = os.path.join(localization_dir, path)
                 print('  Writing to {}'.format(fullpath))
                 if not dry_run:
+                    fulldir = os.path.dirname(fullpath)
+                    if not os.path.isdir(fulldir):
+                        os.makedirs(fulldir)
                     with open(fullpath, 'w') as f:
                         f.write(content.encode('utf8'))
                         f.close()

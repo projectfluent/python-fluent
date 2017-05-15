@@ -39,7 +39,8 @@ def get_entry_or_junk(ps):
         entry.add_span(entry_start_pos, ps.get_index())
         return entry
     except ParseError as err:
-        annot = ast.Annotation("ParseError", err.message, ps.get_index())
+        annot = ast.Annotation(err.code, err.args, err.message)
+        annot.add_span(ps.get_index(), ps.get_index())
 
         ps.skip_to_next_entry_start()
         next_entry_start = ps.get_index()
@@ -66,7 +67,8 @@ def get_entry(ps):
 
     if comment:
         return comment
-    raise ParseError('Expected entry')
+
+    raise ParseError('E0002')
 
 def get_comment(ps):
     ps.expect_char('/')
@@ -134,12 +136,11 @@ def get_message(ps, comment):
 
     if ps.is_peek_next_line_tag_start():
         if attrs is not None:
-            raise ParseError(
-                'Tags cannot be added to messages with attributes')
+            raise ParseError('E0012')
         tags = get_tags(ps)
 
     if pattern is None and attrs is None and tags is None:
-        raise ParseError('Missing field')
+        raise ParseError('E0005', id.name)
 
     return ast.Message(id, pattern, attrs, tags, comment)
 
@@ -161,7 +162,7 @@ def get_attributes(ps):
         value = get_pattern(ps)
 
         if value is None:
-            raise ParseError('Expected field')
+            raise ParseError('E0006', 'value')
 
         attrs.append(ast.Attribute(key, value))
 
@@ -202,7 +203,7 @@ def get_variant_key(ps):
     ch = ps.current()
 
     if ch is None:
-        raise ParseError('Expected variant key')
+        raise ParseError('E0013')
 
     if ps.is_number_start():
         return get_number(ps)
@@ -220,6 +221,8 @@ def get_variants(ps):
         ps.skip_line_ws()
 
         if ps.current_is('*'):
+            if has_default:
+                raise ParseError('E0015')
             ps.next()
             default_index = True
             has_default = True
@@ -235,7 +238,7 @@ def get_variants(ps):
         value = get_pattern(ps)
 
         if value is None:
-            raise ParseError('Expected field')
+            raise ParseError('E0006', 'value')
 
         variants.append(ast.Variant(key, value, default_index))
 
@@ -243,7 +246,7 @@ def get_variants(ps):
             break
 
     if not has_default:
-        raise ParseError('Missing default variant')
+        raise ParseError('E0010')
 
     return variants
 
@@ -270,7 +273,7 @@ def get_digits(ps):
         ch = ps.take_digit()
 
     if len(num) == 0:
-        raise ParseError('Expected char range')
+        raise ParseError('E0004', '0-9')
 
     return num
 
@@ -301,19 +304,16 @@ def get_pattern(ps):
             if first_line and len(buffer) != 0:
                 break
 
-            ps.peek()
-
-            if not ps.current_peek_is(' '):
-                ps.reset_peek()
+            if not ps.is_peek_next_line_pattern():
                 break
 
-            ps.peek_line_ws()
-            ps.skip_to_peek()
+            ps.next()
+            ps.skip_line_ws()
+
+            if not first_line:
+                buffer += ch
 
             first_line = False
-
-            if len(buffer) != 0:
-                buffer += ch
             continue
         elif ch == '\\':
             ch2 = ps.peek()
@@ -374,7 +374,7 @@ def get_expression(ps):
             variants = get_variants(ps)
 
             if len(variants) == 0:
-                raise ParseError('Missing variables')
+                raise ParseError('E0011')
 
             ps.expect_char('\n')
             ps.expect_char(' ')
@@ -429,7 +429,7 @@ def get_call_args(ps):
 
         if ps.current_is(':'):
             if not isinstance(exp, ast.MessageReference):
-                raise ParseError('Forbidden key')
+                raise ParseError('E0009')
 
             ps.next()
             ps.skip_line_ws()
@@ -456,7 +456,7 @@ def get_arg_val(ps):
         return get_number(ps)
     elif ps.current_is('"'):
         return get_string(ps)
-    raise ParseError('Expected field')
+    raise ParseError('E0006', 'value')
 
 def get_string(ps):
     val = ''
@@ -476,7 +476,7 @@ def get_literal(ps):
     ch = ps.current()
 
     if ch is None:
-        raise ParseError('Expected literal')
+        raise ParseError('E0014')
 
     if ps.is_number_start():
         return get_number(ps)

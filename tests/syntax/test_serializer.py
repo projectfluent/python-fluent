@@ -113,7 +113,6 @@ class TestSerializer(unittest.TestCase):
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    @unittest.skip("The parser ignores the new-line after }.")
     def test_multiline_with_placeable(self):
         input = """\
             foo =
@@ -121,20 +120,6 @@ class TestSerializer(unittest.TestCase):
                 Baz
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
-
-    # The parser ignores the new-line after { bar }.  Consequently, none of the
-    # Text elements composing the Pattern contain a new-line and the serializer
-    # output a single line.  There's also no space between { bar } and Baz.
-    def test_multiline_with_placeable_current(self):
-        input = """\
-            foo =
-                Foo { bar }
-                Baz
-        """
-        output = """\
-            foo = Foo { bar }Baz
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(output))
 
     def test_tag(self):
         input = """\

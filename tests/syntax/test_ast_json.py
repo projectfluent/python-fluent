@@ -6,16 +6,19 @@ sys.path.append('.')
 
 from tests.syntax import dedent_ftl
 from fluent.syntax.ast import from_json
-from fluent.syntax.parser import parse
+from fluent.syntax.parser import FluentParser
 
 
 class TestASTJSON(unittest.TestCase):
+    def setUp(self):
+        self.parser = FluentParser()
+
     def test_simple_resource(self):
         input = """\
             foo = Foo
         """
 
-        ast1 = parse(dedent_ftl(input))
+        ast1 = self.parser.parse(dedent_ftl(input))
         json1 = ast1.to_json()
         ast2 = from_json(json1)
         json2 = ast2.to_json()
@@ -47,7 +50,7 @@ class TestASTJSON(unittest.TestCase):
                 } post.
         """
 
-        ast1 = parse(dedent_ftl(input))
+        ast1 = self.parser.parse(dedent_ftl(input))
         json1 = ast1.to_json()
         ast2 = from_json(json1)
         json2 = ast2.to_json()
@@ -59,7 +62,7 @@ class TestASTJSON(unittest.TestCase):
             foo = Foo {
         """
 
-        ast1 = parse(dedent_ftl(input))
+        ast1 = self.parser.parse(dedent_ftl(input))
         json1 = ast1.to_json()
         ast2 = from_json(json1)
         json2 = ast2.to_json()

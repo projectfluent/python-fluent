@@ -7,7 +7,7 @@ import unittest
 
 sys.path.append('.')
 
-from fluent.syntax.parser import parse
+from fluent.syntax import parse
 
 
 def read_file(path):

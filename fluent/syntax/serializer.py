@@ -15,31 +15,34 @@ def contain_new_line(elems):
     ])
 
 
-def serialize(resource, with_junk=False):
-    parts = []
-    if resource.comment:
-        parts.append(
-            "{}\n\n".format(
-                serialize_comment(resource.comment)
+class FluentSerializer(object):
+    def __init__(self, with_junk=False):
+        self.with_junk = with_junk
+
+    def serialize(self, resource):
+        parts = []
+        if resource.comment:
+            parts.append(
+                "{}\n\n".format(
+                    serialize_comment(resource.comment)
+                )
             )
-        )
-    for entry in resource.body:
-        if not isinstance(entry, ast.Junk) or with_junk:
-            parts.append(serialize_entry(entry))
+        for entry in resource.body:
+            if not isinstance(entry, ast.Junk) or self.with_junk:
+                parts.append(self.serialize_entry(entry))
 
-    return "".join(parts)
+        return "".join(parts)
 
-
-def serialize_entry(entry):
-    if isinstance(entry, ast.Message):
-        return serialize_message(entry)
-    if isinstance(entry, ast.Section):
-        return serialize_section(entry)
-    if isinstance(entry, ast.Comment):
-        return serialize_comment(entry)
-    if isinstance(entry, ast.Junk):
-        return serialize_junk(entry)
-    raise Exception('Unknown entry type: {}'.format(entry.type))
+    def serialize_entry(self, entry):
+        if isinstance(entry, ast.Message):
+            return serialize_message(entry)
+        if isinstance(entry, ast.Section):
+            return serialize_section(entry)
+        if isinstance(entry, ast.Comment):
+            return serialize_comment(entry)
+        if isinstance(entry, ast.Junk):
+            return serialize_junk(entry)
+        raise Exception('Unknown entry type: {}'.format(entry.type))
 
 
 def serialize_comment(comment):

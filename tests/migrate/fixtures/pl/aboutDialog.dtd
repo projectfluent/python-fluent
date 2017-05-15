@@ -1,0 +1,16 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<!ENTITY update.failed.start        "Aktualizacja się nie powiodła. ">
+<!ENTITY update.failed.linkText     "Pobierz">
+<!ENTITY update.failed.end          ".">
+
+<!ENTITY channel.description.start  "Obecnie korzystasz z kanału ">
+<!ENTITY channel.description.end    ". ">
+
+<!ENTITY community.start            "Program &brandShortName; został opracowany przez ">
+<!ENTITY community.mozillaLink      "organizację &vendorShortName;">
+<!ENTITY community.middle           ", która jest ">
+<!ENTITY community.creditsLink      "globalną społecznością">
+<!ENTITY community.end              ", starającą się zapewnić, by…">

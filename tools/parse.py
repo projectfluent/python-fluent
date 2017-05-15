@@ -4,7 +4,7 @@ import sys
 
 sys.path.append('./')
 import codecs
-import fluent.syntax.parser
+from fluent.syntax import parse
 import json
 
 
@@ -15,7 +15,7 @@ def read_file(path):
 
 
 def print_ast(fileType, data):
-    ast = fluent.syntax.parser.parse(data)
+    ast = parse(data)
     print(json.dumps(ast.to_json(), indent=2, ensure_ascii=False))
 
 

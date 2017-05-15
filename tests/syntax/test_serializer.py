@@ -5,8 +5,7 @@ import sys
 sys.path.append('.')
 
 from tests.syntax import dedent_ftl
-from fluent.syntax.parser import parse
-from fluent.syntax.serializer import serialize
+from fluent.syntax import parse, serialize
 
 
 def pretty_ftl(text):

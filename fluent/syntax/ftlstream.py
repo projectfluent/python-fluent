@@ -32,7 +32,11 @@ class FTLParserStream(ParserStream):
             self.next()
             return True
 
-        raise ParseError('Expected token "{}"'.format(ch))
+        if ch == '\n':
+            # Unicode Character 'SYMBOL FOR NEWLINE' (U+2424)
+            raise ParseError('E0003', '\u2424')
+
+        raise ParseError('E0003', ch)
 
     def take_char_if(self, ch):
         if self.ch == ch:
@@ -42,12 +46,15 @@ class FTLParserStream(ParserStream):
 
     def take_char(self, f):
         ch = self.ch
-        if f(ch):
+        if ch is not None and f(ch):
             self.next()
             return ch
         return None
 
     def is_id_start(self):
+        if self.ch is None:
+            return False
+
         cc = ord(self.ch)
 
         return (cc >= 97 and cc <= 122) or \
@@ -62,7 +69,7 @@ class FTLParserStream(ParserStream):
     def is_peek_next_line_indented(self):
         if not self.current_peek_is('\n'):
             return False
-        
+
         self.peek()
 
         if self.current_peek_is(' '):
@@ -75,10 +82,17 @@ class FTLParserStream(ParserStream):
     def is_peek_next_line_variant_start(self):
         if not self.current_peek_is('\n'):
             return False
-        
+
         self.peek()
 
+        ptr = self.get_peek_index()
+
         self.peek_line_ws()
+
+        if (self.get_peek_index() - ptr == 0):
+            self.reset_peek()
+            return False
+
         if self.current_peek_is('*'):
             self.peek()
 
@@ -92,10 +106,16 @@ class FTLParserStream(ParserStream):
     def is_peek_next_line_attribute_start(self):
         if not self.current_peek_is('\n'):
             return False
-        
+
         self.peek()
 
+        ptr = self.get_peek_index()
+
         self.peek_line_ws()
+
+        if (self.get_peek_index() - ptr == 0):
+            self.reset_peek()
+            return False
 
         if self.current_peek_is('.'):
             self.reset_peek()
@@ -104,6 +124,31 @@ class FTLParserStream(ParserStream):
         self.reset_peek()
         return False
 
+    def is_peek_next_line_pattern(self):
+        if not self.current_peek_is('\n'):
+            return False
+
+        self.peek()
+
+        ptr = self.get_peek_index()
+
+        self.peek_line_ws()
+
+        if (self.get_peek_index() - ptr == 0):
+            self.reset_peek()
+            return False
+
+        if (self.current_peek_is('}') or
+                self.current_peek_is('.') or
+                self.current_peek_is('#') or
+                self.current_peek_is('[') or
+                self.current_peek_is('*')):
+            self.reset_peek()
+            return False
+
+        self.reset_peek()
+        return True
+
     def is_peek_next_line_tag_start(self):
 
         if not self.current_peek_is('\n'):
@@ -111,7 +156,13 @@ class FTLParserStream(ParserStream):
 
         self.peek()
 
+        ptr = self.get_peek_index()
+
         self.peek_line_ws()
+
+        if (self.get_peek_index() - ptr == 0):
+            self.reset_peek()
+            return False
 
         if self.current_peek_is('#'):
             self.reset_peek()
@@ -136,15 +187,15 @@ class FTLParserStream(ParserStream):
             self.next()
             return ret
 
-        raise ParseError('Expected char range')
+        raise ParseError('E0004', 'a-zA-Z')
 
     def take_id_char(self):
         def closure(ch):
             cc = ord(ch)
-            return (cc >= 97 and cc <= 122) or \
-                   (cc >= 65 and cc <= 90) or \
-                   (cc >= 48 and cc <= 57) or \
-                    cc == 95 or cc == 45
+            return ((cc >= 97 and cc <= 122) or
+                    (cc >= 65 and cc <= 90) or
+                    (cc >= 48 and cc <= 57) or
+                    cc == 95 or cc == 45)
         return self.take_char(closure)
 
     def take_symb_char(self):

@@ -14,12 +14,23 @@ def to_json(value):
 
 def from_json(value):
     if isinstance(value, dict):
-        cls = getattr(sys.modules[__name__], value["type"])
+        cls = getattr(sys.modules[__name__], value['type'])
         args = {
             k: from_json(v)
-            for k, v in value.items() if k != "type"
+            for k, v in value.items()
+            if k != 'type'
+            if k != 'span'
         }
-        return cls(**args)
+        node = cls(**args)
+
+        # Spans need to be added via add_span, not __init__.
+        if 'span' in value:
+            span = value['span']
+            # Message and section comments don't have their own spans.
+            if span is not None:
+                node.add_span(span['start'], span['end'])
+
+        return node
     if isinstance(value, list):
         return list(map(from_json, value))
     else:
@@ -219,8 +230,11 @@ class Span(Node):
 
 
 class Annotation(Node):
-    def __init__(self, name, message, pos):
+    def __init__(self, code, args=None, message=None):
         super(Annotation, self).__init__()
-        self.name = name
+        self.code = code
+        self.args = args or []
         self.message = message
-        self.pos = pos
+
+    def add_span(self, start, end):
+        self.span = Span(start, end)

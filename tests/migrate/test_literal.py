@@ -10,7 +10,7 @@ except ImportError:
     PropertiesParser = DTDParser = None
 
 from fluent.migrate.util import parse, ftl_message_to_json
-from fluent.migrate.transforms import evaluate, LITERAL_FROM
+from fluent.migrate.transforms import evaluate, COPY
 
 
 class MockContext(unittest.TestCase):
@@ -33,7 +33,7 @@ class TestCopy(MockContext):
     def test_copy(self):
         msg = FTL.Message(
             FTL.Identifier('foo'),
-            value=LITERAL_FROM(self.strings, 'foo')
+            value=COPY(self.strings, 'foo')
         )
 
         self.assertEqual(
@@ -46,7 +46,7 @@ class TestCopy(MockContext):
     def test_copy_escape_unicode_middle(self):
         msg = FTL.Message(
             FTL.Identifier('foo-unicode-middle'),
-            value=LITERAL_FROM(self.strings, 'foo.unicode.middle')
+            value=COPY(self.strings, 'foo.unicode.middle')
         )
 
         self.assertEqual(
@@ -60,7 +60,7 @@ class TestCopy(MockContext):
     def test_copy_escape_unicode_begin(self):
         msg = FTL.Message(
             FTL.Identifier('foo-unicode-begin'),
-            value=LITERAL_FROM(self.strings, 'foo.unicode.begin')
+            value=COPY(self.strings, 'foo.unicode.begin')
         )
 
         self.assertEqual(
@@ -74,7 +74,7 @@ class TestCopy(MockContext):
     def test_copy_escape_unicode_end(self):
         msg = FTL.Message(
             FTL.Identifier('foo-unicode-end'),
-            value=LITERAL_FROM(self.strings, 'foo.unicode.end')
+            value=COPY(self.strings, 'foo.unicode.end')
         )
 
         self.assertEqual(
@@ -87,7 +87,7 @@ class TestCopy(MockContext):
     def test_copy_html_entity(self):
         msg = FTL.Message(
             FTL.Identifier('foo-html-entity'),
-            value=LITERAL_FROM(self.strings, 'foo.html.entity')
+            value=COPY(self.strings, 'foo.html.entity')
         )
 
         self.assertEqual(
@@ -112,11 +112,11 @@ class TestCopyTraits(MockContext):
             attributes=[
                 FTL.Attribute(
                     FTL.Identifier('label'),
-                    LITERAL_FROM(self.strings, 'checkForUpdatesButton.label')
+                    COPY(self.strings, 'checkForUpdatesButton.label')
                 ),
                 FTL.Attribute(
                     FTL.Identifier('accesskey'),
-                    LITERAL_FROM(
+                    COPY(
                         self.strings, 'checkForUpdatesButton.accesskey'
                     )
                 ),

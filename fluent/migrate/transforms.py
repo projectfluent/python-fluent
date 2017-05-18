@@ -1,7 +1,72 @@
 # coding=utf8
+"""Migration Transforms.
+
+Transforms are AST nodes which describe how legacy translations should be
+migrated.  They are created inert and only return the migrated AST nodes when
+they are evaluated by a MergeContext.
+
+All Transforms evaluate to Fluent Patterns. This makes them suitable for
+defining migrations of values of message, attributes and variants.  The special
+CONCAT Transform is capable of joining multiple Patterns returned by evaluating
+other Transforms into a single Pattern.  It can also concatenate Fluent
+Expressions, like MessageReferences and ExternalArguments.
+
+The COPY, REPLACE and PLURALS Transforms inherit from Source which is a special
+AST Node defining the location (the file path and the id) of the legacy
+translation.  During the migration, the current MergeContext scans the
+migration spec for Source nodes and extracts the information about all legacy
+translations being migrated. Thus,
+
+    COPY('file.dtd', 'hello')
+
+is equivalent to:
+
+    LITERAL(Source('file.dtd', 'hello'))
+
+where LITERAL is a helper defined in the helpers.py module for creating Fluent
+Patterns from the text passed as the argument.
+
+The LITERAL helper and the special REPLACE_IN_TEXT Transforms are useful for
+working with text rather than (path, key) source definitions.  This is the case
+when the migrated translation requires some hardcoded text, e.g. <a> and </a>
+when multiple translations become a single one with a DOM overlay.
+
+    FTL.Message(
+        id=FTL.Identifier('update-failed'),
+        value=CONCAT(
+            COPY('aboutDialog.dtd', 'update.failed.start'),
+            LITERAL('<a>'),
+            COPY('aboutDialog.dtd', 'update.failed.linkText'),
+            LITERAL('</a>'),
+            COPY('aboutDialog.dtd', 'update.failed.end'),
+        )
+    )
+
+The REPLACE_IN_TEXT Transform also takes text as input, making in possible to
+pass it as the foreach function of the PLURALS Transform.  In this case, each
+slice of the plural string will be run through a REPLACE_IN_TEXT operation.
+Those slices are strings, so a REPLACE(path, key, …) isn't suitable for them.
+
+    FTL.Message(
+        FTL.Identifier('delete-all'),
+        value=PLURALS(
+            'aboutDownloads.dtd',
+            'deleteAll',
+            EXTERNAL_ARGUMENT('num'),
+            lambda text: REPLACE_IN_TEXT(
+                text,
+                {
+                    '#1': EXTERNAL_ARGUMENT('num')
+                }
+            )
+        )
+    )
+"""
+
 from __future__ import unicode_literals
 
 import fluent.syntax.ast as FTL
+from .helpers import LITERAL
 
 
 def evaluate(ctx, node):
@@ -19,10 +84,10 @@ class Transform(FTL.Node):
         raise NotImplementedError
 
 
-class SOURCE(Transform):
+class Source(Transform):
     """Declare the source translation to be migrated with other transforms.
 
-    When evaluated `SOURCE` returns a simple string value.  All \\uXXXX from
+    When evaluated `Source` returns a simple string value.  All \\uXXXX from
     the original translations are converted beforehand to the literal
     characters they encode.
 
@@ -50,46 +115,15 @@ class SOURCE(Transform):
         return ctx.get_source(self.path, self.key)
 
 
-class LITERAL(Transform):
-    """Create a Pattern with the literal text `value`.
-
-    This transform is used by `LITERAL_FROM` and can be used on its own with
-    `CONCAT`.
-    """
-
-    def __init__(self, value):
-        self.value = value
-
-    def __call__(self, ctx):
-        elements = [FTL.TextElement(self.value)]
-        return FTL.Pattern(elements)
-
-
-class LITERAL_FROM(SOURCE):
+class COPY(Source):
     """Create a Pattern with the translation value from the given source."""
 
     def __call__(self, ctx):
         source = super(self.__class__, self).__call__(ctx)
-        return LITERAL(source)(ctx)
+        return LITERAL(source)
 
 
-class EXTERNAL(Transform):
-    """Create a Pattern with the external argument `name`
-
-    This is a common use-case when joining translations with CONCAT.
-    """
-
-    def __init__(self, name):
-        self.name = name
-
-    def __call__(self, ctx):
-        external = FTL.ExternalArgument(
-            id=FTL.Identifier(self.name)
-        )
-        return FTL.Pattern([external])
-
-
-class REPLACE(Transform):
+class REPLACE_IN_TEXT(Transform):
     """Replace various placeables in the translation with FTL placeables.
 
     The original placeables are defined as keys on the `replacements` dict.
@@ -105,7 +139,9 @@ class REPLACE(Transform):
 
         # Only replace placeable which are present in the translation.
         replacements = {
-            k: v for k, v in self.replacements.iteritems() if k in self.value
+            key: evaluate(ctx, repl)
+            for key, repl in self.replacements.iteritems()
+            if key in self.value
         }
 
         # Order the original placeables by their position in the translation.
@@ -150,11 +186,11 @@ class REPLACE(Transform):
         return FTL.Pattern(elements)
 
 
-class REPLACE_FROM(SOURCE):
+class REPLACE(Source):
     """Create a Pattern with interpolations from given source.
 
     Interpolations in the translation value from the given source will be
-    replaced with FTL placeables using the `REPLACE` transform.
+    replaced with FTL placeables using the `REPLACE_IN_TEXT` transform.
     """
 
     def __init__(self, path, key, replacements):
@@ -163,24 +199,27 @@ class REPLACE_FROM(SOURCE):
 
     def __call__(self, ctx):
         value = super(self.__class__, self).__call__(ctx)
-        return REPLACE(value, self.replacements)(ctx)
+        return REPLACE_IN_TEXT(value, self.replacements)(ctx)
 
 
-class PLURALS(Transform):
-    """Convert semicolon-separated variants into a select expression.
+class PLURALS(Source):
+    """Create a Pattern with plurals from given source.
 
     Build an `FTL.SelectExpression` with the supplied `selector` and variants
-    extracted from the source.  Each variant will be run through the
-    `foreach` function, which should return an `FTL.Node`.
+    extracted from the source.  The source needs to be a semicolon-separated
+    list of variants.  Each variant will be run through the `foreach` function,
+    which should return an `FTL.Node` or a `Transform`.
     """
 
-    def __init__(self, value, selector, foreach):
-        self.value = value
+    def __init__(self, path, key, selector, foreach=LITERAL):
+        super(self.__class__, self).__init__(path, key)
         self.selector = selector
         self.foreach = foreach
 
     def __call__(self, ctx):
-        variants = self.value.split(';')
+        value = super(self.__class__, self).__call__(ctx)
+        selector = evaluate(ctx, self.selector)
+        variants = value.split(';')
         keys = ctx.plural_categories
         last_index = min(len(variants), len(keys)) - 1
 
@@ -197,29 +236,11 @@ class PLURALS(Transform):
             )
 
         select = FTL.SelectExpression(
-            expression=self.selector,
+            expression=selector,
             variants=map(createVariant, enumerate(zip(keys, variants)))
         )
 
         return FTL.Pattern([select])
-
-
-class PLURALS_FROM(SOURCE):
-    """Create a Pattern with plurals from given source.
-
-    Semi-colon separated variants in the translation value from the given
-    source will be replaced with an FTL select expression using the `PLURALS`
-    transform.
-    """
-
-    def __init__(self, path, key, selector, foreach):
-        super(self.__class__, self).__init__(path, key)
-        self.selector = selector
-        self.foreach = foreach
-
-    def __call__(self, ctx):
-        value = super(self.__class__, self).__call__(ctx)
-        return PLURALS(value, self.selector, self.foreach)(ctx)
 
 
 class CONCAT(Transform):
@@ -230,9 +251,18 @@ class CONCAT(Transform):
 
     def __call__(self, ctx):
         # Flatten the list of patterns of which each has a list of elements.
-        elements = [
-            elems for pattern in self.patterns for elems in pattern.elements
-        ]
+        def concat_elements(acc, cur):
+            if isinstance(cur, FTL.Pattern):
+                acc.extend(cur.elements)
+                return acc
+            elif (isinstance(cur, FTL.TextElement) or
+                  isinstance(cur, FTL.Expression)):
+                acc.append(cur)
+                return acc
+
+            raise RuntimeError(
+                'CONCAT accepts FTL Patterns and Expressions.'
+            )
 
         # Merge adjecent `FTL.TextElement` nodes.
         def merge_adjecent_text(acc, cur):
@@ -246,6 +276,7 @@ class CONCAT(Transform):
                 acc.append(cur)
             return acc
 
+        elements = reduce(concat_elements, self.patterns, [])
         elements = reduce(merge_adjecent_text, elements, [])
         return FTL.Pattern(elements)
 

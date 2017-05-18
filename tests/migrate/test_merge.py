@@ -12,7 +12,8 @@ except ImportError:
 
 from fluent.migrate.util import parse, ftl, ftl_resource_to_json
 from fluent.migrate.merge import merge_resource
-from fluent.migrate.transforms import LITERAL, LITERAL_FROM
+from fluent.migrate.helpers import LITERAL
+from fluent.migrate.transforms import COPY
 
 
 class MockContext(unittest.TestCase):
@@ -59,7 +60,7 @@ class TestMergeMessages(MockContext):
         self.transforms = [
             FTL.Message(
                 FTL.Identifier('title'),
-                value=LITERAL_FROM(None, 'aboutDownloads.title')
+                value=COPY(None, 'aboutDownloads.title')
             ),
             FTL.Message(
                 FTL.Identifier('about'),
@@ -70,13 +71,13 @@ class TestMergeMessages(MockContext):
                 attributes=[
                     FTL.Attribute(
                         FTL.Identifier('label'),
-                        LITERAL_FROM(None, 'aboutDownloads.open')
+                        COPY(None, 'aboutDownloads.open')
                     ),
                 ]
             ),
             FTL.Message(
                 FTL.Identifier('download-state-downloading'),
-                value=LITERAL_FROM(None, 'downloadState.downloading')
+                value=COPY(None, 'downloadState.downloading')
             )
         ]
 
@@ -167,20 +168,20 @@ class TestMergeAllEntries(MockContext):
         self.transforms = [
             FTL.Message(
                 FTL.Identifier('title'),
-                value=LITERAL_FROM(None, 'aboutDownloads.title')
+                value=COPY(None, 'aboutDownloads.title')
             ),
             FTL.Message(
                 FTL.Identifier('open-menuitem'),
                 attributes=[
                     FTL.Attribute(
                         FTL.Identifier('label'),
-                        LITERAL_FROM(None, 'aboutDownloads.open')
+                        COPY(None, 'aboutDownloads.open')
                     ),
                 ]
             ),
             FTL.Message(
                 FTL.Identifier('download-state-downloading'),
-                value=LITERAL_FROM(None, 'downloadState.downloading')
+                value=COPY(None, 'downloadState.downloading')
             )
         ]
 
@@ -280,11 +281,11 @@ class TestMergeSubset(MockContext):
         self.transforms = [
             FTL.Message(
                 FTL.Identifier('title'),
-                value=LITERAL_FROM(None, 'aboutDownloads.title')
+                value=COPY(None, 'aboutDownloads.title')
             ),
             FTL.Message(
                 FTL.Identifier('download-state-downloading'),
-                value=LITERAL_FROM(None, 'downloadState.downloading')
+                value=COPY(None, 'downloadState.downloading')
             )
         ]
 

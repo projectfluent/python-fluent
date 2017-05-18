@@ -10,8 +10,11 @@ except ImportError:
     DTDParser = PropertiesParser = None
 
 from fluent.migrate.util import parse, ftl_message_to_json
+from fluent.migrate.helpers import (
+    LITERAL, EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
+)
 from fluent.migrate.transforms import (
-    evaluate, CONCAT, LITERAL_FROM, EXTERNAL, REPLACE_FROM, LITERAL
+    evaluate, CONCAT, COPY, REPLACE
 )
 
 
@@ -37,7 +40,7 @@ class TestConcatCopy(MockContext):
         msg = FTL.Message(
             FTL.Identifier('hello'),
             value=CONCAT(
-                LITERAL_FROM(self.strings, 'hello'),
+                COPY(self.strings, 'hello'),
             )
         )
 
@@ -52,8 +55,8 @@ class TestConcatCopy(MockContext):
         msg = FTL.Message(
             FTL.Identifier('hello'),
             value=CONCAT(
-                LITERAL_FROM(self.strings, 'hello.start'),
-                LITERAL_FROM(self.strings, 'hello.end'),
+                COPY(self.strings, 'hello.start'),
+                COPY(self.strings, 'hello.end'),
             )
         )
 
@@ -87,8 +90,8 @@ class TestConcatCopy(MockContext):
         msg = FTL.Message(
             FTL.Identifier('hello'),
             value=CONCAT(
-                LITERAL_FROM(self.strings, 'whitespace.begin.start'),
-                LITERAL_FROM(self.strings, 'whitespace.begin.end'),
+                COPY(self.strings, 'whitespace.begin.start'),
+                COPY(self.strings, 'whitespace.begin.end'),
             )
         )
 
@@ -104,8 +107,8 @@ class TestConcatCopy(MockContext):
         msg = FTL.Message(
             FTL.Identifier('hello'),
             value=CONCAT(
-                LITERAL_FROM(self.strings, 'whitespace.end.start'),
-                LITERAL_FROM(self.strings, 'whitespace.end.end'),
+                COPY(self.strings, 'whitespace.end.start'),
+                COPY(self.strings, 'whitespace.end.end'),
             )
         )
 
@@ -130,11 +133,11 @@ class TestConcatLiteral(MockContext):
         msg = FTL.Message(
             FTL.Identifier('update-failed'),
             value=CONCAT(
-                LITERAL_FROM(self.strings, 'update.failed.start'),
+                COPY(self.strings, 'update.failed.start'),
                 LITERAL('<a>'),
-                LITERAL_FROM(self.strings, 'update.failed.linkText'),
+                COPY(self.strings, 'update.failed.linkText'),
                 LITERAL('</a>'),
-                LITERAL_FROM(self.strings, 'update.failed.end'),
+                COPY(self.strings, 'update.failed.end'),
             )
         )
 
@@ -159,9 +162,9 @@ class TestConcatInterpolate(MockContext):
         msg = FTL.Message(
             FTL.Identifier('channel-desc'),
             value=CONCAT(
-                LITERAL_FROM(self.strings, 'channel.description.start'),
-                EXTERNAL('channelname'),
-                LITERAL_FROM(self.strings, 'channel.description.end'),
+                COPY(self.strings, 'channel.description.start'),
+                EXTERNAL_ARGUMENT('channelname'),
+                COPY(self.strings, 'channel.description.end'),
             )
         )
 
@@ -188,39 +191,39 @@ class TestConcatReplace(MockContext):
         msg = FTL.Message(
             FTL.Identifier('community'),
             value=CONCAT(
-                REPLACE_FROM(
+                REPLACE(
                     self.strings,
                     'community.start',
                     {
-                        '&brandShortName;': FTL.ExternalArgument(
-                            id=FTL.Identifier('brand-short-name')
+                        '&brandShortName;': MESSAGE_REFERENCE(
+                            'brand-short-name'
                         )
                     }
                 ),
                 LITERAL('<a>'),
-                REPLACE_FROM(
+                REPLACE(
                     self.strings,
                     'community.mozillaLink',
                     {
-                        '&vendorShortName;': FTL.ExternalArgument(
-                            id=FTL.Identifier('vendor-short-name')
+                        '&vendorShortName;': MESSAGE_REFERENCE(
+                            'vendor-short-name'
                         )
                     }
                 ),
                 LITERAL('</a>'),
-                LITERAL_FROM(self.strings, 'community.middle'),
+                COPY(self.strings, 'community.middle'),
                 LITERAL('<a>'),
-                LITERAL_FROM(self.strings, 'community.creditsLink'),
+                COPY(self.strings, 'community.creditsLink'),
                 LITERAL('</a>'),
-                LITERAL_FROM(self.strings, 'community.end')
+                COPY(self.strings, 'community.end')
             )
         )
 
         self.assertEqual(
             evaluate(self, msg).to_json(),
             ftl_message_to_json(
-                'community = { $brand-short-name } is designed by '
-                '<a>{ $vendor-short-name }</a>, a <a>global community</a> '
+                'community = { brand-short-name } is designed by '
+                '<a>{ vendor-short-name }</a>, a <a>global community</a> '
                 'working together to…'
             )
         )

@@ -2,7 +2,9 @@
 
 from .context import MergeContext                      # noqa: F401
 from .transforms import (                              # noqa: F401
-    CONCAT, EXTERNAL, LITERAL, LITERAL_FROM, PLURALS, PLURALS_FROM, REPLACE,
-    REPLACE_FROM, SOURCE
+    Source, COPY, REPLACE_IN_TEXT, REPLACE, PLURALS, CONCAT
+)
+from .helpers import (                                 # noqa: F401
+    LITERAL, EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
 )
 from .changesets import convert_blame_to_changesets    # noqa: F401

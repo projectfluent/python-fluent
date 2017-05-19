@@ -5,11 +5,11 @@ import unittest
 
 import fluent.syntax.ast as FTL
 from fluent.util import fold
-from fluent.migrate.transforms import CONCAT, LITERAL_FROM, SOURCE
+from fluent.migrate.transforms import CONCAT, COPY, Source
 
 
 def get_source(acc, cur):
-    if isinstance(cur, SOURCE):
+    if isinstance(cur, Source):
         return acc + ((cur.path, cur.key),)
     return acc
 
@@ -19,8 +19,8 @@ class TestTraverse(unittest.TestCase):
         node = FTL.Message(
             FTL.Identifier('hello'),
             value=CONCAT(
-                LITERAL_FROM('path1', 'key1'),
-                LITERAL_FROM('path2', 'key2')
+                COPY('path1', 'key1'),
+                COPY('path2', 'key2')
             )
         )
 
@@ -40,7 +40,7 @@ class TestReduce(unittest.TestCase):
     def test_copy_value(self):
         node = FTL.Message(
             id=FTL.Identifier('key'),
-            value=LITERAL_FROM('path', 'key')
+            value=COPY('path', 'key')
         )
 
         self.assertEqual(
@@ -54,11 +54,11 @@ class TestReduce(unittest.TestCase):
             attributes=[
                 FTL.Attribute(
                     FTL.Identifier('trait1'),
-                    value=LITERAL_FROM('path1', 'key1')
+                    value=COPY('path1', 'key1')
                 ),
                 FTL.Attribute(
                     FTL.Identifier('trait2'),
-                    value=LITERAL_FROM('path2', 'key2')
+                    value=COPY('path2', 'key2')
                 )
             ]
         )
@@ -72,8 +72,8 @@ class TestReduce(unittest.TestCase):
         node = FTL.Message(
             FTL.Identifier('hello'),
             value=CONCAT(
-                LITERAL_FROM('path1', 'key1'),
-                LITERAL_FROM('path2', 'key2')
+                COPY('path1', 'key1'),
+                COPY('path2', 'key2')
             )
         )
 

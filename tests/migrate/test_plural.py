@@ -10,7 +10,8 @@ except ImportError:
     PropertiesParser = None
 
 from fluent.migrate.util import parse, ftl_message_to_json
-from fluent.migrate.transforms import evaluate, LITERAL, PLURALS_FROM, REPLACE
+from fluent.migrate.helpers import LITERAL, EXTERNAL_ARGUMENT
+from fluent.migrate.transforms import evaluate, PLURALS, REPLACE_IN_TEXT
 
 
 class MockContext(unittest.TestCase):
@@ -30,13 +31,10 @@ class TestPlural(MockContext):
 
         self.message = FTL.Message(
             FTL.Identifier('delete-all'),
-            value=PLURALS_FROM(
+            value=PLURALS(
                 self.strings,
                 'deleteAll',
-                FTL.ExternalArgument(
-                    id=FTL.Identifier('num')
-                ),
-                lambda var: LITERAL(var)
+                EXTERNAL_ARGUMENT('num')
             )
         )
 
@@ -79,6 +77,36 @@ class TestPlural(MockContext):
 
 
 @unittest.skipUnless(PropertiesParser, 'compare-locales required')
+class TestPluralLiteral(MockContext):
+    def setUp(self):
+        self.strings = parse(PropertiesParser, '''
+            deleteAll=Delete this download?;Delete all downloads?
+        ''')
+
+        self.message = FTL.Message(
+            FTL.Identifier('delete-all'),
+            value=PLURALS(
+                self.strings,
+                'deleteAll',
+                EXTERNAL_ARGUMENT('num'),
+                LITERAL
+            )
+        )
+
+    def test_plural_literal(self):
+        self.assertEqual(
+            evaluate(self, self.message).to_json(),
+            ftl_message_to_json('''
+                delete-all =
+                    { $num ->
+                        [one] Delete this download?
+                       *[other] Delete all downloads?
+                    }
+            ''')
+        )
+
+
+@unittest.skipUnless(PropertiesParser, 'compare-locales required')
 class TestPluralReplace(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
@@ -88,18 +116,14 @@ class TestPluralReplace(MockContext):
     def test_plural_replace(self):
         msg = FTL.Message(
             FTL.Identifier('delete-all'),
-            value=PLURALS_FROM(
+            value=PLURALS(
                 self.strings,
                 'deleteAll',
-                FTL.ExternalArgument(
-                    id=FTL.Identifier('num')
-                ),
-                lambda var: REPLACE(
-                    var,
+                EXTERNAL_ARGUMENT('num'),
+                lambda text: REPLACE_IN_TEXT(
+                    text,
                     {
-                        '#1': FTL.ExternalArgument(
-                            id=FTL.Identifier('num')
-                        )
+                        '#1': EXTERNAL_ARGUMENT('num')
                     }
                 )
             )

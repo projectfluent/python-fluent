@@ -1,7 +1,10 @@
 # coding=utf8
 
 import fluent.syntax.ast as FTL
-from fluent.migrate import CONCAT, EXTERNAL, LITERAL, LITERAL_FROM, REPLACE_FROM
+from fluent.migrate import (
+    CONCAT, LITERAL, EXTERNAL_ARGUMENT, MESSAGE_REFERENCE, COPY,
+    REPLACE
+)
 
 
 def migrate(ctx):
@@ -11,73 +14,73 @@ def migrate(ctx):
     ctx.add_localization('browser/chrome/browser/aboutDialog.dtd')
 
     ctx.add_transforms('browser/aboutDialog.ftl', [
-        FTL.Entity(
+        FTL.Message(
             id=FTL.Identifier('update-failed'),
             value=CONCAT(
-                LITERAL_FROM(
+                COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'update.failed.start'
                 ),
                 LITERAL('<a>'),
-                LITERAL_FROM(
+                COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'update.failed.linkText'
                 ),
                 LITERAL('</a>'),
-                LITERAL_FROM(
+                COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'update.failed.end'
                 )
             )
         ),
-        FTL.Entity(
+        FTL.Message(
             id=FTL.Identifier('channel-desc'),
             value=CONCAT(
-                LITERAL_FROM(
+                COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'channel.description.start'
                 ),
-                EXTERNAL('channelname'),
-                LITERAL_FROM(
+                EXTERNAL_ARGUMENT('channelname'),
+                COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'channel.description.end'
                 )
             )
         ),
-        FTL.Entity(
+        FTL.Message(
             id=FTL.Identifier('community'),
             value=CONCAT(
-                REPLACE_FROM(
+                REPLACE(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'community.start2',
                     {
-                        '&brandShortName;': FTL.ExternalArgument(
-                            id=FTL.Identifier('brand-short-name')
+                        '&brandShortName;': MESSAGE_REFERENCE(
+                            'brand-short-name'
                         )
                     }
                 ),
                 LITERAL('<a>'),
-                REPLACE_FROM(
+                REPLACE(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'community.mozillaLink',
                     {
-                        '&vendorShortName;': FTL.ExternalArgument(
-                            id=FTL.Identifier('vendor-short-name')
+                        '&vendorShortName;': MESSAGE_REFERENCE(
+                            'vendor-short-name'
                         )
                     }
                 ),
                 LITERAL('</a>'),
-                LITERAL_FROM(
+                COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'community.middle2'
                 ),
                 LITERAL('<a>'),
-                LITERAL_FROM(
+                COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'community.creditsLink'
                 ),
                 LITERAL('</a>'),
-                LITERAL_FROM(
+                COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'community.end3'
                 )

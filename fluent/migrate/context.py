@@ -16,7 +16,7 @@ except ImportError:
         raise RuntimeError('compare-locales required')
 
 from .cldr import get_plural_categories
-from .transforms import SOURCE
+from .transforms import Source
 from .merge import merge_resource
 from .util import get_message
 
@@ -39,8 +39,10 @@ class MergeContext(object):
           into FTL and merged into the existing FTL files for this language.
 
         - A list of `FTL.Message` objects some of whose nodes are special
-          operation nodes: CONCAT, EXTERNAL, LITERAL, LITERAL_FROM, PLURALS,
-          PLURALS_FROM, REPLACE, REPLACE_FROM, SOURCE.
+          helper or transform nodes:
+
+              helpers: LITERAL, EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
+              transforms: COPY, REPLACE_IN_TEXT, REPLACE, PLURALS, CONCAT
     """
 
     def __init__(self, lang, reference_dir, localization_dir):
@@ -65,7 +67,7 @@ class MergeContext(object):
         self.reference_resources = {}
         self.localization_resources = {}
 
-        # An iterable of `FTL.Entity` objects some of whose nodes can be the
+        # An iterable of `FTL.Message` objects some of whose nodes can be the
         # transform operations.
         self.transforms = {}
 
@@ -157,16 +159,16 @@ class MergeContext(object):
         `merge_changeset` is called, at which point they are evaluated to real
         FTL nodes with migrated translations.
 
-        Each transform is scanned for `SOURCE` nodes which will be used to
+        Each transform is scanned for `Source` nodes which will be used to
         build the list of dependencies for the transformed message.
         """
         def get_sources(acc, cur):
-            if isinstance(cur, SOURCE):
+            if isinstance(cur, Source):
                 acc.add((cur.path, cur.key))
             return acc
 
         for node in transforms:
-            # Scan `node` for `SOURCE` nodes and collect the information they
+            # Scan `node` for `Source` nodes and collect the information they
             # store into a set of dependencies.
             dependencies = fold(get_sources, node, set())
             # Set these sources as dependencies for the current transform.
@@ -178,7 +180,7 @@ class MergeContext(object):
     def get_source(self, path, key):
         """Get an entity value from the localized source.
 
-        Used by the `SOURCE` transform.
+        Used by the `Source` transform.
         """
         if path.endswith('.ftl'):
             resource = self.localization_resources[path]

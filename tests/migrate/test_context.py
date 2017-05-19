@@ -9,7 +9,8 @@ import fluent.syntax.ast as FTL
 
 from fluent.migrate.util import ftl, ftl_resource_to_json, to_json
 from fluent.migrate.context import MergeContext
-from fluent.migrate.transforms import LITERAL, LITERAL_FROM
+from fluent.migrate.helpers import LITERAL
+from fluent.migrate.transforms import COPY
 
 
 def here(*parts):
@@ -59,7 +60,7 @@ class TestMergeContext(unittest.TestCase):
         self.ctx.add_transforms('aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
-                value=LITERAL_FROM(
+                value=COPY(
                     'aboutDownloads.dtd',
                     'aboutDownloads.title'
                 )
@@ -85,14 +86,14 @@ class TestMergeContext(unittest.TestCase):
         self.ctx.add_transforms('aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
-                value=LITERAL_FROM(
+                value=COPY(
                     'aboutDownloads.dtd',
                     'aboutDownloads.title'
                 )
             ),
             FTL.Message(
                 id=FTL.Identifier('header'),
-                value=LITERAL_FROM(
+                value=COPY(
                     'aboutDownloads.dtd',
                     'aboutDownloads.header'
                 )
@@ -124,14 +125,14 @@ class TestMergeContext(unittest.TestCase):
         self.ctx.add_transforms('aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
-                value=LITERAL_FROM(
+                value=COPY(
                     'aboutDownloads.dtd',
                     'aboutDownloads.title'
                 )
             ),
             FTL.Message(
                 id=FTL.Identifier('header'),
-                value=LITERAL_FROM(
+                value=COPY(
                     'aboutDownloads.dtd',
                     'aboutDownloads.header'
                 )
@@ -177,14 +178,14 @@ class TestMergeContext(unittest.TestCase):
         self.ctx.add_transforms('aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
-                value=LITERAL_FROM(
+                value=COPY(
                     'aboutDownloads.dtd',
                     'aboutDownloads.title'
                 )
             ),
             FTL.Message(
                 id=FTL.Identifier('header'),
-                value=LITERAL_FROM(
+                value=COPY(
                     'aboutDownloads.dtd',
                     'aboutDownloads.header'
                 )
@@ -270,14 +271,14 @@ class TestIncompleteLocalization(unittest.TestCase):
                 attributes=[
                     FTL.Attribute(
                         id=FTL.Identifier('placeholder'),
-                        value=LITERAL_FROM(
+                        value=COPY(
                             'browser.dtd',
                             'urlbar.placeholder2'
                         )
                     ),
                     FTL.Attribute(
                         id=FTL.Identifier('accesskey'),
-                        value=LITERAL_FROM(
+                        value=COPY(
                             'browser.dtd',
                             'urlbar.accesskey'
                         )

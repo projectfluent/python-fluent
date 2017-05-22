@@ -10,10 +10,10 @@ from fluent.migrate import (
 def migrate(ctx):
     """Migrate about:dialog, part {index}"""
 
-    ctx.add_reference('browser/aboutDialog.ftl', realpath='aboutDialog.ftl')
+    ctx.add_reference('browser/about_dialog.ftl', realpath='about_dialog.ftl')
     ctx.add_localization('browser/chrome/browser/aboutDialog.dtd')
 
-    ctx.add_transforms('browser/aboutDialog.ftl', [
+    ctx.add_transforms('browser/about_dialog.ftl', [
         FTL.Message(
             id=FTL.Identifier('update-failed'),
             value=CONCAT(
@@ -34,7 +34,7 @@ def migrate(ctx):
             )
         ),
         FTL.Message(
-            id=FTL.Identifier('channel-desc'),
+            id=FTL.Identifier('channel-description'),
             value=CONCAT(
                 COPY(
                     'browser/chrome/browser/aboutDialog.dtd',

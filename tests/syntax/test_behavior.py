@@ -100,4 +100,6 @@ class TestBehaviorMeta(type):
 
 
 class TestBehavior(unittest.TestCase):
+    maxDiff = None
+
     __metaclass__ = TestBehaviorMeta

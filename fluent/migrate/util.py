@@ -6,10 +6,7 @@ from fluent.syntax.parser import FluentParser
 from fluent.util import ftl
 
 
-fluent_parser = FluentParser(
-    with_spans=False,
-    with_annotations=False
-)
+fluent_parser = FluentParser(with_spans=False)
 
 
 def parse(Parser, string):

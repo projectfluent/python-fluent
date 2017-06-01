@@ -10,6 +10,8 @@ from fluent.syntax.parser import FluentParser
 
 
 class TestASTJSON(unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         self.parser = FluentParser()
 

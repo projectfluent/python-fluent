@@ -4,10 +4,34 @@ from . import ast
 from .errors import ParseError
 
 
+def with_span(fn):
+    def decorated(self, ps, *args):
+        if not self.with_spans:
+            return fn(self, ps, *args)
+
+        start = ps.get_index()
+        node = fn(self, ps, *args)
+
+        # Don't re-add the span if the node already has it.  This may happen
+        # when one decorated function calls another decorated function.
+        if node.span is not None:
+            return node
+
+        # Spans of Messages and Sections should include the attached Comment.
+        if isinstance(node, ast.Message) or isinstance(node, ast.Section):
+            if node.comment is not None:
+                start = node.comment.span.start
+
+        end = ps.get_index()
+        node.add_span(start, end)
+        return node
+
+    return decorated
+
+
 class FluentParser(object):
-    def __init__(self, with_spans=True, with_annotations=True):
+    def __init__(self, with_spans=True):
         self.with_spans = with_spans
-        self.with_annotations = with_annotations
 
     def parse(self, source):
         comment = None
@@ -27,7 +51,12 @@ class FluentParser(object):
 
             ps.skip_ws_lines()
 
-        return ast.Resource(entries, comment)
+        res = ast.Resource(entries, comment)
+
+        if self.with_spans:
+            res.add_span(0, ps.get_index())
+
+        return res
 
     def parse_entry(self, source):
         ps = FTLParserStream(source)
@@ -38,10 +67,7 @@ class FluentParser(object):
         entry_start_pos = ps.get_index()
 
         try:
-            entry = self.get_entry(ps)
-            if self.with_spans:
-                entry.add_span(entry_start_pos, ps.get_index())
-            return entry
+            return self.get_entry(ps)
         except ParseError as err:
             error_index = ps.get_index()
             ps.skip_to_next_entry_start()
@@ -52,10 +78,9 @@ class FluentParser(object):
             junk = ast.Junk(slice)
             if self.with_spans:
                 junk.add_span(entry_start_pos, next_entry_start)
-            if self.with_annotations:
-                annot = ast.Annotation(err.code, err.args, err.message)
-                annot.add_span(error_index, error_index)
-                junk.add_annotation(annot)
+            annot = ast.Annotation(err.code, err.args, err.message)
+            annot.add_span(error_index, error_index)
+            junk.add_annotation(annot)
             return junk
 
     def get_entry(self, ps):
@@ -75,6 +100,7 @@ class FluentParser(object):
 
         raise ParseError('E0002')
 
+    @with_span
     def get_comment(self, ps):
         ps.expect_char('/')
         ps.expect_char('/')
@@ -100,8 +126,10 @@ class FluentParser(object):
                 ps.take_char_if(' ')
             else:
                 break
+
         return ast.Comment(content)
 
+    @with_span
     def get_section(self, ps, comment):
         ps.expect_char('[')
         ps.expect_char('[')
@@ -121,6 +149,7 @@ class FluentParser(object):
 
         return ast.Section(symb, comment)
 
+    @with_span
     def get_message(self, ps, comment):
         id = self.get_identifier(ps)
 
@@ -149,6 +178,23 @@ class FluentParser(object):
 
         return ast.Message(id, pattern, attrs, tags, comment)
 
+    @with_span
+    def get_attribute(self, ps):
+        ps.expect_char('.')
+
+        key = self.get_identifier(ps)
+
+        ps.skip_line_ws()
+        ps.expect_char('=')
+        ps.skip_line_ws()
+
+        value = self.get_pattern(ps)
+
+        if value is None:
+            raise ParseError('E0006', 'value')
+
+        return ast.Attribute(key, value)
+
     def get_attributes(self, ps):
         attrs = []
 
@@ -156,24 +202,18 @@ class FluentParser(object):
             ps.expect_char('\n')
             ps.skip_line_ws()
 
-            ps.expect_char('.')
-
-            key = self.get_identifier(ps)
-
-            ps.skip_line_ws()
-            ps.expect_char('=')
-            ps.skip_line_ws()
-
-            value = self.get_pattern(ps)
-
-            if value is None:
-                raise ParseError('E0006', 'value')
-
-            attrs.append(ast.Attribute(key, value))
+            attr = self.get_attribute(ps)
+            attrs.append(attr)
 
             if not ps.is_peek_next_line_attribute_start():
                 break
         return attrs
+
+    @with_span
+    def get_tag(self, ps):
+        ps.expect_char('#')
+        symb = self.get_symbol(ps)
+        return ast.Tag(symb)
 
     def get_tags(self, ps):
         tags = []
@@ -182,16 +222,14 @@ class FluentParser(object):
             ps.expect_char('\n')
             ps.skip_line_ws()
 
-            ps.expect_char('#')
-
-            symb = self.get_symbol(ps)
-
-            tags.append(ast.Tag(symb))
+            tag = self.get_tag(ps)
+            tags.append(tag)
 
             if not ps.is_peek_next_line_tag_start():
                 break
         return tags
 
+    @with_span
     def get_identifier(self, ps):
         name = ''
 
@@ -215,37 +253,45 @@ class FluentParser(object):
 
         return self.get_symbol(ps)
 
+    @with_span
+    def get_variant(self, ps, has_default):
+        default_index = False
+
+        if ps.current_is('*'):
+            if has_default:
+                raise ParseError('E0015')
+            ps.next()
+            default_index = True
+
+        ps.expect_char('[')
+
+        key = self.get_variant_key(ps)
+
+        ps.expect_char(']')
+
+        ps.skip_line_ws()
+
+        value = self.get_pattern(ps)
+
+        if value is None:
+            raise ParseError('E0006', 'value')
+
+        return ast.Variant(key, value, default_index)
+
     def get_variants(self, ps):
         variants = []
         has_default = False
 
         while True:
-            default_index = False
-
             ps.expect_char('\n')
             ps.skip_line_ws()
 
-            if ps.current_is('*'):
-                if has_default:
-                    raise ParseError('E0015')
-                ps.next()
-                default_index = True
+            variant = self.get_variant(ps, has_default)
+
+            if variant.default:
                 has_default = True
 
-            ps.expect_char('[')
-
-            key = self.get_variant_key(ps)
-
-            ps.expect_char(']')
-
-            ps.skip_line_ws()
-
-            value = self.get_pattern(ps)
-
-            if value is None:
-                raise ParseError('E0006', 'value')
-
-            variants.append(ast.Variant(key, value, default_index))
+            variants.append(variant)
 
             if not ps.is_peek_next_line_variant_start():
                 break
@@ -255,6 +301,7 @@ class FluentParser(object):
 
         return variants
 
+    @with_span
     def get_symbol(self, ps):
         name = ''
 
@@ -282,6 +329,7 @@ class FluentParser(object):
 
         return num
 
+    @with_span
     def get_number(self, ps):
         num = ''
 
@@ -298,10 +346,15 @@ class FluentParser(object):
 
         return ast.NumberExpression(num)
 
+    @with_span
     def get_pattern(self, ps):
         buffer = ''
         elements = []
         first_line = True
+        span_start = None
+
+        if (self.with_spans):
+            span_start = ps.get_index()
 
         while ps.current():
             ch = ps.current()
@@ -334,7 +387,10 @@ class FluentParser(object):
                 ps.skip_line_ws()
 
                 if len(buffer) != 0:
-                    elements.append(ast.TextElement(buffer))
+                    text = ast.TextElement(buffer)
+                    if self.with_spans:
+                        text.add_span(span_start, ps.get_index())
+                    elements.append(text)
 
                 buffer = ''
 
@@ -342,16 +398,23 @@ class FluentParser(object):
 
                 ps.expect_char('}')
 
+                if (self.with_spans):
+                    span_start = ps.get_index()
+
                 continue
             else:
                 buffer += ps.ch
             ps.next()
 
         if len(buffer) != 0:
-            elements.append(ast.TextElement(buffer))
+            text = ast.TextElement(buffer)
+            if self.with_spans:
+                text.add_span(span_start, ps.get_index())
+            elements.append(text)
 
         return ast.Pattern(elements)
 
+    @with_span
     def get_expression(self, ps):
         if ps.is_peek_next_line_variant_start():
             variants = self.get_variants(ps)
@@ -389,6 +452,7 @@ class FluentParser(object):
 
         return selector
 
+    @with_span
     def get_selector_expression(self, ps):
         literal = self.get_literal(ps)
 
@@ -419,6 +483,25 @@ class FluentParser(object):
 
         return literal
 
+    @with_span
+    def get_call_arg(self, ps):
+        exp = self.get_selector_expression(ps)
+
+        ps.skip_line_ws()
+
+        if not ps.current_is(':'):
+            return exp
+
+        if not isinstance(exp, ast.MessageReference):
+            raise ParseError('E0009')
+
+        ps.next()
+        ps.skip_line_ws()
+
+        val = self.get_arg_val(ps)
+
+        return ast.NamedArgument(exp.id, val)
+
     def get_call_args(self, ps):
         args = []
 
@@ -428,22 +511,8 @@ class FluentParser(object):
             if ps.current_is(')'):
                 break
 
-            exp = self.get_selector_expression(ps)
-
-            ps.skip_line_ws()
-
-            if ps.current_is(':'):
-                if not isinstance(exp, ast.MessageReference):
-                    raise ParseError('E0009')
-
-                ps.next()
-                ps.skip_line_ws()
-
-                val = self.get_arg_val(ps)
-
-                args.append(ast.NamedArgument(exp.id, val))
-            else:
-                args.append(exp)
+            arg = self.get_call_arg(ps)
+            args.append(arg)
 
             ps.skip_line_ws()
 
@@ -463,6 +532,7 @@ class FluentParser(object):
             return self.get_string(ps)
         raise ParseError('E0006', 'value')
 
+    @with_span
     def get_string(self, ps):
         val = ''
 
@@ -477,6 +547,7 @@ class FluentParser(object):
 
         return ast.StringExpression(val)
 
+    @with_span
     def get_literal(self, ps):
         ch = ps.current()
 

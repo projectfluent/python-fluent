@@ -4,7 +4,7 @@ import json
 
 
 def to_json(value):
-    if isinstance(value, Node):
+    if isinstance(value, BaseNode):
         return value.to_json()
     if isinstance(value, list):
         return list(map(to_json, value))
@@ -19,25 +19,21 @@ def from_json(value):
             k: from_json(v)
             for k, v in value.items()
             if k != 'type'
-            if k != 'span'
         }
-        node = cls(**args)
-
-        # Spans need to be added via add_span, not __init__.
-        if 'span' in value:
-            span = value['span']
-            # Message and section comments don't have their own spans.
-            if span is not None:
-                node.add_span(span['start'], span['end'])
-
-        return node
+        return cls(**args)
     if isinstance(value, list):
         return list(map(from_json, value))
     else:
         return value
 
 
-class Node(object):
+class BaseNode(object):
+    """Base class for all Fluent AST nodes.
+
+    All productions described in the ASDL subclass BaseNode, including Span and
+    Annotation.  Implements __str__, to_json and traverse.
+    """
+
     def traverse(self, fun):
         """Postorder-traverse this node and apply `fun` to all child nodes.
 
@@ -49,7 +45,7 @@ class Node(object):
 
         def visit(value):
             """Call `fun` on `value` and its descendants."""
-            if isinstance(value, Node):
+            if isinstance(value, BaseNode):
                 return value.traverse(fun)
             if isinstance(value, list):
                 return fun(list(map(visit, value)))
@@ -79,162 +75,165 @@ class Node(object):
         return json.dumps(self.to_json())
 
 
-class Resource(Node):
-    def __init__(self, body=None, comment=None):
-        super(Resource, self).__init__()
+class SyntaxNode(BaseNode):
+    """Base class for AST nodes which can have Spans."""
+
+    def __init__(self, span=None, **kwargs):
+        super(SyntaxNode, self).__init__(**kwargs)
+        self.span = span
+
+    def add_span(self, start, end):
+        self.span = Span(start, end)
+
+
+class Resource(SyntaxNode):
+    def __init__(self, body=None, comment=None, **kwargs):
+        super(Resource, self).__init__(**kwargs)
         self.body = body or []
         self.comment = comment
 
 
-class Entry(Node):
-    def __init__(self, span=None, annotations=None):
-        super(Entry, self).__init__()
-        self.span = span
+class Entry(SyntaxNode):
+    def __init__(self, annotations=None, **kwargs):
+        super(Entry, self).__init__(**kwargs)
         self.annotations = annotations or []
-
-    def add_span(self, start, end):
-        self.span = Span(start, end)
 
     def add_annotation(self, annot):
         self.annotations.append(annot)
 
 
 class Message(Entry):
-    def __init__(
-            self, id, value=None, attributes=None, tags=None, comment=None,
-            span=None, annotations=None):
-        super(Message, self).__init__(span, annotations)
+    def __init__(self, id, value=None, attributes=None, tags=None,
+                 comment=None, **kwargs):
+        super(Message, self).__init__(**kwargs)
         self.id = id
         self.value = value
-        self.attributes = attributes
-        self.tags = tags
+        self.attributes = attributes or []
+        self.tags = tags or []
         self.comment = comment
 
-class Pattern(Node):
-    def __init__(self, elements):
-        super(Pattern, self).__init__()
+class Pattern(SyntaxNode):
+    def __init__(self, elements, **kwargs):
+        super(Pattern, self).__init__(**kwargs)
         self.elements = elements
 
-class TextElement(Node):
-    def __init__(self, value):
-        super(TextElement, self).__init__()
+class TextElement(SyntaxNode):
+    def __init__(self, value, **kwargs):
+        super(TextElement, self).__init__(**kwargs)
         self.value = value
 
-class Expression(Node):
-    def __init__(self):
-        super(Expression, self).__init__()
+class Expression(SyntaxNode):
+    def __init__(self, **kwargs):
+        super(Expression, self).__init__(**kwargs)
 
 class StringExpression(Expression):
-    def __init__(self, value):
-        super(StringExpression, self).__init__()
+    def __init__(self, value, **kwargs):
+        super(StringExpression, self).__init__(**kwargs)
         self.value = value
 
 class NumberExpression(Expression):
-    def __init__(self, value):
-        super(NumberExpression, self).__init__()
+    def __init__(self, value, **kwargs):
+        super(NumberExpression, self).__init__(**kwargs)
         self.value = value
 
 class MessageReference(Expression):
-    def __init__(self, id):
-        super(MessageReference, self).__init__()
+    def __init__(self, id, **kwargs):
+        super(MessageReference, self).__init__(**kwargs)
         self.id = id
 
 class ExternalArgument(Expression):
-    def __init__(self, id):
-        super(ExternalArgument, self).__init__()
+    def __init__(self, id, **kwargs):
+        super(ExternalArgument, self).__init__(**kwargs)
         self.id = id
 
 class SelectExpression(Expression):
-    def __init__(self, expression, variants):
-        super(SelectExpression, self).__init__()
+    def __init__(self, expression, variants, **kwargs):
+        super(SelectExpression, self).__init__(**kwargs)
         self.expression = expression
         self.variants = variants
 
 class AttributeExpression(Expression):
-    def __init__(self, id, name):
-        super(AttributeExpression, self).__init__()
+    def __init__(self, id, name, **kwargs):
+        super(AttributeExpression, self).__init__(**kwargs)
         self.id = id
         self.name = name
 
 class VariantExpression(Expression):
-    def __init__(self, id, key):
-        super(VariantExpression, self).__init__()
+    def __init__(self, id, key, **kwargs):
+        super(VariantExpression, self).__init__(**kwargs)
         self.id = id
         self.key = key
 
 class CallExpression(Expression):
-    def __init__(self, callee, args):
-        super(CallExpression, self).__init__()
+    def __init__(self, callee, args, **kwargs):
+        super(CallExpression, self).__init__(**kwargs)
         self.callee = callee
         self.args = args
 
-class Attribute(Node):
-    def __init__(self, id, value):
-        super(Attribute, self).__init__()
+class Attribute(SyntaxNode):
+    def __init__(self, id, value, **kwargs):
+        super(Attribute, self).__init__(**kwargs)
         self.id = id
         self.value = value
 
-class Tag(Node):
-    def __init__(self, name):
-        super(Tag, self).__init__()
+class Tag(SyntaxNode):
+    def __init__(self, name, **kwargs):
+        super(Tag, self).__init__(**kwargs)
         self.name = name
 
-class Variant(Node):
-    def __init__(self, key, value, default = False):
-        super(Variant, self).__init__()
+class Variant(SyntaxNode):
+    def __init__(self, key, value, default=False, **kwargs):
+        super(Variant, self).__init__(**kwargs)
         self.key = key
         self.value = value
         self.default = default
 
-class NamedArgument(Node):
-    def __init__(self, name, val):
-        super(NamedArgument, self).__init__()
+class NamedArgument(SyntaxNode):
+    def __init__(self, name, val, **kwargs):
+        super(NamedArgument, self).__init__(**kwargs)
         self.name = name
         self.val = val
 
-class Identifier(Node):
-    def __init__(self, name):
-        super(Identifier, self).__init__()
+class Identifier(SyntaxNode):
+    def __init__(self, name, **kwargs):
+        super(Identifier, self).__init__(**kwargs)
         self.name = name
 
 class Symbol(Identifier):
-    def __init__(self, name):
-        super(Symbol, self).__init__(name)
+    def __init__(self, name, **kwargs):
+        super(Symbol, self).__init__(name, **kwargs)
 
 class Comment(Entry):
-    def __init__(self, content=None, span=None, annotations=None):
-        super(Comment, self).__init__(span, annotations)
+    def __init__(self, content=None, **kwargs):
+        super(Comment, self).__init__(**kwargs)
         self.content = content
 
 class Section(Entry):
-    def __init__(self, name, comment=None, span=None, annotations=None):
-        super(Section, self).__init__(span, annotations)
+    def __init__(self, name, comment=None, **kwargs):
+        super(Section, self).__init__(**kwargs)
         self.name = name
         self.comment = comment
 
 class Function(Identifier):
-    def __init__(self, name):
-        super(Function, self).__init__(name)
+    def __init__(self, name, **kwargs):
+        super(Function, self).__init__(name, **kwargs)
 
 class Junk(Entry):
-    def __init__(self, content=None, span=None, annotations=None):
-        super(Junk, self).__init__(span, annotations)
+    def __init__(self, content=None, **kwargs):
+        super(Junk, self).__init__(**kwargs)
         self.content = content
 
 
-class Span(Node):
-    def __init__(self, start, end):
-        super(Span, self).__init__()
+class Span(BaseNode):
+    def __init__(self, start, end, **kwargs):
+        super(Span, self).__init__(**kwargs)
         self.start = start
         self.end = end
 
 
-class Annotation(Node):
-    def __init__(self, code, args=None, message=None):
-        super(Annotation, self).__init__()
+class Annotation(SyntaxNode):
+    def __init__(self, code, args=None, message=None, **kwargs):
+        super(Annotation, self).__init__(**kwargs)
         self.code = code
         self.args = args or []
         self.message = message
-
-    def add_span(self, start, end):
-        self.span = Span(start, end)

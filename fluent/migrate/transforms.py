@@ -79,7 +79,7 @@ def evaluate(ctx, node):
     return node.traverse(eval_node)
 
 
-class Transform(FTL.Node):
+class Transform(FTL.BaseNode):
     def __call__(self, ctx):
         raise NotImplementedError
 
@@ -282,7 +282,7 @@ class CONCAT(Transform):
 
     def traverse(self, fun):
         def visit(value):
-            if isinstance(value, FTL.Node):
+            if isinstance(value, FTL.BaseNode):
                 return value.traverse(fun)
             if isinstance(value, list):
                 return fun(map(visit, value))
@@ -299,7 +299,7 @@ class CONCAT(Transform):
 
     def to_json(self):
         def to_json(value):
-            if isinstance(value, FTL.Node):
+            if isinstance(value, FTL.BaseNode):
                 return value.to_json()
             else:
                 return value

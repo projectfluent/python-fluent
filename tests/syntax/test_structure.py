@@ -51,4 +51,6 @@ class TestStructureMeta(type):
 
 
 class TestStructure(unittest.TestCase):
+    maxDiff = None
+
     __metaclass__ = TestStructureMeta

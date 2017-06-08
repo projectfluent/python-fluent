@@ -11,6 +11,8 @@ from fluent.syntax.serializer import FluentSerializer
 
 
 class TestParseEntry(unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         self.parser = FluentParser()
 
@@ -25,22 +27,37 @@ class TestParseEntry(unittest.TestCase):
                 "end": 9,
                 "type": "Span"
             },
-            "tags": None,
+            "tags": [],
             "value": {
                 "elements": [
                     {
                         "type": "TextElement",
-                        "value": "Foo"
+                        "value": "Foo",
+                        "span": {
+                            "start": 6,
+                            "end": 9,
+                            "type": "Span"
+                        }
                     }
                 ],
-                "type": "Pattern"
+                "type": "Pattern",
+                "span": {
+                    "start": 6,
+                    "end": 9,
+                    "type": "Span"
+                }
             },
             "annotations": [],
-            "attributes": None,
+            "attributes": [],
             "type": "Message",
             "id": {
                 "type": "Identifier",
-                "name": "foo"
+                "name": "foo",
+                "span": {
+                    "start": 0,
+                    "end": 3,
+                    "type": "Span"
+                }
             }
         }
 
@@ -60,7 +77,7 @@ class TestSerializeEntry(unittest.TestCase):
                 "end": 9,
                 "type": "Span"
             },
-            "tags": None,
+            "tags": [],
             "value": {
                 "elements": [
                     {
@@ -71,7 +88,7 @@ class TestSerializeEntry(unittest.TestCase):
                 "type": "Pattern"
             },
             "annotations": [],
-            "attributes": None,
+            "attributes": [],
             "type": "Message",
             "id": {
                 "type": "Identifier",

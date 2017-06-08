@@ -46,9 +46,7 @@ class MergeContext(object):
     """
 
     def __init__(self, lang, reference_dir, localization_dir):
-        self.fluent_parser = FluentParser(
-            with_spans=False, with_annotations=False
-        )
+        self.fluent_parser = FluentParser(with_spans=False)
         self.fluent_serializer = FluentSerializer()
 
         # An iterable of plural category names relevant to the context's

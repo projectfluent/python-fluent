@@ -4,10 +4,34 @@ from . import ast
 from .errors import ParseError
 
 
+def with_span(fn):
+    def decorated(self, ps, *args):
+        if not self.with_spans:
+            return fn(self, ps, *args)
+
+        start = ps.get_index()
+        node = fn(self, ps, *args)
+
+        # Don't re-add the span if the node already has it.  This may happen
+        # when one decorated function calls another decorated function.
+        if node.span is not None:
+            return node
+
+        # Spans of Messages and Sections should include the attached Comment.
+        if isinstance(node, ast.Message) or isinstance(node, ast.Section):
+            if node.comment is not None:
+                start = node.comment.span.start
+
+        end = ps.get_index()
+        node.add_span(start, end)
+        return node
+
+    return decorated
+
+
 class FluentParser(object):
-    def __init__(self, with_spans=True, with_annotations=True):
+    def __init__(self, with_spans=True):
         self.with_spans = with_spans
-        self.with_annotations = with_annotations
 
     def parse(self, source):
         comment = None
@@ -18,7 +42,7 @@ class FluentParser(object):
         entries = []
 
         while ps.current():
-            entry = get_entry_or_junk(self, ps)
+            entry = self.get_entry_or_junk(ps)
 
             if isinstance(entry, ast.Comment) and len(entries) == 0:
                 comment = entry
@@ -27,472 +51,517 @@ class FluentParser(object):
 
             ps.skip_ws_lines()
 
-        return ast.Resource(entries, comment)
+        res = ast.Resource(entries, comment)
+
+        if self.with_spans:
+            res.add_span(0, ps.get_index())
+
+        return res
 
     def parse_entry(self, source):
         ps = FTLParserStream(source)
         ps.skip_ws_lines()
-        return get_entry_or_junk(self, ps)
+        return self.get_entry_or_junk(ps)
 
+    def get_entry_or_junk(self, ps):
+        entry_start_pos = ps.get_index()
 
-def get_entry_or_junk(self, ps):
-    entry_start_pos = ps.get_index()
+        try:
+            return self.get_entry(ps)
+        except ParseError as err:
+            error_index = ps.get_index()
+            ps.skip_to_next_entry_start()
+            next_entry_start = ps.get_index()
 
-    try:
-        entry = get_entry(ps)
-        if self.with_spans:
-            entry.add_span(entry_start_pos, ps.get_index())
-        return entry
-    except ParseError as err:
-        error_index = ps.get_index()
-        ps.skip_to_next_entry_start()
-        next_entry_start = ps.get_index()
-
-        # Create a Junk instance
-        slice = ps.get_slice(entry_start_pos, next_entry_start)
-        junk = ast.Junk(slice)
-        if self.with_spans:
-            junk.add_span(entry_start_pos, next_entry_start)
-        if self.with_annotations:
+            # Create a Junk instance
+            slice = ps.get_slice(entry_start_pos, next_entry_start)
+            junk = ast.Junk(slice)
+            if self.with_spans:
+                junk.add_span(entry_start_pos, next_entry_start)
             annot = ast.Annotation(err.code, err.args, err.message)
             annot.add_span(error_index, error_index)
             junk.add_annotation(annot)
-        return junk
+            return junk
 
-
-def get_entry(ps):
-    comment = None
-
-    if ps.current_is('/'):
-        comment = get_comment(ps)
-
-    if ps.current_is('['):
-        return get_section(ps, comment)
-
-    if ps.is_id_start():
-        return get_message(ps, comment)
-
-    if comment:
-        return comment
-
-    raise ParseError('E0002')
-
-def get_comment(ps):
-    ps.expect_char('/')
-    ps.expect_char('/')
-    ps.take_char_if(' ')
-
-    content = ''
-
-    def until_eol(x):
-        return x != '\n'
-
-    while True:
-        ch = ps.take_char(until_eol)
-        while ch:
-            content += ch
-            ch = ps.take_char(until_eol)
-
-        ps.next()
+    def get_entry(self, ps):
+        comment = None
 
         if ps.current_is('/'):
-            content += '\n'
+            comment = self.get_comment(ps)
+
+        if ps.current_is('['):
+            return self.get_section(ps, comment)
+
+        if ps.is_id_start():
+            return self.get_message(ps, comment)
+
+        if comment:
+            return comment
+
+        raise ParseError('E0002')
+
+    @with_span
+    def get_comment(self, ps):
+        ps.expect_char('/')
+        ps.expect_char('/')
+        ps.take_char_if(' ')
+
+        content = ''
+
+        def until_eol(x):
+            return x != '\n'
+
+        while True:
+            ch = ps.take_char(until_eol)
+            while ch:
+                content += ch
+                ch = ps.take_char(until_eol)
+
             ps.next()
-            ps.expect_char('/')
-            ps.take_char_if(' ')
-        else:
-            break
-    return ast.Comment(content)
 
-def get_section(ps, comment):
-    ps.expect_char('[')
-    ps.expect_char('[')
+            if ps.current_is('/'):
+                content += '\n'
+                ps.next()
+                ps.expect_char('/')
+                ps.take_char_if(' ')
+            else:
+                break
 
-    ps.skip_line_ws()
+        return ast.Comment(content)
 
-    symb = get_symbol(ps)
+    @with_span
+    def get_section(self, ps, comment):
+        ps.expect_char('[')
+        ps.expect_char('[')
 
-    ps.skip_line_ws()
-
-    ps.expect_char(']')
-    ps.expect_char(']')
-
-    ps.skip_line_ws()
-
-    ps.expect_char('\n')
-
-    return ast.Section(symb, comment)
-
-def get_message(ps, comment):
-    id = get_identifier(ps)
-
-    ps.skip_line_ws()
-
-    pattern = None
-    attrs = None
-    tags = None
-
-    if ps.current_is('='):
-        ps.next()
         ps.skip_line_ws()
 
-        pattern = get_pattern(ps)
+        symb = self.get_symbol(ps)
 
-    if ps.is_peek_next_line_attribute_start():
-        attrs = get_attributes(ps)
+        ps.skip_line_ws()
 
-    if ps.is_peek_next_line_tag_start():
-        if attrs is not None:
-            raise ParseError('E0012')
-        tags = get_tags(ps)
+        ps.expect_char(']')
+        ps.expect_char(']')
 
-    if pattern is None and attrs is None and tags is None:
-        raise ParseError('E0005', id.name)
+        ps.skip_line_ws()
 
-    return ast.Message(id, pattern, attrs, tags, comment)
-
-def get_attributes(ps):
-    attrs = []
-
-    while True:
         ps.expect_char('\n')
+
+        return ast.Section(symb, comment)
+
+    @with_span
+    def get_message(self, ps, comment):
+        id = self.get_identifier(ps)
+
         ps.skip_line_ws()
 
+        pattern = None
+        attrs = None
+        tags = None
+
+        if ps.current_is('='):
+            ps.next()
+            ps.skip_line_ws()
+
+            pattern = self.get_pattern(ps)
+
+        if ps.is_peek_next_line_attribute_start():
+            attrs = self.get_attributes(ps)
+
+        if ps.is_peek_next_line_tag_start():
+            if attrs is not None:
+                raise ParseError('E0012')
+            tags = self.get_tags(ps)
+
+        if pattern is None and attrs is None and tags is None:
+            raise ParseError('E0005', id.name)
+
+        return ast.Message(id, pattern, attrs, tags, comment)
+
+    @with_span
+    def get_attribute(self, ps):
         ps.expect_char('.')
 
-        key = get_identifier(ps)
+        key = self.get_identifier(ps)
 
         ps.skip_line_ws()
         ps.expect_char('=')
         ps.skip_line_ws()
 
-        value = get_pattern(ps)
+        value = self.get_pattern(ps)
 
         if value is None:
             raise ParseError('E0006', 'value')
 
-        attrs.append(ast.Attribute(key, value))
+        return ast.Attribute(key, value)
 
-        if not ps.is_peek_next_line_attribute_start():
-            break
-    return attrs
+    def get_attributes(self, ps):
+        attrs = []
 
-def get_tags(ps):
-    tags = []
+        while True:
+            ps.expect_char('\n')
+            ps.skip_line_ws()
 
-    while True:
-        ps.expect_char('\n')
-        ps.skip_line_ws()
+            attr = self.get_attribute(ps)
+            attrs.append(attr)
 
+            if not ps.is_peek_next_line_attribute_start():
+                break
+        return attrs
+
+    @with_span
+    def get_tag(self, ps):
         ps.expect_char('#')
+        symb = self.get_symbol(ps)
+        return ast.Tag(symb)
 
-        symb = get_symbol(ps)
+    def get_tags(self, ps):
+        tags = []
 
-        tags.append(ast.Tag(symb))
+        while True:
+            ps.expect_char('\n')
+            ps.skip_line_ws()
 
-        if not ps.is_peek_next_line_tag_start():
-            break
-    return tags
+            tag = self.get_tag(ps)
+            tags.append(tag)
 
-def get_identifier(ps):
-    name = ''
+            if not ps.is_peek_next_line_tag_start():
+                break
+        return tags
 
-    name += ps.take_id_start()
+    @with_span
+    def get_identifier(self, ps):
+        name = ''
 
-    ch = ps.take_id_char()
-    while ch:
-        name += ch
+        name += ps.take_id_start()
+
         ch = ps.take_id_char()
+        while ch:
+            name += ch
+            ch = ps.take_id_char()
 
-    return ast.Identifier(name)
+        return ast.Identifier(name)
 
-def get_variant_key(ps):
-    ch = ps.current()
+    def get_variant_key(self, ps):
+        ch = ps.current()
 
-    if ch is None:
-        raise ParseError('E0013')
+        if ch is None:
+            raise ParseError('E0013')
 
-    if ps.is_number_start():
-        return get_number(ps)
+        if ps.is_number_start():
+            return self.get_number(ps)
 
-    return get_symbol(ps)
+        return self.get_symbol(ps)
 
-def get_variants(ps):
-    variants = []
-    has_default = False
-
-    while True:
+    @with_span
+    def get_variant(self, ps, has_default):
         default_index = False
-
-        ps.expect_char('\n')
-        ps.skip_line_ws()
 
         if ps.current_is('*'):
             if has_default:
                 raise ParseError('E0015')
             ps.next()
             default_index = True
-            has_default = True
 
         ps.expect_char('[')
 
-        key = get_variant_key(ps)
+        key = self.get_variant_key(ps)
 
         ps.expect_char(']')
 
         ps.skip_line_ws()
 
-        value = get_pattern(ps)
+        value = self.get_pattern(ps)
 
         if value is None:
             raise ParseError('E0006', 'value')
 
-        variants.append(ast.Variant(key, value, default_index))
+        return ast.Variant(key, value, default_index)
 
-        if not ps.is_peek_next_line_variant_start():
-            break
+    def get_variants(self, ps):
+        variants = []
+        has_default = False
 
-    if not has_default:
-        raise ParseError('E0010')
-
-    return variants
-
-def get_symbol(ps):
-    name = ''
-
-    name += ps.take_id_start()
-
-    while True:
-        ch = ps.take_symb_char()
-        if ch:
-            name += ch
-        else:
-            break
-
-    return ast.Symbol(name.rstrip())
-
-def get_digits(ps):
-    num = ''
-
-    ch = ps.take_digit()
-    while ch:
-        num += ch
-        ch = ps.take_digit()
-
-    if len(num) == 0:
-        raise ParseError('E0004', '0-9')
-
-    return num
-
-def get_number(ps):
-    num = ''
-
-    if ps.current_is('-'):
-        num += '-'
-        ps.next()
-
-    num += get_digits(ps)
-
-    if ps.current_is('.'):
-        num += '.'
-        ps.next()
-        num += get_digits(ps)
-
-    return ast.NumberExpression(num)
-
-def get_pattern(ps):
-    buffer = ''
-    elements = []
-    first_line = True
-
-    while ps.current():
-        ch = ps.current()
-        if ch == '\n':
-            if first_line and len(buffer) != 0:
-                break
-
-            if not ps.is_peek_next_line_pattern():
-                break
-
-            ps.next()
+        while True:
+            ps.expect_char('\n')
             ps.skip_line_ws()
 
-            if not first_line:
-                buffer += ch
+            variant = self.get_variant(ps, has_default)
 
-            first_line = False
-            continue
-        elif ch == '\\':
-            ch2 = ps.peek()
+            if variant.default:
+                has_default = True
 
-            if ch2 == '{' or ch2 == '"':
-                buffer += ch2
+            variants.append(variant)
+
+            if not ps.is_peek_next_line_variant_start():
+                break
+
+        if not has_default:
+            raise ParseError('E0010')
+
+        return variants
+
+    @with_span
+    def get_symbol(self, ps):
+        name = ''
+
+        name += ps.take_id_start()
+
+        while True:
+            ch = ps.take_symb_char()
+            if ch:
+                name += ch
             else:
-                buffer += ch + ch2
-            ps.next()
-        elif ch == '{':
-            ps.next()
+                break
 
-            ps.skip_line_ws()
+        return ast.Symbol(name.rstrip())
 
-            if len(buffer) != 0:
-                elements.append(ast.TextElement(buffer))
+    def get_digits(self, ps):
+        num = ''
 
-            buffer = ''
+        ch = ps.take_digit()
+        while ch:
+            num += ch
+            ch = ps.take_digit()
 
-            elements.append(get_expression(ps))
+        if len(num) == 0:
+            raise ParseError('E0004', '0-9')
 
-            ps.expect_char('}')
+        return num
 
-            continue
-        else:
-            buffer += ps.ch
-        ps.next()
+    @with_span
+    def get_number(self, ps):
+        num = ''
 
-    if len(buffer) != 0:
-        elements.append(ast.TextElement(buffer))
-
-    return ast.Pattern(elements)
-
-def get_expression(ps):
-    if ps.is_peek_next_line_variant_start():
-        variants = get_variants(ps)
-
-        ps.expect_char('\n')
-        ps.expect_char(' ')
-        ps.skip_line_ws()
-
-        return ast.SelectExpression(None, variants)
-
-    selector = get_selector_expression(ps)
-
-    ps.skip_line_ws()
-
-    if ps.current_is('-'):
-        ps.peek()
-        if not ps.current_peek_is('>'):
-            ps.reset_peek()
-        else:
-            ps.next()
+        if ps.current_is('-'):
+            num += '-'
             ps.next()
 
-            ps.skip_line_ws()
+        num += self.get_digits(ps)
 
-            variants = get_variants(ps)
+        if ps.current_is('.'):
+            num += '.'
+            ps.next()
+            num += self.get_digits(ps)
 
-            if len(variants) == 0:
-                raise ParseError('E0011')
+        return ast.NumberExpression(num)
+
+    @with_span
+    def get_pattern(self, ps):
+        buffer = ''
+        elements = []
+        first_line = True
+        span_start = None
+
+        if (self.with_spans):
+            span_start = ps.get_index()
+
+        while ps.current():
+            ch = ps.current()
+            if ch == '\n':
+                if first_line and len(buffer) != 0:
+                    break
+
+                if not ps.is_peek_next_line_pattern():
+                    break
+
+                ps.next()
+                ps.skip_line_ws()
+
+                if not first_line:
+                    buffer += ch
+
+                first_line = False
+                continue
+            elif ch == '\\':
+                ch2 = ps.peek()
+
+                if ch2 == '{' or ch2 == '"':
+                    buffer += ch2
+                else:
+                    buffer += ch + ch2
+                ps.next()
+            elif ch == '{':
+                ps.next()
+
+                ps.skip_line_ws()
+
+                if len(buffer) != 0:
+                    text = ast.TextElement(buffer)
+                    if self.with_spans:
+                        text.add_span(span_start, ps.get_index())
+                    elements.append(text)
+
+                buffer = ''
+
+                elements.append(self.get_expression(ps))
+
+                ps.expect_char('}')
+
+                if (self.with_spans):
+                    span_start = ps.get_index()
+
+                continue
+            else:
+                buffer += ps.ch
+            ps.next()
+
+        if len(buffer) != 0:
+            text = ast.TextElement(buffer)
+            if self.with_spans:
+                text.add_span(span_start, ps.get_index())
+            elements.append(text)
+
+        return ast.Pattern(elements)
+
+    @with_span
+    def get_expression(self, ps):
+        if ps.is_peek_next_line_variant_start():
+            variants = self.get_variants(ps)
 
             ps.expect_char('\n')
             ps.expect_char(' ')
             ps.skip_line_ws()
 
-            return ast.SelectExpression(selector, variants)
+            return ast.SelectExpression(None, variants)
 
-    return selector
+        selector = self.get_selector_expression(ps)
 
-def get_selector_expression(ps):
-    literal = get_literal(ps)
+        ps.skip_line_ws()
 
-    if not isinstance(literal, ast.MessageReference):
+        if ps.current_is('-'):
+            ps.peek()
+            if not ps.current_peek_is('>'):
+                ps.reset_peek()
+            else:
+                ps.next()
+                ps.next()
+
+                ps.skip_line_ws()
+
+                variants = self.get_variants(ps)
+
+                if len(variants) == 0:
+                    raise ParseError('E0011')
+
+                ps.expect_char('\n')
+                ps.expect_char(' ')
+                ps.skip_line_ws()
+
+                return ast.SelectExpression(selector, variants)
+
+        return selector
+
+    @with_span
+    def get_selector_expression(self, ps):
+        literal = self.get_literal(ps)
+
+        if not isinstance(literal, ast.MessageReference):
+            return literal
+
+        ch = ps.current()
+
+        if (ch == '.'):
+            ps.next()
+            attr = self.get_identifier(ps)
+            return ast.AttributeExpression(literal.id, attr)
+
+        if (ch == '['):
+            ps.next()
+            key = self.get_variant_key(ps)
+            ps.expect_char(']')
+            return ast.VariantExpression(literal.id, key)
+
+        if (ch == '('):
+            ps.next()
+
+            args = self.get_call_args(ps)
+
+            ps.expect_char(')')
+
+            return ast.CallExpression(literal.id, args)
+
         return literal
 
-    ch = ps.current()
-
-    if (ch == '.'):
-        ps.next()
-        attr = get_identifier(ps)
-        return ast.AttributeExpression(literal.id, attr)
-
-    if (ch == '['):
-        ps.next()
-        key = get_variant_key(ps)
-        ps.expect_char(']')
-        return ast.VariantExpression(literal.id, key)
-
-    if (ch == '('):
-        ps.next()
-
-        args = get_call_args(ps)
-
-        ps.expect_char(')')
-
-        return ast.CallExpression(literal.id, args)
-
-    return literal
-
-def get_call_args(ps):
-    args = []
-
-    ps.skip_line_ws()
-
-    while True:
-        if ps.current_is(')'):
-            break
-
-        exp = get_selector_expression(ps)
+    @with_span
+    def get_call_arg(self, ps):
+        exp = self.get_selector_expression(ps)
 
         ps.skip_line_ws()
 
-        if ps.current_is(':'):
-            if not isinstance(exp, ast.MessageReference):
-                raise ParseError('E0009')
+        if not ps.current_is(':'):
+            return exp
 
-            ps.next()
-            ps.skip_line_ws()
+        if not isinstance(exp, ast.MessageReference):
+            raise ParseError('E0009')
 
-            val = get_arg_val(ps)
+        ps.next()
+        ps.skip_line_ws()
 
-            args.append(ast.NamedArgument(exp.id, val))
-        else:
-            args.append(exp)
+        val = self.get_arg_val(ps)
+
+        return ast.NamedArgument(exp.id, val)
+
+    def get_call_args(self, ps):
+        args = []
 
         ps.skip_line_ws()
 
-        if ps.current_is(','):
-            ps.next()
+        while True:
+            if ps.current_is(')'):
+                break
+
+            arg = self.get_call_arg(ps)
+            args.append(arg)
+
             ps.skip_line_ws()
-            continue
-        else:
-            break
 
-    return args
+            if ps.current_is(','):
+                ps.next()
+                ps.skip_line_ws()
+                continue
+            else:
+                break
 
-def get_arg_val(ps):
-    if ps.is_number_start():
-        return get_number(ps)
-    elif ps.current_is('"'):
-        return get_string(ps)
-    raise ParseError('E0006', 'value')
+        return args
 
-def get_string(ps):
-    val = ''
+    def get_arg_val(self, ps):
+        if ps.is_number_start():
+            return self.get_number(ps)
+        elif ps.current_is('"'):
+            return self.get_string(ps)
+        raise ParseError('E0006', 'value')
 
-    ps.expect_char('"')
+    @with_span
+    def get_string(self, ps):
+        val = ''
 
-    ch = ps.take_char(lambda x: x != '"')
-    while ch:
-        val += ch
+        ps.expect_char('"')
+
         ch = ps.take_char(lambda x: x != '"')
+        while ch:
+            val += ch
+            ch = ps.take_char(lambda x: x != '"')
 
-    ps.next()
-
-    return ast.StringExpression(val)
-
-def get_literal(ps):
-    ch = ps.current()
-
-    if ch is None:
-        raise ParseError('E0014')
-
-    if ps.is_number_start():
-        return get_number(ps)
-    elif ch == '"':
-        return get_string(ps)
-    elif ch == '$':
         ps.next()
-        name = get_identifier(ps)
-        return ast.ExternalArgument(name)
 
-    name = get_identifier(ps)
-    return ast.MessageReference(name)
+        return ast.StringExpression(val)
+
+    @with_span
+    def get_literal(self, ps):
+        ch = ps.current()
+
+        if ch is None:
+            raise ParseError('E0014')
+
+        if ps.is_number_start():
+            return self.get_number(ps)
+        elif ch == '"':
+            return self.get_string(ps)
+        elif ch == '$':
+            ps.next()
+            name = self.get_identifier(ps)
+            return ast.ExternalArgument(name)
+
+        name = self.get_identifier(ps)
+        return ast.MessageReference(name)

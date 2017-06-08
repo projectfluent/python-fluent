@@ -32,7 +32,7 @@ def fold(fun, node, init):
         head = list(vals)[0]
         tail = list(vals)[1:]
 
-        if isinstance(head, FTL.Node):
+        if isinstance(head, FTL.BaseNode):
             acc = fold(fun, head, acc)
         if isinstance(head, list):
             acc = fold_(head, acc)

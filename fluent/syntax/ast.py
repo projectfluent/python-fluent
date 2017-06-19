@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 import sys
 import json
+from itertools import ifilterfalse, imap, izip
 
 
 def to_json(value):
@@ -25,6 +26,38 @@ def from_json(value):
         return list(map(from_json, value))
     else:
         return value
+
+
+def fields_equal(field1, field2, with_spans):
+    (key1, value1), (key2, value2) = field1, field2
+
+    if key1 != key2:
+        return False
+
+    return values_equal(value1, value2, with_spans)
+
+
+def values_equal(value1, value2, with_spans):
+    if type(value1) != type(value2):
+        return False
+
+    if isinstance(value1, BaseNode):
+        return value1.equals(value2, with_spans)
+
+    if isinstance(value1, list):
+        value_pairs = izip(value1, value2)
+        diffs = imap(
+            lambda pair: not values_equal(*pair, with_spans),
+            value_pairs)
+        return not any(diffs)
+
+    else:
+        return value1 == value2
+
+
+def is_span(item):
+    _, value = item
+    return isinstance(value, Span)
 
 
 class BaseNode(object):
@@ -60,6 +93,21 @@ class BaseNode(object):
         )
 
         return fun(node)
+
+    def equals(self, other, with_spans=True):
+        self_vars = vars(self).iteritems()
+        other_vars = vars(other).iteritems()
+
+        if not with_spans:
+            self_vars = ifilterfalse(is_span, self_vars)
+            other_vars = ifilterfalse(is_span, other_vars)
+
+        field_pairs = izip(self_vars, other_vars)
+        diffs = imap(
+            lambda pair: not fields_equal(*pair, with_spans),
+            field_pairs)
+
+        return not any(diffs)
 
     def to_json(self):
         obj = {

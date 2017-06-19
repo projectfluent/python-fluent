@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import sys
 import json
-from itertools import ifilterfalse, imap, izip
+from itertools import izip
 
 
 def to_json(value):
@@ -28,36 +28,17 @@ def from_json(value):
         return value
 
 
-def fields_equal(field1, field2, with_spans):
-    (key1, value1), (key2, value2) = field1, field2
-
-    if key1 != key2:
+def fields_equal(field1, field2, with_spans=True):
+    if type(field1) != type(field2):
         return False
 
-    return values_equal(value1, value2, with_spans)
+    if isinstance(field1, BaseNode):
+        return field1.equals(field2, with_spans)
 
-
-def values_equal(value1, value2, with_spans):
-    if type(value1) != type(value2):
+    if field1 != field2:
         return False
 
-    if isinstance(value1, BaseNode):
-        return value1.equals(value2, with_spans)
-
-    if isinstance(value1, list):
-        value_pairs = izip(value1, value2)
-        diffs = imap(
-            lambda pair: not values_equal(*pair, with_spans),
-            value_pairs)
-        return not any(diffs)
-
-    else:
-        return value1 == value2
-
-
-def is_span(item):
-    _, value = item
-    return isinstance(value, Span)
+    return True
 
 
 class BaseNode(object):
@@ -95,19 +76,46 @@ class BaseNode(object):
         return fun(node)
 
     def equals(self, other, with_spans=True):
-        self_vars = vars(self).iteritems()
-        other_vars = vars(other).iteritems()
+        self_keys = set(vars(self).keys())
+        other_keys = set(vars(other).keys())
 
         if not with_spans:
-            self_vars = ifilterfalse(is_span, self_vars)
-            other_vars = ifilterfalse(is_span, other_vars)
+            self_keys.discard('span')
+            other_keys.discard('span')
 
-        field_pairs = izip(self_vars, other_vars)
-        diffs = imap(
-            lambda pair: not fields_equal(*pair, with_spans),
-            field_pairs)
+        if self_keys != other_keys:
+            return False
 
-        return not any(diffs)
+        keys = sorted(self_keys)
+
+        self_fields = [getattr(self, key) for key in keys]
+        other_fields = [getattr(other, key) for key in keys]
+
+        for key, field1, field2 in izip(keys, self_fields, other_fields):
+            if isinstance(field1, list) and isinstance(field2, list):
+                if len(field1) != len(field2):
+                    return False
+
+                field_sorting = {
+                    # 'annotations': lambda elem: elem.message,
+                    'attributes': lambda elem: elem.id.name,
+                    'tags': lambda elem: elem.name.name,
+                    'variants': lambda elem: elem.key.name,
+                }
+
+                if key in field_sorting.keys():
+                    sorting = field_sorting[key]
+                    field1 = sorted(field1, key=sorting)
+                    field2 = sorted(field2, key=sorting)
+
+                for elem1, elem2 in izip(field1, field2):
+                    if not fields_equal(elem1, elem2, with_spans):
+                        return False
+
+            elif not fields_equal(field1, field2, with_spans):
+                return False
+
+        return True
 
     def to_json(self):
         obj = {

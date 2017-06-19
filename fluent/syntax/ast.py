@@ -28,7 +28,7 @@ def from_json(value):
         return value
 
 
-def scalars_equal(field1, field2, with_spans=True):
+def scalars_equal(field1, field2, with_spans=False):
     if type(field1) != type(field2):
         return False
 
@@ -72,7 +72,7 @@ class BaseNode(object):
 
         return fun(node)
 
-    def equals(self, other, with_spans=True):
+    def equals(self, other, with_spans=False):
         self_keys = set(vars(self).keys())
         other_keys = set(vars(other).keys())
 

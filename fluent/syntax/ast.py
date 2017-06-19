@@ -28,17 +28,14 @@ def from_json(value):
         return value
 
 
-def fields_equal(field1, field2, with_spans=True):
+def scalars_equal(field1, field2, with_spans=True):
     if type(field1) != type(field2):
         return False
 
     if isinstance(field1, BaseNode):
         return field1.equals(field2, with_spans)
 
-    if field1 != field2:
-        return False
-
-    return True
+    return field1 == field2
 
 
 class BaseNode(object):
@@ -109,10 +106,10 @@ class BaseNode(object):
                     field2 = sorted(field2, key=sorting)
 
                 for elem1, elem2 in izip(field1, field2):
-                    if not fields_equal(elem1, elem2, with_spans):
+                    if not scalars_equal(elem1, elem2, with_spans):
                         return False
 
-            elif not fields_equal(field1, field2, with_spans):
+            elif not scalars_equal(field1, field2, with_spans):
                 return False
 
         return True

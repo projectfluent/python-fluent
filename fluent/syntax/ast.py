@@ -83,12 +83,10 @@ class BaseNode(object):
         if self_keys != other_keys:
             return False
 
-        keys = sorted(self_keys)
+        for key in self_keys:
+            field1 = getattr(self, key)
+            field2 = getattr(other, key)
 
-        self_fields = [getattr(self, key) for key in keys]
-        other_fields = [getattr(other, key) for key in keys]
-
-        for key, field1, field2 in izip(keys, self_fields, other_fields):
             if isinstance(field1, list) and isinstance(field2, list):
                 if len(field1) != len(field2):
                     return False
@@ -100,7 +98,7 @@ class BaseNode(object):
                     'variants': lambda elem: elem.key.name,
                 }
 
-                if key in field_sorting.keys():
+                if key in field_sorting:
                     sorting = field_sorting[key]
                     field1 = sorted(field1, key=sorting)
                     field2 = sorted(field2, key=sorting)

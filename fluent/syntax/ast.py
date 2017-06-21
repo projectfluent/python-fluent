@@ -28,14 +28,16 @@ def from_json(value):
         return value
 
 
-def scalars_equal(field1, field2, with_spans=False):
-    if type(field1) != type(field2):
+def scalars_equal(node1, node2, with_spans=False):
+    """Compare two nodes which are not lists."""
+
+    if type(node1) != type(node2):
         return False
 
-    if isinstance(field1, BaseNode):
-        return field1.equals(field2, with_spans)
+    if isinstance(node1, BaseNode):
+        return node1.equals(node2, with_spans)
 
-    return field1 == field2
+    return node1 == node2
 
 
 class BaseNode(object):
@@ -73,6 +75,13 @@ class BaseNode(object):
         return fun(node)
 
     def equals(self, other, with_spans=False):
+        """Compare two entries.
+
+        Entries are deeply compared on a field by field basis. If possible,
+        False is returned early.  When comparing attributes, tags and variants
+        in SelectExpressions, the order doesn't matter.
+        """
+
         self_keys = set(vars(self).keys())
         other_keys = set(vars(other).keys())
 
@@ -87,12 +96,16 @@ class BaseNode(object):
             field1 = getattr(self, key)
             field2 = getattr(other, key)
 
+            # List-typed nodes are compared item-by-item.  When comparing
+            # attributes, tags and variants, the order of items doesn't matter.
             if isinstance(field1, list) and isinstance(field2, list):
                 if len(field1) != len(field2):
                     return False
 
+                # These functions are used to sort lists of items for when
+                # order doesn't matter.  Annotations are also lists but they
+                # can't be keyed on any of their fields reliably.
                 field_sorting = {
-                    # 'annotations': lambda elem: elem.message,
                     'attributes': lambda elem: elem.id.name,
                     'tags': lambda elem: elem.name.name,
                     'variants': lambda elem: elem.key.name,

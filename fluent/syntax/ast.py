@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 import sys
 import json
-from itertools import izip
 
 
 def to_json(value):
@@ -116,7 +115,7 @@ class BaseNode(object):
                     field1 = sorted(field1, key=sorting)
                     field2 = sorted(field2, key=sorting)
 
-                for elem1, elem2 in izip(field1, field2):
+                for elem1, elem2 in zip(field1, field2):
                     if not scalars_equal(elem1, elem2, with_spans):
                         return False
 

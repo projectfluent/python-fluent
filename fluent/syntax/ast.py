@@ -74,11 +74,12 @@ class BaseNode(object):
         return fun(node)
 
     def equals(self, other, with_spans=False):
-        """Compare two entries.
+        """Compare two nodes.
 
-        Entries are deeply compared on a field by field basis. If possible,
-        False is returned early.  When comparing attributes, tags and variants
-        in SelectExpressions, the order doesn't matter.
+        Nodes are deeply compared on a field by field basis. If possible, False
+        is returned early. When comparing attributes, tags and variants in
+        SelectExpressions, the order doesn't matter. By default, spans are not
+        taken into account.
         """
 
         self_keys = set(vars(self).keys())

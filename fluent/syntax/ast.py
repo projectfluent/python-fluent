@@ -27,14 +27,14 @@ def from_json(value):
         return value
 
 
-def scalars_equal(node1, node2, with_spans=False):
+def scalars_equal(node1, node2, ignored_fields):
     """Compare two nodes which are not lists."""
 
     if type(node1) != type(node2):
         return False
 
     if isinstance(node1, BaseNode):
-        return node1.equals(node2, with_spans)
+        return node1.equals(node2, ignored_fields)
 
     return node1 == node2
 
@@ -73,7 +73,7 @@ class BaseNode(object):
 
         return fun(node)
 
-    def equals(self, other, with_spans=False):
+    def equals(self, other, ignored_fields=['span']):
         """Compare two nodes.
 
         Nodes are deeply compared on a field by field basis. If possible, False
@@ -85,9 +85,10 @@ class BaseNode(object):
         self_keys = set(vars(self).keys())
         other_keys = set(vars(other).keys())
 
-        if not with_spans:
-            self_keys.discard('span')
-            other_keys.discard('span')
+        if ignored_fields:
+            for key in ignored_fields:
+                self_keys.discard(key)
+                other_keys.discard(key)
 
         if self_keys != other_keys:
             return False
@@ -117,10 +118,10 @@ class BaseNode(object):
                     field2 = sorted(field2, key=sorting)
 
                 for elem1, elem2 in zip(field1, field2):
-                    if not scalars_equal(elem1, elem2, with_spans):
+                    if not scalars_equal(elem1, elem2, ignored_fields):
                         return False
 
-            elif not scalars_equal(field1, field2, with_spans):
+            elif not scalars_equal(field1, field2, ignored_fields):
                 return False
 
         return True

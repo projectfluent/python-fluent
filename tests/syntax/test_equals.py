@@ -203,7 +203,7 @@ class TestEqualWithSpans(unittest.TestCase):
         ]
 
         for a, b in messages:
-            self.assertTrue(a.equals(b, with_spans=True))
+            self.assertTrue(a.equals(b, ignored_fields=None))
 
     def test_parser_without_spans_equals_with_spans(self):
         parser = FluentParser(with_spans=False)
@@ -221,7 +221,7 @@ class TestEqualWithSpans(unittest.TestCase):
         ]
 
         for a, b in messages:
-            self.assertTrue(a.equals(b, with_spans=True))
+            self.assertTrue(a.equals(b, ignored_fields=None))
 
     def test_differ_with_spans(self):
         parser = FluentParser()
@@ -237,4 +237,42 @@ class TestEqualWithSpans(unittest.TestCase):
         ]
 
         for a, b in messages:
-            self.assertFalse(a.equals(b, with_spans=True))
+            self.assertFalse(a.equals(b, ignored_fields=None))
+
+
+class TestIgnoredFields(unittest.TestCase):
+    def setUp(self):
+        self.parser = FluentParser()
+
+    def parse_ftl_entry(self, string):
+        return self.parser.parse_entry(dedent_ftl(string))
+
+    def test_ignore_value(self):
+        a = self.parse_ftl_entry("foo = Foo")
+        b = self.parse_ftl_entry("foo = Bar")
+
+        self.assertTrue(a.equals(b, ignored_fields=['value']))
+
+    def test_ignore_value_span(self):
+        a = self.parse_ftl_entry("foo = Foo")
+        b = self.parse_ftl_entry("foo = Foobar")
+
+        self.assertTrue(a.equals(b, ignored_fields=['span', 'value']))
+        self.assertFalse(a.equals(b, ignored_fields=['value']))
+
+    def test_ignore_comments(self):
+        a = self.parse_ftl_entry("""\
+            // Comment A
+            foo = Foo
+        """)
+        b = self.parse_ftl_entry("""\
+            // Comment B
+            foo = Foo
+        """)
+        c = self.parse_ftl_entry("""\
+            // Comment CC
+            foo = Foo
+        """)
+
+        self.assertTrue(a.equals(b, ignored_fields=['comment']))
+        self.assertFalse(a.equals(c, ignored_fields=['comment']))

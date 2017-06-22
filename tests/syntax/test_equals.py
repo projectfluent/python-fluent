@@ -8,6 +8,10 @@ from tests.syntax import dedent_ftl
 from fluent.syntax.parser import FluentParser
 
 
+def identity(node):
+    return node
+
+
 class TestEntryEqualToSelf(unittest.TestCase):
     def setUp(self):
         self.parser = FluentParser()
@@ -21,6 +25,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
+        self.assertTrue(message1.equals(message1.traverse(identity)))
 
     def test_same_selector_message(self):
         message1 = self.parse_ftl_entry("""\
@@ -35,6 +40,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
+        self.assertTrue(message1.equals(message1.traverse(identity)))
 
     def test_same_complex_placeable_message(self):
         message1 = self.parse_ftl_entry("""\
@@ -42,6 +48,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
+        self.assertTrue(message1.equals(message1.traverse(identity)))
 
     def test_same_message_with_attribute(self):
         message1 = self.parse_ftl_entry("""\
@@ -50,6 +57,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
+        self.assertTrue(message1.equals(message1.traverse(identity)))
 
     def test_same_message_with_attributes(self):
         message1 = self.parse_ftl_entry("""\
@@ -59,6 +67,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
+        self.assertTrue(message1.equals(message1.traverse(identity)))
 
     def test_same_message_with_tag(self):
         message1 = self.parse_ftl_entry("""\
@@ -67,6 +76,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
+        self.assertTrue(message1.equals(message1.traverse(identity)))
 
     def test_same_message_with_tags(self):
         message1 = self.parse_ftl_entry("""\
@@ -76,6 +86,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
+        self.assertTrue(message1.equals(message1.traverse(identity)))
 
     def test_same_junk(self):
         message1 = self.parse_ftl_entry("""\
@@ -83,6 +94,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
+        self.assertTrue(message1.equals(message1.traverse(identity)))
 
 
 class TestOrderEquals(unittest.TestCase):
@@ -142,7 +154,7 @@ class TestOrderEquals(unittest.TestCase):
         self.assertTrue(message2.equals(message1))
 
 
-class TestSpansEqual(unittest.TestCase):
+class TestEqualWithSpans(unittest.TestCase):
     def test_default_behavior(self):
         parser = FluentParser()
 
@@ -193,22 +205,6 @@ class TestSpansEqual(unittest.TestCase):
         for a, b in messages:
             self.assertTrue(a.equals(b, with_spans=True))
 
-    def test_differ_with_spans(self):
-        parser = FluentParser()
-
-        strings = [
-            ("foo = Foo", "foo =   Foo"),
-            ("foo = { $arg }", "foo = {  $arg  }"),
-        ]
-
-        messages = [
-            (parser.parse_entry(a), parser.parse_entry(b))
-            for a, b in strings
-        ]
-
-        for a, b in messages:
-            self.assertFalse(a.equals(b, with_spans=True))
-
     def test_parser_without_spans_equals_with_spans(self):
         parser = FluentParser(with_spans=False)
 
@@ -226,3 +222,19 @@ class TestSpansEqual(unittest.TestCase):
 
         for a, b in messages:
             self.assertTrue(a.equals(b, with_spans=True))
+
+    def test_differ_with_spans(self):
+        parser = FluentParser()
+
+        strings = [
+            ("foo = Foo", "foo =   Foo"),
+            ("foo = { $arg }", "foo = {  $arg  }"),
+        ]
+
+        messages = [
+            (parser.parse_entry(a), parser.parse_entry(b))
+            for a, b in strings
+        ]
+
+        for a, b in messages:
+            self.assertFalse(a.equals(b, with_spans=True))

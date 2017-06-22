@@ -27,6 +27,18 @@ def from_json(value):
         return value
 
 
+def scalars_equal(node1, node2, with_spans=False):
+    """Compare two nodes which are not lists."""
+
+    if type(node1) != type(node2):
+        return False
+
+    if isinstance(node1, BaseNode):
+        return node1.equals(node2, with_spans)
+
+    return node1 == node2
+
+
 class BaseNode(object):
     """Base class for all Fluent AST nodes.
 
@@ -60,6 +72,58 @@ class BaseNode(object):
         )
 
         return fun(node)
+
+    def equals(self, other, with_spans=False):
+        """Compare two nodes.
+
+        Nodes are deeply compared on a field by field basis. If possible, False
+        is returned early. When comparing attributes, tags and variants in
+        SelectExpressions, the order doesn't matter. By default, spans are not
+        taken into account.
+        """
+
+        self_keys = set(vars(self).keys())
+        other_keys = set(vars(other).keys())
+
+        if not with_spans:
+            self_keys.discard('span')
+            other_keys.discard('span')
+
+        if self_keys != other_keys:
+            return False
+
+        for key in self_keys:
+            field1 = getattr(self, key)
+            field2 = getattr(other, key)
+
+            # List-typed nodes are compared item-by-item.  When comparing
+            # attributes, tags and variants, the order of items doesn't matter.
+            if isinstance(field1, list) and isinstance(field2, list):
+                if len(field1) != len(field2):
+                    return False
+
+                # These functions are used to sort lists of items for when
+                # order doesn't matter.  Annotations are also lists but they
+                # can't be keyed on any of their fields reliably.
+                field_sorting = {
+                    'attributes': lambda elem: elem.id.name,
+                    'tags': lambda elem: elem.name.name,
+                    'variants': lambda elem: elem.key.name,
+                }
+
+                if key in field_sorting:
+                    sorting = field_sorting[key]
+                    field1 = sorted(field1, key=sorting)
+                    field2 = sorted(field2, key=sorting)
+
+                for elem1, elem2 in zip(field1, field2):
+                    if not scalars_equal(elem1, elem2, with_spans):
+                        return False
+
+            elif not scalars_equal(field1, field2, with_spans):
+                return False
+
+        return True
 
     def to_json(self):
         obj = {

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+  - …
+
+## fluent 0.4.1 (June 27th, 2017)
+
   - Add BaseNode.equals for deep-equality testing.
 
     Nodes are deeply compared on a field by field basis. If possible, False is

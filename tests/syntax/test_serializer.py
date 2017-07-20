@@ -112,6 +112,16 @@ class TestSerializer(unittest.TestCase):
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
+    def test_comment_standalone(self):
+        input = """\
+            foo = Foo
+
+            // A multiline
+
+            bar = Bar
+        """
+        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
+
     def test_multiline_with_placeable(self):
         input = """\
             foo =

@@ -47,7 +47,7 @@ class FluentSerializer(object):
 
 def serialize_comment(comment):
     return "".join([
-        "{}{}".format("// ", line)
+        "\n{}{}\n\n".format("// ", line)
         for line in comment.content.splitlines(True)
     ])
 

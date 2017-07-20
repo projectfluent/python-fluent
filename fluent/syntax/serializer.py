@@ -39,7 +39,7 @@ class FluentSerializer(object):
         if isinstance(entry, ast.Section):
             return serialize_section(entry)
         if isinstance(entry, ast.Comment):
-            return serialize_comment(entry)
+            return "\n{}\n\n".format(serialize_comment(entry))
         if isinstance(entry, ast.Junk):
             return serialize_junk(entry)
         raise Exception('Unknown entry type: {}'.format(entry.type))
@@ -47,7 +47,7 @@ class FluentSerializer(object):
 
 def serialize_comment(comment):
     return "".join([
-        "\n{}{}\n\n".format("// ", line)
+        "{}{}".format("// ", line)
         for line in comment.content.splitlines(True)
     ])
 

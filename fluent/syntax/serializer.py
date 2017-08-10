@@ -125,18 +125,27 @@ def serialize_pattern(pattern):
 def serialize_element(element):
     if isinstance(element, ast.TextElement):
         return serialize_text_element(element)
-    if isinstance(element, ast.SelectExpression):
-        return "{{{}}}".format(
-            serialize_select_expression(element)
-        )
-    if isinstance(element, ast.Expression):
-        return "{{ {} }}".format(
-            serialize_expression(element)
-        )
+    if isinstance(element, ast.Placeable):
+        return serialize_placeable(element)
+    raise Exception('Unknown element type: {}'.format(element.type))
 
 
 def serialize_text_element(text):
     return text.value
+
+
+def serialize_placeable(placeable):
+    expr = placeable.expression
+
+    if isinstance(expr, ast.Placeable):
+        return "{{{}}}".format(
+            serialize_placeable(expr))
+    if isinstance(expr, ast.SelectExpression):
+        return "{{{}}}".format(
+            serialize_select_expression(expr))
+    if isinstance(expr, ast.Expression):
+        return "{{ {} }}".format(
+            serialize_expression(expr))
 
 
 def serialize_expression(expression):

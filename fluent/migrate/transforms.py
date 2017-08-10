@@ -164,10 +164,12 @@ class REPLACE_IN_TEXT(Transform):
             parts, rest = acc
             before, key, after = rest.value.partition(cur)
 
+            placeable = FTL.Placeable(replacements[key])
+
             # Return the elements found and converted so far, and the remaining
             # text which hasn't been scanned for placeables yet.
             return (
-                parts + [FTL.TextElement(before), replacements[key]],
+                parts + [FTL.TextElement(before), placeable],
                 FTL.TextElement(after)
             )
 
@@ -240,7 +242,8 @@ class PLURALS(Source):
             variants=map(createVariant, enumerate(zip(keys, variants)))
         )
 
-        return FTL.Pattern([select])
+        placeable = FTL.Placeable(select)
+        return FTL.Pattern([placeable])
 
 
 class CONCAT(Transform):
@@ -256,7 +259,7 @@ class CONCAT(Transform):
                 acc.extend(cur.elements)
                 return acc
             elif (isinstance(cur, FTL.TextElement) or
-                  isinstance(cur, FTL.Expression)):
+                  isinstance(cur, FTL.Placeable)):
                 acc.append(cur)
                 return acc
 

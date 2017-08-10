@@ -3,17 +3,20 @@ from .stream import ParserStream
 from .errors import ParseError
 
 
+INLINE_WS = (' ', '\t')
+
+
 class FTLParserStream(ParserStream):
-    def peek_line_ws(self):
+    def peek_inline_ws(self):
         ch = self.current_peek()
         while ch:
-            if ch != ' ' and ch != '\t':
+            if ch not in INLINE_WS:
                 break
             ch = self.peek()
 
-    def skip_ws_lines(self):
+    def skip_blank_lines(self):
         while True:
-            self.peek_line_ws()
+            self.peek_inline_ws()
 
             if self.current_peek_is('\n'):
                 self.skip_to_peek()
@@ -22,9 +25,9 @@ class FTLParserStream(ParserStream):
                 self.reset_peek()
                 break
 
-    def skip_line_ws(self):
+    def skip_inline_ws(self):
         while self.ch:
-            if self.ch != ' ' and self.ch != '\t':
+            if self.ch not in INLINE_WS:
                 break
             self.next()
 
@@ -67,19 +70,6 @@ class FTLParserStream(ParserStream):
 
         return (cc >= 48 and cc <= 57) or cc == 45
 
-    def is_peek_next_line_indented(self):
-        if not self.current_peek_is('\n'):
-            return False
-
-        self.peek()
-
-        if self.current_peek_is(' '):
-            self.reset_peek()
-            return True
-
-        self.reset_peek()
-        return False
-
     def is_peek_next_line_variant_start(self):
         if not self.current_peek_is('\n'):
             return False
@@ -88,7 +78,7 @@ class FTLParserStream(ParserStream):
 
         ptr = self.get_peek_index()
 
-        self.peek_line_ws()
+        self.peek_inline_ws()
 
         if (self.get_peek_index() - ptr == 0):
             self.reset_peek()
@@ -112,7 +102,7 @@ class FTLParserStream(ParserStream):
 
         ptr = self.get_peek_index()
 
-        self.peek_line_ws()
+        self.peek_inline_ws()
 
         if (self.get_peek_index() - ptr == 0):
             self.reset_peek()
@@ -133,7 +123,7 @@ class FTLParserStream(ParserStream):
 
         ptr = self.get_peek_index()
 
-        self.peek_line_ws()
+        self.peek_inline_ws()
 
         if (self.get_peek_index() - ptr == 0):
             self.reset_peek()
@@ -159,7 +149,7 @@ class FTLParserStream(ParserStream):
 
         ptr = self.get_peek_index()
 
-        self.peek_line_ws()
+        self.peek_inline_ws()
 
         if (self.get_peek_index() - ptr == 0):
             self.reset_peek()
@@ -173,7 +163,7 @@ class FTLParserStream(ParserStream):
         return False
 
     def skip_to_next_entry_start(self):
-        while self.next():
+        while self.ch:
             if self.current_is('\n') and not self.peek_char_is('\n'):
                 self.next()
 
@@ -181,6 +171,7 @@ class FTLParserStream(ParserStream):
                    (self.current_is('/') and self.peek_char_is('/')) or \
                    (self.current_is('[') and self.peek_char_is('[')):
                     break
+            self.next()
 
     def take_id_start(self):
         if self.is_id_start():

@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import re
 from .ftlstream import FTLParserStream
 from . import ast
 from .errors import ParseError
@@ -173,7 +174,7 @@ class FluentParser(object):
                 raise ParseError('E0012')
             tags = self.get_tags(ps)
 
-        if pattern is None and attrs is None and tags is None:
+        if pattern is None and attrs is None:
             raise ParseError('E0005', id.name)
 
         return ast.Message(id, pattern, attrs, tags, comment)
@@ -479,7 +480,13 @@ class FluentParser(object):
 
             ps.expect_char(')')
 
-            return ast.CallExpression(literal.id, args)
+            if not re.match('^[A-Z_-]+$', literal.id.name):
+                raise ParseError('E0008')
+
+            return ast.CallExpression(
+                ast.Function(literal.id.name),
+                args
+            )
 
         return literal
 

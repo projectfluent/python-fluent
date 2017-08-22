@@ -18,7 +18,7 @@ def get_error_message(code, args):
     if code == 'E0004':
         return 'Expected a character from range: "{}"'.format(args[0])
     if code == 'E0005':
-        msg = 'Expected entry "{}" to have a value, attributes or tags'
+        msg = 'Expected entry "{}" to have a value or attributes'
         return msg.format(args[0])
     if code == 'E0006':
         return 'Expected field: "{}"'.format(args[0])

@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from .stream import ParserStream
 from .errors import ParseError
 
+
 class FTLParserStream(ParserStream):
     def peek_line_ws(self):
         ch = self.current_peek()
@@ -187,7 +188,7 @@ class FTLParserStream(ParserStream):
             self.next()
             return ret
 
-        raise ParseError('E0004', 'a-zA-Z')
+        raise ParseError('E0004', 'a-zA-Z_')
 
     def take_id_char(self):
         def closure(ch):
@@ -212,5 +213,5 @@ class FTLParserStream(ParserStream):
     def take_digit(self):
         def closure(ch):
             cc = ord(ch)
-            return (cc >= 48 and cc <= 57) 
+            return (cc >= 48 and cc <= 57)
         return self.take_char(closure)

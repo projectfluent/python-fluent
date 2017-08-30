@@ -187,6 +187,11 @@ class TextElement(SyntaxNode):
         super(TextElement, self).__init__(**kwargs)
         self.value = value
 
+class Placeable(SyntaxNode):
+    def __init__(self, expression, **kwargs):
+        super(Placeable, self).__init__(**kwargs)
+        self.expression = expression
+
 class Expression(SyntaxNode):
     def __init__(self, **kwargs):
         super(Expression, self).__init__(**kwargs)

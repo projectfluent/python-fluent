@@ -38,7 +38,7 @@ class FluentParser(object):
         comment = None
 
         ps = FTLParserStream(source)
-        ps.skip_ws_lines()
+        ps.skip_blank_lines()
 
         entries = []
 
@@ -50,7 +50,7 @@ class FluentParser(object):
             else:
                 entries.append(entry)
 
-            ps.skip_ws_lines()
+            ps.skip_blank_lines()
 
         res = ast.Resource(entries, comment)
 
@@ -61,7 +61,7 @@ class FluentParser(object):
 
     def parse_entry(self, source):
         ps = FTLParserStream(source)
-        ps.skip_ws_lines()
+        ps.skip_blank_lines()
         return self.get_entry_or_junk(ps)
 
     def get_entry_or_junk(self, ps):
@@ -135,16 +135,16 @@ class FluentParser(object):
         ps.expect_char('[')
         ps.expect_char('[')
 
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
 
         symb = self.get_symbol(ps)
 
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
 
         ps.expect_char(']')
         ps.expect_char(']')
 
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
 
         ps.expect_char('\n')
 
@@ -154,7 +154,7 @@ class FluentParser(object):
     def get_message(self, ps, comment):
         id = self.get_identifier(ps)
 
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
 
         pattern = None
         attrs = None
@@ -162,7 +162,7 @@ class FluentParser(object):
 
         if ps.current_is('='):
             ps.next()
-            ps.skip_line_ws()
+            ps.skip_inline_ws()
 
             pattern = self.get_pattern(ps)
 
@@ -185,9 +185,9 @@ class FluentParser(object):
 
         key = self.get_identifier(ps)
 
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
         ps.expect_char('=')
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
 
         value = self.get_pattern(ps)
 
@@ -201,7 +201,7 @@ class FluentParser(object):
 
         while True:
             ps.expect_char('\n')
-            ps.skip_line_ws()
+            ps.skip_inline_ws()
 
             attr = self.get_attribute(ps)
             attrs.append(attr)
@@ -221,7 +221,7 @@ class FluentParser(object):
 
         while True:
             ps.expect_char('\n')
-            ps.skip_line_ws()
+            ps.skip_inline_ws()
 
             tag = self.get_tag(ps)
             tags.append(tag)
@@ -270,7 +270,7 @@ class FluentParser(object):
 
         ps.expect_char(']')
 
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
 
         value = self.get_pattern(ps)
 
@@ -285,7 +285,7 @@ class FluentParser(object):
 
         while True:
             ps.expect_char('\n')
-            ps.skip_line_ws()
+            ps.skip_inline_ws()
 
             variant = self.get_variant(ps, has_default)
 
@@ -349,86 +349,91 @@ class FluentParser(object):
 
     @with_span
     def get_pattern(self, ps):
-        buffer = ''
         elements = []
-        first_line = True
-        span_start = None
+        ps.skip_inline_ws()
 
-        if (self.with_spans):
-            span_start = ps.get_index()
+        # Special-case: trim leading whitespace and newlines.
+        if ps.is_peek_next_line_pattern():
+            ps.skip_blank_lines()
+            ps.skip_inline_ws()
 
         while ps.current():
             ch = ps.current()
-            if ch == '\n':
-                if first_line and len(buffer) != 0:
-                    break
 
-                if not ps.is_peek_next_line_pattern():
-                    break
+            # The end condition for get_pattern's while loop is a newline
+            # which is not followed by a valid pattern continuation.
+            if ch == '\n' and not ps.is_peek_next_line_pattern():
+                break
 
-                ps.next()
-                ps.skip_line_ws()
-
-                if not first_line:
-                    buffer += ch
-
-                first_line = False
-                continue
-            elif ch == '\\':
-                ch2 = ps.peek()
-
-                if ch2 == '{' or ch2 == '"':
-                    buffer += ch2
-                else:
-                    buffer += ch + ch2
-                ps.next()
-            elif ch == '{':
-                ps.next()
-
-                ps.skip_line_ws()
-
-                if len(buffer) != 0:
-                    text = ast.TextElement(buffer)
-                    if self.with_spans:
-                        text.add_span(span_start, ps.get_index())
-                    elements.append(text)
-
-                buffer = ''
-
-                elements.append(self.get_expression(ps))
-
-                ps.expect_char('}')
-
-                if (self.with_spans):
-                    span_start = ps.get_index()
-
-                continue
+            if ch == '{':
+                element = self.get_placeable(ps)
             else:
-                buffer += ps.ch
-            ps.next()
+                element = self.get_text_element(ps)
 
-        if len(buffer) != 0:
-            text = ast.TextElement(buffer)
-            if self.with_spans:
-                text.add_span(span_start, ps.get_index())
-            elements.append(text)
+            elements.append(element)
 
         return ast.Pattern(elements)
 
     @with_span
+    def get_text_element(self, ps):
+        buf = ''
+
+        while ps.current():
+            ch = ps.current()
+
+            if ch == '{':
+                return ast.TextElement(buf)
+
+            if ch == '\n':
+                if not ps.is_peek_next_line_pattern():
+                    return ast.TextElement(buf)
+
+                ps.next()
+                ps.skip_inline_ws()
+
+                # Add the new line to the buffer
+                buf += ch
+                continue
+
+            if ch == '\\':
+                ch2 = ps.next()
+
+                if ch2 == '{' or ch2 == '"':
+                    buf += ch2
+                else:
+                    buf += ch + ch2
+
+            else:
+                buf += ch
+
+            ps.next()
+
+        return ast.TextElement(buf)
+
+    @with_span
+    def get_placeable(self, ps):
+        ps.expect_char('{')
+        expression = self.get_expression(ps)
+        ps.expect_char('}')
+        return ast.Placeable(expression)
+
+    @with_span
     def get_expression(self, ps):
+
         if ps.is_peek_next_line_variant_start():
             variants = self.get_variants(ps)
 
             ps.expect_char('\n')
             ps.expect_char(' ')
-            ps.skip_line_ws()
+            ps.skip_inline_ws()
 
             return ast.SelectExpression(None, variants)
 
+        ps.skip_inline_ws()
+
         selector = self.get_selector_expression(ps)
 
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
 
         if ps.current_is('-'):
             ps.peek()
@@ -438,7 +443,7 @@ class FluentParser(object):
                 ps.next()
                 ps.next()
 
-                ps.skip_line_ws()
+                ps.skip_inline_ws()
 
                 variants = self.get_variants(ps)
 
@@ -447,7 +452,7 @@ class FluentParser(object):
 
                 ps.expect_char('\n')
                 ps.expect_char(' ')
-                ps.skip_line_ws()
+                ps.skip_inline_ws()
 
                 return ast.SelectExpression(selector, variants)
 
@@ -494,7 +499,7 @@ class FluentParser(object):
     def get_call_arg(self, ps):
         exp = self.get_selector_expression(ps)
 
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
 
         if not ps.current_is(':'):
             return exp
@@ -503,7 +508,7 @@ class FluentParser(object):
             raise ParseError('E0009')
 
         ps.next()
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
 
         val = self.get_arg_val(ps)
 
@@ -512,7 +517,7 @@ class FluentParser(object):
     def get_call_args(self, ps):
         args = []
 
-        ps.skip_line_ws()
+        ps.skip_inline_ws()
 
         while True:
             if ps.current_is(')'):
@@ -521,11 +526,11 @@ class FluentParser(object):
             arg = self.get_call_arg(ps)
             args.append(arg)
 
-            ps.skip_line_ws()
+            ps.skip_inline_ws()
 
             if ps.current_is(','):
                 ps.next()
-                ps.skip_line_ws()
+                ps.skip_inline_ws()
                 continue
             else:
                 break

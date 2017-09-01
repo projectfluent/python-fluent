@@ -1,9 +1,11 @@
+sudo: false
 language: python
 python:
   - "2.7"
   - "3.5"
   - "nightly"
-script: python -m unittest discover
+install: pip install tox-travis
+script: tox
 notifications:
   irc:
     channels:

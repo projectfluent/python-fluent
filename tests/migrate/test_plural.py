@@ -19,7 +19,7 @@ class MockContext(unittest.TestCase):
     plural_categories = ('one', 'other')
 
     def get_source(self, path, key):
-        return self.strings.get(key, None).get_val()
+        return self.strings.get(key, None).val
 
 
 @unittest.skipUnless(PropertiesParser, 'compare-locales required')

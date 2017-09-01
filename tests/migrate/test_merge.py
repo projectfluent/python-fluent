@@ -18,7 +18,7 @@ from fluent.migrate.transforms import COPY
 
 class MockContext(unittest.TestCase):
     def get_source(self, path, key):
-        return self.ab_cd_legacy.get(key, None).get_val()
+        return self.ab_cd_legacy.get(key, None).val
 
 
 @unittest.skipUnless(PropertiesParser and DTDParser,

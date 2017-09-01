@@ -16,7 +16,7 @@ from fluent.migrate.transforms import evaluate, REPLACE
 
 class MockContext(unittest.TestCase):
     def get_source(self, path, key):
-        return self.strings.get(key, None).get_val()
+        return self.strings.get(key, None).val
 
 
 @unittest.skipUnless(PropertiesParser, 'compare-locales required')

@@ -299,13 +299,12 @@ class TestSerializer(unittest.TestCase):
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    @unittest.skip("Parsing error")
     def test_select_expression_nested(self):
         input = """\
             foo = { sel_a ->
                    *[a] { sel_b ->
-                       *[b] Foo
-                    }
+                           *[b] Foo
+                        }
                 }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))

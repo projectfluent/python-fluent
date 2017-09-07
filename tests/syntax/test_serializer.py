@@ -214,7 +214,9 @@ class TestSerializer(unittest.TestCase):
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    @unittest.skip("Parsing error")
+    # XXX The variant contains a new-line so the serializer defaults to
+    # multiline formatting for all of its contents.
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=1397760
     def test_variant_multiline_first_inline(self):
         input = """\
             foo = {
@@ -222,15 +224,21 @@ class TestSerializer(unittest.TestCase):
                         BBB
                 }
         """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
+        output = """\
+            foo = {
+                   *[a]
+                        AAA
+                        BBB
+                }
+        """
+        self.assertEqual(pretty_ftl(input), dedent_ftl(output))
 
-    @unittest.skip("Parsing error")
     def test_variant_multiline(self):
         input = """\
             foo = {
                    *[a]
-                       AAA
-                       BBB
+                        AAA
+                        BBB
                 }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))

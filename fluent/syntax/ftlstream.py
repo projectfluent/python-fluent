@@ -70,6 +70,20 @@ class FTLParserStream(ParserStream):
 
         return (cc >= 48 and cc <= 57) or cc == 45
 
+    def is_peek_next_line_comment(self):
+        if not self.current_peek_is('\n'):
+            return False
+
+        self.peek()
+        if self.current_peek_is('/'):
+            self.peek()
+            if self.current_peek_is('/'):
+                self.reset_peek()
+                return True
+
+        self.reset_peek()
+        return False
+
     def is_peek_next_line_variant_start(self):
         if not self.current_peek_is('\n'):
             return False

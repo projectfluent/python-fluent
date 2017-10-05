@@ -90,6 +90,10 @@ class FluentParser(object):
         if ps.current_is('/'):
             comment = self.get_comment(ps)
 
+            # The Comment content doesn't include the trailing newline. Consume
+            # this newline to be ready for the next entry. None stands for EOF.
+            ps.expect_char('\n' if ps.current() else None)
+
         if ps.current_is('['):
             return self.get_section(ps, comment)
 
@@ -118,11 +122,10 @@ class FluentParser(object):
                 content += ch
                 ch = ps.take_char(until_eol)
 
-            ps.next()
-
-            if ps.current_is('/'):
+            if ps.is_peek_next_line_comment():
                 content += '\n'
                 ps.next()
+                ps.expect_char('/')
                 ps.expect_char('/')
                 ps.take_char_if(' ')
             else:

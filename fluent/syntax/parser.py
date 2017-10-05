@@ -50,6 +50,7 @@ class FluentParser(object):
             else:
                 entries.append(entry)
 
+            ps.skip_inline_ws()
             ps.skip_blank_lines()
 
         res = ast.Resource(entries, comment)
@@ -146,10 +147,6 @@ class FluentParser(object):
 
         ps.expect_char(']')
         ps.expect_char(']')
-
-        ps.skip_inline_ws()
-
-        ps.expect_char('\n')
 
         return ast.Section(symb, comment)
 

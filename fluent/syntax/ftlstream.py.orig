@@ -25,18 +25,6 @@ class FTLParserStream(ParserStream):
                 self.reset_peek()
                 break
 
-    def peek_blank_lines(self):
-        while True:
-            line_start = self.get_peek_index()
-
-            self.peek_inline_ws()
-
-            if self.current_peek_is('\n'):
-                self.peek()
-            else:
-                self.reset_peek(line_start)
-                break
-
     def skip_inline_ws(self):
         while self.ch:
             if self.ch not in INLINE_WS:
@@ -53,12 +41,6 @@ class FTLParserStream(ParserStream):
             raise ParseError('E0003', '\u2424')
 
         raise ParseError('E0003', ch)
-
-    def expect_indent(self):
-        self.expect_char('\n')
-        self.skip_blank_lines()
-        self.expect_char(' ')
-        self.skip_inline_ws()
 
     def take_char_if(self, ch):
         if self.ch == ch:
@@ -81,7 +63,7 @@ class FTLParserStream(ParserStream):
 
         return (cc >= 97 and cc <= 122) or \
                (cc >= 65 and cc <= 90) or \
-            cc == 95
+                cc == 95
 
     def is_number_start(self):
         cc = ord(self.ch)
@@ -108,8 +90,6 @@ class FTLParserStream(ParserStream):
 
         self.peek()
 
-        self.peek_blank_lines()
-
         ptr = self.get_peek_index()
 
         self.peek_inline_ws()
@@ -134,8 +114,6 @@ class FTLParserStream(ParserStream):
 
         self.peek()
 
-        self.peek_blank_lines()
-
         ptr = self.get_peek_index()
 
         self.peek_inline_ws()
@@ -151,13 +129,11 @@ class FTLParserStream(ParserStream):
         self.reset_peek()
         return False
 
-    def is_peek_next_non_blank_line_pattern(self):
+    def is_peek_next_line_pattern(self):
         if not self.current_peek_is('\n'):
             return False
 
         self.peek()
-
-        self.peek_blank_lines()
 
         ptr = self.get_peek_index()
 
@@ -184,8 +160,6 @@ class FTLParserStream(ParserStream):
             return False
 
         self.peek()
-
-        self.peek_blank_lines()
 
         ptr = self.get_peek_index()
 
@@ -238,7 +212,7 @@ class FTLParserStream(ParserStream):
             return (cc >= 97 and cc <= 122) or \
                    (cc >= 65 and cc <= 90) or \
                    (cc >= 48 and cc <= 57) or \
-                cc == 95 or cc == 45 or cc == 32
+                    cc == 95 or cc == 45 or cc == 32
         return self.take_char(closure)
 
     def take_digit(self):

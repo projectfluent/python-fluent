@@ -4,6 +4,12 @@
 
   - …
 
+## fluent 0.4.3 (October 9, 2017)
+
+  - Bug 1397234 - Allow blank lines before attributes, tags and multiline patterns
+  - Bug 1406342 - Trim trailing newline in Comment and Section spans
+
+
 ## fluent 0.4.2 (September 11, 2017)
 
   - Add an intermediate Placeable node for Expressions within Patterns.

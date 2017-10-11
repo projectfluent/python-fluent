@@ -20,5 +20,6 @@ setup(name='fluent',
       packages=['fluent', 'fluent.syntax', 'fluent.migrate'],
       package_data={
           'fluent.migrate': ['cldr_data/*']
-      }
-      )
+      },
+      tests_require=['six']
+)

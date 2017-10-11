@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+from six import with_metaclass
+
 import os
 import re
 import sys
@@ -99,7 +101,5 @@ class TestBehaviorMeta(type):
         return type.__new__(mcs, name, bases, attrs)
 
 
-class TestBehavior(unittest.TestCase):
+class TestBehavior(with_metaclass(TestBehaviorMeta, unittest.TestCase)):
     maxDiff = None
-
-    __metaclass__ = TestBehaviorMeta

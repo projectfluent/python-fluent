@@ -18,7 +18,7 @@ except ImportError:
 from .cldr import get_plural_categories
 from .transforms import Source
 from .merge import merge_resource
-from .util import get_message
+from .errors import NotSupportedError, UnreadableReferenceError
 
 
 class MergeContext(object):
@@ -79,6 +79,10 @@ class MergeContext(object):
         f = codecs.open(path, 'r', 'utf8')
         try:
             contents = f.read()
+        except UnicodeDecodeError as err:
+            logger = logging.getLogger('migrate')
+            logger.warn('Unable to read file {}: {}'.format(path, err))
+            raise err
         finally:
             f.close()
 
@@ -94,7 +98,7 @@ class MergeContext(object):
             logger = logging.getLogger('migrate')
             for annot in annots:
                 msg = annot.message
-                logger.warn(u'Syntax error in {}: {}'.format(path, msg))
+                logger.warn('Syntax error in {}: {}'.format(path, msg))
 
         return ast
 
@@ -111,43 +115,40 @@ class MergeContext(object):
         try:
             ast = self.read_ftl_resource(fullpath)
         except IOError as err:
-            logger = logging.getLogger('migrate')
-            logger.error(u'Missing reference file: {}'.format(path))
-            raise err
+            error_message = 'Missing reference file: {}'.format(fullpath)
+            logging.getLogger('migrate').error(error_message)
+            raise UnreadableReferenceError(error_message)
         except UnicodeDecodeError as err:
-            logger = logging.getLogger('migrate')
-            logger.error(u'Error reading file {}: {}'.format(path, err))
-            raise err
+            error_message = 'Error reading file {}: {}'.format(fullpath, err)
+            logging.getLogger('migrate').error(error_message)
+            raise UnreadableReferenceError(error_message)
         else:
             self.reference_resources[path] = ast
 
-    def add_localization(self, path):
-        """Add an existing localization resource.
+    def maybe_add_localization(self, path):
+        """Add a localization resource to migrate translations from.
 
-        If it's an FTL resource, add an FTL AST.  Otherwise, it's a legacy
-        resource.  Use a compare-locales parser to create a dict of (key,
-        string value) tuples.
+        Only legacy resources can be added as migration sources.  The resource
+        may be missing on disk.
+
+        Uses a compare-locales parser to create a dict of (key, string value)
+        tuples.
         """
-        fullpath = os.path.join(self.localization_dir, path)
-        if fullpath.endswith('.ftl'):
-            try:
-                ast = self.read_ftl_resource(fullpath)
-            except IOError:
-                logger = logging.getLogger('migrate')
-                logger.warn(u'Missing localization file: {}'.format(path))
-            except UnicodeDecodeError as err:
-                logger = logging.getLogger('migrate')
-                logger.warn(u'Error reading file {}: {}'.format(path, err))
-            else:
-                self.localization_resources[path] = ast
+        if path.endswith('.ftl'):
+            error_message = (
+                'Migrating translations from Fluent files is not supported '
+                '({})'.format(path))
+            logging.getLogger('migrate').error(error_message)
+            raise NotSupportedError(error_message)
+
+        try:
+            fullpath = os.path.join(self.localization_dir, path)
+            collection = self.read_legacy_resource(fullpath)
+        except IOError:
+            logger = logging.getLogger('migrate')
+            logger.warn('Missing localization file: {}'.format(path))
         else:
-            try:
-                collection = self.read_legacy_resource(fullpath)
-            except IOError:
-                logger = logging.getLogger('migrate')
-                logger.warn(u'Missing localization file: {}'.format(path))
-            else:
-                self.localization_resources[path] = collection
+            self.localization_resources[path] = collection
 
     def add_transforms(self, path, transforms):
         """Define transforms for path.
@@ -175,17 +176,30 @@ class MergeContext(object):
         path_transforms = self.transforms.setdefault(path, [])
         path_transforms += transforms
 
+        if path not in self.localization_resources:
+            fullpath = os.path.join(self.localization_dir, path)
+            try:
+                ast = self.read_ftl_resource(fullpath)
+            except IOError:
+                logger = logging.getLogger('migrate')
+                logger.info(
+                    'Localization file {} does not exist and '
+                    'it will be created'.format(path))
+            except UnicodeDecodeError:
+                logger = logging.getLogger('migrate')
+                logger.warn(
+                    'Localization file {} will be re-created and some '
+                    'translations might be lost'.format(path))
+            else:
+                self.localization_resources[path] = ast
+
     def get_source(self, path, key):
-        """Get an entity value from the localized source.
+        """Get an entity value from a localized legacy source.
 
         Used by the `Source` transform.
         """
-        if path.endswith('.ftl'):
-            resource = self.localization_resources[path]
-            return get_message(resource.body, key)
-        else:
-            resource = self.localization_resources[path]
-            return resource.get(key, None)
+        resource = self.localization_resources[path]
+        return resource.get(key, None)
 
     def merge_changeset(self, changeset=None):
         """Return a generator of FTL ASTs for the changeset.
@@ -200,10 +214,11 @@ class MergeContext(object):
         """
 
         if changeset is None:
-            # Merge all known legacy translations.
+            # Merge all known legacy translations. Used in tests.
             changeset = {
                 (path, key)
                 for path, strings in self.localization_resources.iteritems()
+                if not path.endswith('.ftl')
                 for key in strings.iterkeys()
             }
 
@@ -240,10 +255,15 @@ class MergeContext(object):
                 self, reference, current, transforms, in_changeset
             )
 
-            # If none of the transforms is in the given changeset, the merged
-            # snapshot is identical to the current translation. We compare
-            # JSON trees rather then use filtering by `in_changeset` to account
-            # for translations removed from `reference`.
+            # Skip this path if the merged snapshot is identical to the current
+            # state of the localization file. This may happen when:
+            #
+            #   - none of the transforms is in the changset, or
+            #   - all messages which would be migrated by the context's
+            #     transforms already exist in the current state.
+            #
+            # We compare JSON trees rather then use filtering by `in_changeset`
+            # to account for translations removed from `reference`.
             if snapshot.to_json() == current.to_json():
                 continue
 

@@ -16,6 +16,8 @@ from fluent.migrate.transforms import evaluate, CONCAT, COPY, REPLACE
 
 class MockContext(unittest.TestCase):
     def get_source(self, path, key):
+        # Ignore path (test.properties) and get translations from self.strings
+        # defined in setUp.
         return self.strings.get(key, None).val
 
 
@@ -36,7 +38,7 @@ class TestConcatCopy(MockContext):
         msg = FTL.Message(
             FTL.Identifier('hello'),
             value=CONCAT(
-                COPY(self.strings, 'hello'),
+                COPY('test.properties', 'hello'),
             )
         )
 
@@ -51,8 +53,8 @@ class TestConcatCopy(MockContext):
         msg = FTL.Message(
             FTL.Identifier('hello'),
             value=CONCAT(
-                COPY(self.strings, 'hello.start'),
-                COPY(self.strings, 'hello.end'),
+                COPY('test.properties', 'hello.start'),
+                COPY('test.properties', 'hello.end'),
             )
         )
 
@@ -86,8 +88,8 @@ class TestConcatCopy(MockContext):
         msg = FTL.Message(
             FTL.Identifier('hello'),
             value=CONCAT(
-                COPY(self.strings, 'whitespace.begin.start'),
-                COPY(self.strings, 'whitespace.begin.end'),
+                COPY('test.properties', 'whitespace.begin.start'),
+                COPY('test.properties', 'whitespace.begin.end'),
             )
         )
 
@@ -103,8 +105,8 @@ class TestConcatCopy(MockContext):
         msg = FTL.Message(
             FTL.Identifier('hello'),
             value=CONCAT(
-                COPY(self.strings, 'whitespace.end.start'),
-                COPY(self.strings, 'whitespace.end.end'),
+                COPY('test.properties', 'whitespace.end.start'),
+                COPY('test.properties', 'whitespace.end.end'),
             )
         )
 
@@ -129,11 +131,11 @@ class TestConcatLiteral(MockContext):
         msg = FTL.Message(
             FTL.Identifier('update-failed'),
             value=CONCAT(
-                COPY(self.strings, 'update.failed.start'),
+                COPY('test.properties', 'update.failed.start'),
                 FTL.TextElement('<a>'),
-                COPY(self.strings, 'update.failed.linkText'),
+                COPY('test.properties', 'update.failed.linkText'),
                 FTL.TextElement('</a>'),
-                COPY(self.strings, 'update.failed.end'),
+                COPY('test.properties', 'update.failed.end'),
             )
         )
 
@@ -157,9 +159,9 @@ class TestConcatInterpolate(MockContext):
         msg = FTL.Message(
             FTL.Identifier('channel-desc'),
             value=CONCAT(
-                COPY(self.strings, 'channel.description.start'),
+                COPY('test.properties', 'channel.description.start'),
                 FTL.Placeable(EXTERNAL_ARGUMENT('channelname')),
-                COPY(self.strings, 'channel.description.end'),
+                COPY('test.properties', 'channel.description.end'),
             )
         )
 
@@ -187,7 +189,7 @@ class TestConcatReplace(MockContext):
             FTL.Identifier('community'),
             value=CONCAT(
                 REPLACE(
-                    self.strings,
+                    'test.properties',
                     'community.start',
                     {
                         '&brandShortName;': MESSAGE_REFERENCE(
@@ -197,7 +199,7 @@ class TestConcatReplace(MockContext):
                 ),
                 FTL.TextElement('<a>'),
                 REPLACE(
-                    self.strings,
+                    'test.properties',
                     'community.mozillaLink',
                     {
                         '&vendorShortName;': MESSAGE_REFERENCE(
@@ -206,11 +208,11 @@ class TestConcatReplace(MockContext):
                     }
                 ),
                 FTL.TextElement('</a>'),
-                COPY(self.strings, 'community.middle'),
+                COPY('test.properties', 'community.middle'),
                 FTL.TextElement('<a>'),
-                COPY(self.strings, 'community.creditsLink'),
+                COPY('test.properties', 'community.creditsLink'),
                 FTL.TextElement('</a>'),
-                COPY(self.strings, 'community.end')
+                COPY('test.properties', 'community.end')
             )
         )
 

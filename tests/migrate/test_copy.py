@@ -15,6 +15,8 @@ from fluent.migrate.transforms import evaluate, COPY
 
 class MockContext(unittest.TestCase):
     def get_source(self, path, key):
+        # Ignore path (test.properties) and get translations from self.strings
+        # defined in setUp.
         return self.strings.get(key, None).val
 
 
@@ -33,7 +35,7 @@ class TestCopy(MockContext):
     def test_copy(self):
         msg = FTL.Message(
             FTL.Identifier('foo'),
-            value=COPY(self.strings, 'foo')
+            value=COPY('test.properties', 'foo')
         )
 
         self.assertEqual(
@@ -46,7 +48,7 @@ class TestCopy(MockContext):
     def test_copy_escape_unicode_middle(self):
         msg = FTL.Message(
             FTL.Identifier('foo-unicode-middle'),
-            value=COPY(self.strings, 'foo.unicode.middle')
+            value=COPY('test.properties', 'foo.unicode.middle')
         )
 
         self.assertEqual(
@@ -60,7 +62,7 @@ class TestCopy(MockContext):
     def test_copy_escape_unicode_begin(self):
         msg = FTL.Message(
             FTL.Identifier('foo-unicode-begin'),
-            value=COPY(self.strings, 'foo.unicode.begin')
+            value=COPY('test.properties', 'foo.unicode.begin')
         )
 
         self.assertEqual(
@@ -74,7 +76,7 @@ class TestCopy(MockContext):
     def test_copy_escape_unicode_end(self):
         msg = FTL.Message(
             FTL.Identifier('foo-unicode-end'),
-            value=COPY(self.strings, 'foo.unicode.end')
+            value=COPY('test.properties', 'foo.unicode.end')
         )
 
         self.assertEqual(
@@ -87,7 +89,7 @@ class TestCopy(MockContext):
     def test_copy_html_entity(self):
         msg = FTL.Message(
             FTL.Identifier('foo-html-entity'),
-            value=COPY(self.strings, 'foo.html.entity')
+            value=COPY('test.properties', 'foo.html.entity')
         )
 
         self.assertEqual(
@@ -99,7 +101,7 @@ class TestCopy(MockContext):
 
 
 @unittest.skipUnless(DTDParser, 'compare-locales required')
-class TestCopyTraits(MockContext):
+class TestCopyAttributes(MockContext):
     def setUp(self):
         self.strings = parse(DTDParser, '''
             <!ENTITY checkForUpdatesButton.label       "Check for updates">
@@ -112,12 +114,12 @@ class TestCopyTraits(MockContext):
             attributes=[
                 FTL.Attribute(
                     FTL.Identifier('label'),
-                    COPY(self.strings, 'checkForUpdatesButton.label')
+                    COPY('test.properties', 'checkForUpdatesButton.label')
                 ),
                 FTL.Attribute(
                     FTL.Identifier('accesskey'),
                     COPY(
-                        self.strings, 'checkForUpdatesButton.accesskey'
+                        'test.properties', 'checkForUpdatesButton.accesskey'
                     )
                 ),
             ]

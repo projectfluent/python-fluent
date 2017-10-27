@@ -20,10 +20,10 @@ def migrate(ctx):
         realpath='brand.ftl'
     )
 
-    ctx.add_localization('browser/chrome/browser/browser.dtd')
-    ctx.add_localization('browser/chrome/browser/browser.properties')
-    ctx.add_localization('browser/branding/official/brand.dtd')
-    ctx.add_localization('browser/branding/official/brand.properties')
+    ctx.maybe_add_localization('browser/chrome/browser/browser.dtd')
+    ctx.maybe_add_localization('browser/chrome/browser/browser.properties')
+    ctx.maybe_add_localization('browser/branding/official/brand.dtd')
+    ctx.maybe_add_localization('browser/branding/official/brand.properties')
 
     ctx.add_transforms('browser/menubar.ftl', [
         FTL.Message(

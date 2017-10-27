@@ -1,6 +1,9 @@
 # coding=utf8
 
 from .context import MergeContext                      # noqa: F401
+from .errors import (                                  # noqa: F401
+    MigrationError, NotSupportedError, UnreadableReferenceError
+)
 from .transforms import (                              # noqa: F401
     Source, COPY, REPLACE_IN_TEXT, REPLACE, PLURALS, CONCAT
 )

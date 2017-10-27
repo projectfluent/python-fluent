@@ -29,8 +29,8 @@ class TestMergeAboutDownloads(unittest.TestCase):
 
         self.ctx.add_reference('aboutDownloads.ftl')
         try:
-            self.ctx.add_localization('aboutDownloads.dtd')
-            self.ctx.add_localization('aboutDownloads.properties')
+            self.ctx.maybe_add_localization('aboutDownloads.dtd')
+            self.ctx.maybe_add_localization('aboutDownloads.properties')
         except RuntimeError:
             self.skipTest('compare-locales required')
 
@@ -290,7 +290,7 @@ class TestMergeAboutDialog(unittest.TestCase):
 
         try:
             self.ctx.add_reference('aboutDialog.ftl')
-            self.ctx.add_localization('aboutDialog.dtd')
+            self.ctx.maybe_add_localization('aboutDialog.dtd')
         except RuntimeError:
             self.skipTest('compare-locales required')
 

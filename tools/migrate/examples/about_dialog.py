@@ -10,7 +10,7 @@ def migrate(ctx):
     """Migrate about:dialog, part {index}"""
 
     ctx.add_reference('browser/about_dialog.ftl', realpath='about_dialog.ftl')
-    ctx.add_localization('browser/chrome/browser/aboutDialog.dtd')
+    ctx.maybe_add_localization('browser/chrome/browser/aboutDialog.dtd')
 
     ctx.add_transforms('browser/about_dialog.ftl', [
         FTL.Message(

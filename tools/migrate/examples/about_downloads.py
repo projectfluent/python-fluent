@@ -11,8 +11,10 @@ def migrate(ctx):
         'mobile/about_downloads.ftl',
         realpath='about_downloads.ftl'
     )
-    ctx.add_localization('mobile/android/chrome/aboutDownloads.dtd')
-    ctx.add_localization('mobile/android/chrome/aboutDownloads.properties')
+    ctx.maybe_add_localization(
+        'mobile/android/chrome/aboutDownloads.dtd')
+    ctx.maybe_add_localization(
+        'mobile/android/chrome/aboutDownloads.properties')
 
     ctx.add_transforms('mobile/about_downloads.ftl', [
         FTL.Message(

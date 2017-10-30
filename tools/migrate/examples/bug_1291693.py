@@ -7,25 +7,12 @@ from fluent.migrate import MESSAGE_REFERENCE, COPY, REPLACE
 def migrate(ctx):
     """Bug 1291693 - Migrate the menubar to FTL, part {index}"""
 
-    ctx.add_reference(
-        'browser/menubar.ftl',
-        realpath='menubar.ftl'
-    )
-    ctx.add_reference(
-        'browser/toolbar.ftl',
-        realpath='toolbar.ftl'
-    )
-    ctx.add_reference(
-        'browser/branding/official/brand.ftl',
-        realpath='brand.ftl'
-    )
-
     ctx.maybe_add_localization('browser/chrome/browser/browser.dtd')
     ctx.maybe_add_localization('browser/chrome/browser/browser.properties')
     ctx.maybe_add_localization('browser/branding/official/brand.dtd')
     ctx.maybe_add_localization('browser/branding/official/brand.properties')
 
-    ctx.add_transforms('browser/menubar.ftl', [
+    ctx.add_transforms('browser/menubar.ftl', 'menubar.ftl', [
         FTL.Message(
             id=FTL.Identifier('file-menu'),
             attributes=[
@@ -1795,7 +1782,7 @@ def migrate(ctx):
         ),
     ])
 
-    ctx.add_transforms('browser/toolbar.ftl', [
+    ctx.add_transforms('browser/toolbar.ftl', 'toolbar.ftl', [
         FTL.Message(
             id=FTL.Identifier('urlbar-textbox'),
             attributes=[
@@ -1889,7 +1876,7 @@ def migrate(ctx):
         ),
     ])
 
-    ctx.add_transforms('browser/branding/official/brand.ftl', [
+    ctx.add_transforms('browser/branding/official/brand.ftl', 'brand.ftl', [
         FTL.Message(
             id=FTL.Identifier('brand-shorter-name'),
             value=COPY(

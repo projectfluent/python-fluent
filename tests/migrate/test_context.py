@@ -26,7 +26,6 @@ class TestMergeContext(unittest.TestCase):
             localization_dir=here('fixtures/pl')
         )
 
-        self.ctx.add_reference('aboutDownloads.ftl')
         try:
             self.ctx.maybe_add_localization('aboutDownloads.dtd')
             self.ctx.maybe_add_localization('aboutDownloads.properties')
@@ -34,7 +33,7 @@ class TestMergeContext(unittest.TestCase):
             self.skipTest('compare-locales required')
 
     def test_hardcoded_node(self):
-        self.ctx.add_transforms('aboutDownloads.ftl', [
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('about'),
                 value=FTL.Pattern([
@@ -59,7 +58,7 @@ class TestMergeContext(unittest.TestCase):
         )
 
     def test_merge_single_message(self):
-        self.ctx.add_transforms('aboutDownloads.ftl', [
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
                 value=COPY(
@@ -85,7 +84,7 @@ class TestMergeContext(unittest.TestCase):
         )
 
     def test_merge_one_changeset(self):
-        self.ctx.add_transforms('aboutDownloads.ftl', [
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
                 value=COPY(
@@ -124,7 +123,7 @@ class TestMergeContext(unittest.TestCase):
         )
 
     def test_merge_two_changesets(self):
-        self.ctx.add_transforms('aboutDownloads.ftl', [
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
                 value=COPY(
@@ -177,7 +176,7 @@ class TestMergeContext(unittest.TestCase):
         self.assertDictEqual(merged_b, expected_b)
 
     def test_serialize_changeset(self):
-        self.ctx.add_transforms('aboutDownloads.ftl', [
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
                 value=COPY(
@@ -247,7 +246,7 @@ class TestIncompleteReference(unittest.TestCase):
 
     def test_missing_reference_file(self):
         with self.assertRaises(UnreadableReferenceError):
-            self.ctx.add_reference('missing.ftl')
+            self.ctx.add_transforms('some.ftl', 'missing.ftl', [])
 
 
 class TestIncompleteLocalization(unittest.TestCase):
@@ -261,13 +260,12 @@ class TestIncompleteLocalization(unittest.TestCase):
             localization_dir=here('fixtures/pl')
         )
 
-        self.ctx.add_reference('toolbar.ftl')
         try:
             self.ctx.maybe_add_localization('browser.dtd')
         except RuntimeError:
             self.skipTest('compare-locales required')
 
-        self.ctx.add_transforms('toolbar.ftl', [
+        self.ctx.add_transforms('toolbar.ftl', 'toolbar.ftl', [
             FTL.Message(
                 id=FTL.Identifier('urlbar-textbox'),
                 attributes=[
@@ -323,7 +321,6 @@ class TestExistingTarget(unittest.TestCase):
             localization_dir=here('fixtures/pl')
         )
 
-        self.ctx.add_reference('privacy.ftl')
         try:
             self.ctx.maybe_add_localization('privacy.dtd')
         except RuntimeError:
@@ -334,7 +331,7 @@ class TestExistingTarget(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def test_existing_target_ftl_missing_string(self):
-        self.ctx.add_transforms('privacy.ftl', [
+        self.ctx.add_transforms('privacy.ftl', 'privacy.ftl', [
             FTL.Message(
                 id=FTL.Identifier('dnt-learn-more'),
                 value=COPY(
@@ -362,7 +359,7 @@ class TestExistingTarget(unittest.TestCase):
         )
 
     def test_existing_target_ftl_existing_string(self):
-        self.ctx.add_transforms('privacy.ftl', [
+        self.ctx.add_transforms('privacy.ftl', 'privacy.ftl', [
             FTL.Message(
                 id=FTL.Identifier('dnt-description'),
                 value=COPY(
@@ -401,7 +398,7 @@ class TestExistingTarget(unittest.TestCase):
         )
 
     def test_existing_target_ftl_with_all_messages(self):
-        self.ctx.add_transforms('privacy.ftl', [
+        self.ctx.add_transforms('privacy.ftl', 'privacy.ftl', [
             FTL.Message(
                 id=FTL.Identifier('dnt-description'),
                 value=COPY(
@@ -429,5 +426,4 @@ class TestNotSupportedError(unittest.TestCase):
                 localization_dir=here('fixtures/pl')
             )
 
-            ctx.add_reference('privacy.ftl')
             ctx.maybe_add_localization('privacy.ftl')

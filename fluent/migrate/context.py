@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import os
+import sys
 import codecs
 import logging
 
@@ -109,22 +110,6 @@ class MergeContext(object):
         # Transform the parsed result which is an iterator into a dict.
         return {entity.key: entity.val for entity in parser}
 
-    def add_reference(self, path, realpath=None):
-        """Add an FTL AST to this context's reference resources."""
-        fullpath = os.path.join(self.reference_dir, realpath or path)
-        try:
-            ast = self.read_ftl_resource(fullpath)
-        except IOError as err:
-            error_message = 'Missing reference file: {}'.format(fullpath)
-            logging.getLogger('migrate').error(error_message)
-            raise UnreadableReferenceError(error_message)
-        except UnicodeDecodeError as err:
-            error_message = 'Error reading file {}: {}'.format(fullpath, err)
-            logging.getLogger('migrate').error(error_message)
-            raise UnreadableReferenceError(error_message)
-        else:
-            self.reference_resources[path] = ast
-
     def maybe_add_localization(self, path):
         """Add a localization resource to migrate translations from.
 
@@ -150,8 +135,8 @@ class MergeContext(object):
         else:
             self.localization_resources[path] = collection
 
-    def add_transforms(self, path, transforms):
-        """Define transforms for path.
+    def add_transforms(self, path, reference, transforms):
+        """Define transforms for path using reference as template.
 
         Each transform is an extended FTL node with `Transform` nodes as some
         values.  Transforms are stored in their lazy AST form until
@@ -165,6 +150,22 @@ class MergeContext(object):
             if isinstance(cur, Source):
                 acc.add((cur.path, cur.key))
             return acc
+
+        refpath = os.path.join(self.reference_dir, reference)
+        try:
+            ast = self.read_ftl_resource(refpath)
+        except IOError as err:
+            error_message = 'Missing reference file: {}'.format(refpath)
+            logging.getLogger('migrate').error(error_message)
+            raise UnreadableReferenceError(error_message)
+        except UnicodeDecodeError as err:
+            error_message = 'Error reading file {}: {}'.format(refpath, err)
+            logging.getLogger('migrate').error(error_message)
+            raise UnreadableReferenceError(error_message)
+        else:
+            # The reference file will be used by the merge function as
+            # a template for serializing the merge results.
+            self.reference_resources[path] = ast
 
         for node in transforms:
             # Scan `node` for `Source` nodes and collect the information they

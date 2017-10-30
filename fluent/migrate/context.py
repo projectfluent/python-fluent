@@ -41,7 +41,7 @@ class MergeContext(object):
         - A list of `FTL.Message` objects some of whose nodes are special
           helper or transform nodes:
 
-              helpers: LITERAL, EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
+              helpers: EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
               transforms: COPY, REPLACE_IN_TEXT, REPLACE, PLURALS, CONCAT
     """
 

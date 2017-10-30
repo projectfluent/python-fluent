@@ -10,12 +10,8 @@ except ImportError:
     DTDParser = PropertiesParser = None
 
 from fluent.migrate.util import parse, ftl_message_to_json
-from fluent.migrate.helpers import (
-    LITERAL, EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
-)
-from fluent.migrate.transforms import (
-    evaluate, CONCAT, COPY, REPLACE
-)
+from fluent.migrate.helpers import EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
+from fluent.migrate.transforms import evaluate, CONCAT, COPY, REPLACE
 
 
 class MockContext(unittest.TestCase):
@@ -134,9 +130,9 @@ class TestConcatLiteral(MockContext):
             FTL.Identifier('update-failed'),
             value=CONCAT(
                 COPY(self.strings, 'update.failed.start'),
-                LITERAL('<a>'),
+                FTL.TextElement('<a>'),
                 COPY(self.strings, 'update.failed.linkText'),
-                LITERAL('</a>'),
+                FTL.TextElement('</a>'),
                 COPY(self.strings, 'update.failed.end'),
             )
         )
@@ -154,16 +150,15 @@ class TestConcatInterpolate(MockContext):
     def setUp(self):
         self.strings = parse(DTDParser, '''
             <!ENTITY channel.description.start  "You are on the ">
-            <!ENTITY channel.description.end    " channel. ">
+            <!ENTITY channel.description.end    " channel.">
         ''')
 
-    @unittest.skip('Parser/Serializer trim whitespace')
     def test_concat_replace(self):
         msg = FTL.Message(
             FTL.Identifier('channel-desc'),
             value=CONCAT(
                 COPY(self.strings, 'channel.description.start'),
-                EXTERNAL_ARGUMENT('channelname'),
+                FTL.Placeable(EXTERNAL_ARGUMENT('channelname')),
                 COPY(self.strings, 'channel.description.end'),
             )
         )
@@ -200,7 +195,7 @@ class TestConcatReplace(MockContext):
                         )
                     }
                 ),
-                LITERAL('<a>'),
+                FTL.TextElement('<a>'),
                 REPLACE(
                     self.strings,
                     'community.mozillaLink',
@@ -210,11 +205,11 @@ class TestConcatReplace(MockContext):
                         )
                     }
                 ),
-                LITERAL('</a>'),
+                FTL.TextElement('</a>'),
                 COPY(self.strings, 'community.middle'),
-                LITERAL('<a>'),
+                FTL.TextElement('<a>'),
                 COPY(self.strings, 'community.creditsLink'),
-                LITERAL('</a>'),
+                FTL.TextElement('</a>'),
                 COPY(self.strings, 'community.end')
             )
         )

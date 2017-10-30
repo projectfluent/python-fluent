@@ -2,8 +2,7 @@
 
 import fluent.syntax.ast as FTL
 from fluent.migrate import (
-    CONCAT, LITERAL, EXTERNAL_ARGUMENT, MESSAGE_REFERENCE, COPY,
-    REPLACE
+    CONCAT, EXTERNAL_ARGUMENT, MESSAGE_REFERENCE, COPY, REPLACE
 )
 
 
@@ -21,12 +20,12 @@ def migrate(ctx):
                     'browser/chrome/browser/aboutDialog.dtd',
                     'update.failed.start'
                 ),
-                LITERAL('<a>'),
+                FTL.TextElement('<a>'),
                 COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'update.failed.linkText'
                 ),
-                LITERAL('</a>'),
+                FTL.TextElement('</a>'),
                 COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'update.failed.end'
@@ -40,7 +39,7 @@ def migrate(ctx):
                     'browser/chrome/browser/aboutDialog.dtd',
                     'channel.description.start'
                 ),
-                EXTERNAL_ARGUMENT('channelname'),
+                FTL.Placeable(EXTERNAL_ARGUMENT('channelname')),
                 COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'channel.description.end'
@@ -59,7 +58,7 @@ def migrate(ctx):
                         )
                     }
                 ),
-                LITERAL('<a>'),
+                FTL.TextElement('<a>'),
                 REPLACE(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'community.mozillaLink',
@@ -69,17 +68,17 @@ def migrate(ctx):
                         )
                     }
                 ),
-                LITERAL('</a>'),
+                FTL.TextElement('</a>'),
                 COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'community.middle2'
                 ),
-                LITERAL('<a>'),
+                FTL.TextElement('<a>'),
                 COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'community.creditsLink'
                 ),
-                LITERAL('</a>'),
+                FTL.TextElement('</a>'),
                 COPY(
                     'browser/chrome/browser/aboutDialog.dtd',
                     'community.end3'

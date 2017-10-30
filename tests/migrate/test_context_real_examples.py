@@ -8,9 +8,7 @@ import fluent.syntax.ast as FTL
 
 from fluent.migrate.util import ftl_resource_to_json, to_json
 from fluent.migrate.context import MergeContext
-from fluent.migrate.helpers import (
-    LITERAL, EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
-)
+from fluent.migrate.helpers import EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
 from fluent.migrate.transforms import (
     CONCAT, COPY, PLURALS, REPLACE_IN_TEXT, REPLACE
 )
@@ -301,9 +299,9 @@ class TestMergeAboutDialog(unittest.TestCase):
                 id=FTL.Identifier('update-failed'),
                 value=CONCAT(
                     COPY('aboutDialog.dtd', 'update.failed.start'),
-                    LITERAL('<a>'),
+                    FTL.TextElement('<a>'),
                     COPY('aboutDialog.dtd', 'update.failed.linkText'),
-                    LITERAL('</a>'),
+                    FTL.TextElement('</a>'),
                     COPY('aboutDialog.dtd', 'update.failed.end'),
                 )
             ),
@@ -329,7 +327,7 @@ class TestMergeAboutDialog(unittest.TestCase):
                             )
                         }
                     ),
-                    LITERAL('<a>'),
+                    FTL.TextElement('<a>'),
                     REPLACE(
                         'aboutDialog.dtd',
                         'community.mozillaLink',
@@ -339,11 +337,11 @@ class TestMergeAboutDialog(unittest.TestCase):
                             )
                         }
                     ),
-                    LITERAL('</a>'),
+                    FTL.TextElement('</a>'),
                     COPY('aboutDialog.dtd', 'community.middle'),
-                    LITERAL('<a>'),
+                    FTL.TextElement('<a>'),
                     COPY('aboutDialog.dtd', 'community.creditsLink'),
-                    LITERAL('</a>'),
+                    FTL.TextElement('</a>'),
                     COPY('aboutDialog.dtd', 'community.end')
                 )
             ),

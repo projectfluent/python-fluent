@@ -9,7 +9,6 @@ import fluent.syntax.ast as FTL
 
 from fluent.migrate.util import ftl, ftl_resource_to_json, to_json
 from fluent.migrate.context import MergeContext
-from fluent.migrate.helpers import LITERAL
 from fluent.migrate.transforms import COPY
 
 
@@ -37,7 +36,9 @@ class TestMergeContext(unittest.TestCase):
         self.ctx.add_transforms('aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('about'),
-                value=LITERAL('Hardcoded Value')
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
             ),
         ])
 

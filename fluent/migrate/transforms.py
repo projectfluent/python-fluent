@@ -8,36 +8,35 @@ they are evaluated by a MergeContext.
 All Transforms evaluate to Fluent Patterns. This makes them suitable for
 defining migrations of values of message, attributes and variants.  The special
 CONCAT Transform is capable of joining multiple Patterns returned by evaluating
-other Transforms into a single Pattern.  It can also concatenate Fluent
-Expressions, like MessageReferences and ExternalArguments.
+other Transforms into a single Pattern.  It can also concatenate Pattern
+elements: TextElements and Placeables.
 
 The COPY, REPLACE and PLURALS Transforms inherit from Source which is a special
 AST Node defining the location (the file path and the id) of the legacy
 translation.  During the migration, the current MergeContext scans the
 migration spec for Source nodes and extracts the information about all legacy
-translations being migrated. Thus,
+translations being migrated. For instance,
 
     COPY('file.dtd', 'hello')
 
 is equivalent to:
 
-    LITERAL(Source('file.dtd', 'hello'))
+    FTL.Pattern([
+        FTL.TextElement(Source('file.dtd', 'hello'))
+    ])
 
-where LITERAL is a helper defined in the helpers.py module for creating Fluent
-Patterns from the text passed as the argument.
-
-The LITERAL helper and the special REPLACE_IN_TEXT Transforms are useful for
-working with text rather than (path, key) source definitions.  This is the case
-when the migrated translation requires some hardcoded text, e.g. <a> and </a>
-when multiple translations become a single one with a DOM overlay.
+Sometimes it's useful to work with text rather than (path, key) source
+definitions.  This is the case when the migrated translation requires some
+hardcoded text, e.g. <a> and </a> when multiple translations become a single
+one with a DOM overlay. In such cases it's best to use the AST nodes:
 
     FTL.Message(
         id=FTL.Identifier('update-failed'),
         value=CONCAT(
             COPY('aboutDialog.dtd', 'update.failed.start'),
-            LITERAL('<a>'),
+            FTL.TextElement('<a>'),
             COPY('aboutDialog.dtd', 'update.failed.linkText'),
-            LITERAL('</a>'),
+            FTL.TextElement('</a>'),
             COPY('aboutDialog.dtd', 'update.failed.end'),
         )
     )
@@ -45,7 +44,8 @@ when multiple translations become a single one with a DOM overlay.
 The REPLACE_IN_TEXT Transform also takes text as input, making in possible to
 pass it as the foreach function of the PLURALS Transform.  In this case, each
 slice of the plural string will be run through a REPLACE_IN_TEXT operation.
-Those slices are strings, so a REPLACE(path, key, …) isn't suitable for them.
+Those slices are strings, so a REPLACE(path, key, …) wouldn't be suitable for
+them.
 
     FTL.Message(
         FTL.Identifier('delete-all'),
@@ -66,7 +66,12 @@ Those slices are strings, so a REPLACE(path, key, …) isn't suitable for them.
 from __future__ import unicode_literals
 
 import fluent.syntax.ast as FTL
-from .helpers import LITERAL
+
+
+def pattern_from_text(value):
+    return FTL.Pattern([
+        FTL.TextElement(value)
+    ])
 
 
 def evaluate(ctx, node):
@@ -120,7 +125,7 @@ class COPY(Source):
 
     def __call__(self, ctx):
         source = super(self.__class__, self).__call__(ctx)
-        return LITERAL(source)
+        return pattern_from_text(source)
 
 
 class REPLACE_IN_TEXT(Transform):
@@ -210,10 +215,12 @@ class PLURALS(Source):
     Build an `FTL.SelectExpression` with the supplied `selector` and variants
     extracted from the source.  The source needs to be a semicolon-separated
     list of variants.  Each variant will be run through the `foreach` function,
-    which should return an `FTL.Node` or a `Transform`.
+    which should return an `FTL.Node` or a `Transform`. By default, the
+    `foreach` function transforms the source text into a Pattern with a single
+    TextElement.
     """
 
-    def __init__(self, path, key, selector, foreach=LITERAL):
+    def __init__(self, path, key, selector, foreach=pattern_from_text):
         super(self.__class__, self).__init__(path, key)
         self.selector = selector
         self.foreach = foreach
@@ -264,7 +271,7 @@ class CONCAT(Transform):
                 return acc
 
             raise RuntimeError(
-                'CONCAT accepts FTL Patterns and Expressions.'
+                'CONCAT accepts FTL Patterns, TextElements and Placeables.'
             )
 
         # Merge adjecent `FTL.TextElement` nodes.

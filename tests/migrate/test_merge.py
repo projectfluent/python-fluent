@@ -12,7 +12,6 @@ except ImportError:
 
 from fluent.migrate.util import parse, ftl, ftl_resource_to_json
 from fluent.migrate.merge import merge_resource
-from fluent.migrate.helpers import LITERAL
 from fluent.migrate.transforms import COPY
 
 
@@ -64,7 +63,9 @@ class TestMergeMessages(MockContext):
             ),
             FTL.Message(
                 FTL.Identifier('about'),
-                value=LITERAL('Hardcoded Value')
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
             ),
             FTL.Message(
                 FTL.Identifier('open-menuitem'),

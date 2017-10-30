@@ -10,7 +10,7 @@ except ImportError:
     PropertiesParser = None
 
 from fluent.migrate.util import parse, ftl_message_to_json
-from fluent.migrate.helpers import LITERAL, EXTERNAL_ARGUMENT
+from fluent.migrate.helpers import EXTERNAL_ARGUMENT
 from fluent.migrate.transforms import evaluate, PLURALS, REPLACE_IN_TEXT
 
 
@@ -88,8 +88,7 @@ class TestPluralLiteral(MockContext):
             value=PLURALS(
                 self.strings,
                 'deleteAll',
-                EXTERNAL_ARGUMENT('num'),
-                LITERAL
+                EXTERNAL_ARGUMENT('num')
             )
         )
 

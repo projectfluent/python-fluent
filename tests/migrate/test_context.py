@@ -292,25 +292,16 @@ class TestIncompleteLocalization(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def test_missing_localization_file(self):
-        expected = {
-            'toolbar.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-
-        [[ Toolbar items ]]
-            ''')
-        }
-
         self.maxDiff = None
         self.assertDictEqual(
             to_json(self.ctx.merge_changeset()),
-            expected
+            {}
         )
 
 
 class TestExistingTarget(unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         # Silence all logging.
         logging.disable(logging.CRITICAL)
@@ -410,6 +401,33 @@ class TestExistingTarget(unittest.TestCase):
 
         # All migrated messages are already in the target FTL and the result of
         # merge_changeset is an empty iterator.
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            {}
+        )
+
+    def test_existing_target_ftl_with_all_messages_reordered(self):
+        self.ctx.add_transforms('existing.ftl', 'existing.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('foo'),
+                value=COPY(
+                    'existing.dtd',
+                    'foo'
+                )
+            ),
+            FTL.Message(
+                id=FTL.Identifier('bar'),
+                value=COPY(
+                    'existing.dtd',
+                    'bar'
+                )
+            ),
+        ])
+
+        # All migrated messages are already in the target FTL but in a
+        # different order. The order of messages is explicitly ignored in the
+        # snapshot equality check. Consequently, the result of merge_changeset
+        # is an empty iterator.
         self.assertDictEqual(
             to_json(self.ctx.merge_changeset()),
             {}

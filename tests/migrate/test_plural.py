@@ -19,6 +19,8 @@ class MockContext(unittest.TestCase):
     plural_categories = ('one', 'other')
 
     def get_source(self, path, key):
+        # Ignore path (test.properties) and get translations from self.strings
+        # defined in setUp.
         return self.strings.get(key, None).val
 
 
@@ -32,7 +34,7 @@ class TestPlural(MockContext):
         self.message = FTL.Message(
             FTL.Identifier('delete-all'),
             value=PLURALS(
-                self.strings,
+                'test.properties',
                 'deleteAll',
                 EXTERNAL_ARGUMENT('num')
             )
@@ -86,7 +88,7 @@ class TestPluralLiteral(MockContext):
         self.message = FTL.Message(
             FTL.Identifier('delete-all'),
             value=PLURALS(
-                self.strings,
+                'test.properties',
                 'deleteAll',
                 EXTERNAL_ARGUMENT('num')
             )
@@ -116,7 +118,7 @@ class TestPluralReplace(MockContext):
         msg = FTL.Message(
             FTL.Identifier('delete-all'),
             value=PLURALS(
-                self.strings,
+                'test.properties',
                 'deleteAll',
                 EXTERNAL_ARGUMENT('num'),
                 lambda text: REPLACE_IN_TEXT(

@@ -66,6 +66,7 @@ them.
 from __future__ import unicode_literals
 
 import fluent.syntax.ast as FTL
+from .errors import NotSupportedError
 
 
 def pattern_from_text(value):
@@ -113,6 +114,11 @@ class Source(Transform):
     # not be replaced?
 
     def __init__(self, path, key):
+        if path.endswith('.ftl'):
+            raise NotSupportedError(
+                'Migrating translations from Fluent files is not supported '
+                '({})'.format(path))
+
         self.path = path
         self.key = key
 

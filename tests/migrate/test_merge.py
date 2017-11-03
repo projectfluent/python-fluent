@@ -17,6 +17,8 @@ from fluent.migrate.transforms import COPY
 
 class MockContext(unittest.TestCase):
     def get_source(self, path, key):
+        # Ignore path (test.properties) and get translations from
+        # self.ab_cd_legacy defined in setUp.
         return self.ab_cd_legacy.get(key, None).val
 
 
@@ -59,7 +61,7 @@ class TestMergeMessages(MockContext):
         self.transforms = [
             FTL.Message(
                 FTL.Identifier('title'),
-                value=COPY(None, 'aboutDownloads.title')
+                value=COPY('test.properties', 'aboutDownloads.title')
             ),
             FTL.Message(
                 FTL.Identifier('about'),
@@ -72,13 +74,13 @@ class TestMergeMessages(MockContext):
                 attributes=[
                     FTL.Attribute(
                         FTL.Identifier('label'),
-                        COPY(None, 'aboutDownloads.open')
+                        COPY('test.properties', 'aboutDownloads.open')
                     ),
                 ]
             ),
             FTL.Message(
                 FTL.Identifier('download-state-downloading'),
-                value=COPY(None, 'downloadState.downloading')
+                value=COPY('test.properties', 'downloadState.downloading')
             )
         ]
 
@@ -169,20 +171,20 @@ class TestMergeAllEntries(MockContext):
         self.transforms = [
             FTL.Message(
                 FTL.Identifier('title'),
-                value=COPY(None, 'aboutDownloads.title')
+                value=COPY('test.properties', 'aboutDownloads.title')
             ),
             FTL.Message(
                 FTL.Identifier('open-menuitem'),
                 attributes=[
                     FTL.Attribute(
                         FTL.Identifier('label'),
-                        COPY(None, 'aboutDownloads.open')
+                        COPY('test.properties', 'aboutDownloads.open')
                     ),
                 ]
             ),
             FTL.Message(
                 FTL.Identifier('download-state-downloading'),
-                value=COPY(None, 'downloadState.downloading')
+                value=COPY('test.properties', 'downloadState.downloading')
             )
         ]
 
@@ -282,11 +284,11 @@ class TestMergeSubset(MockContext):
         self.transforms = [
             FTL.Message(
                 FTL.Identifier('title'),
-                value=COPY(None, 'aboutDownloads.title')
+                value=COPY('test.properties', 'aboutDownloads.title')
             ),
             FTL.Message(
                 FTL.Identifier('download-state-downloading'),
-                value=COPY(None, 'downloadState.downloading')
+                value=COPY('test.properties', 'downloadState.downloading')
             )
         ]
 

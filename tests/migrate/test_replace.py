@@ -16,6 +16,8 @@ from fluent.migrate.transforms import evaluate, REPLACE
 
 class MockContext(unittest.TestCase):
     def get_source(self, path, key):
+        # Ignore path (test.properties) and get translations from self.strings
+        # defined in setUp.
         return self.strings.get(key, None).val
 
 
@@ -33,7 +35,7 @@ class TestReplace(MockContext):
         msg = FTL.Message(
             FTL.Identifier(u'hello'),
             value=REPLACE(
-                self.strings,
+                'test.properties',
                 'hello',
                 {
                     '#1': EXTERNAL_ARGUMENT('username')
@@ -52,7 +54,7 @@ class TestReplace(MockContext):
         msg = FTL.Message(
             FTL.Identifier(u'welcome'),
             value=REPLACE(
-                self.strings,
+                'test.properties',
                 'welcome',
                 {
                     '#1': EXTERNAL_ARGUMENT('username'),
@@ -72,7 +74,7 @@ class TestReplace(MockContext):
         msg = FTL.Message(
             FTL.Identifier(u'welcome'),
             value=REPLACE(
-                self.strings,
+                'test.properties',
                 'welcome',
                 {
                     '#1': EXTERNAL_ARGUMENT('username'),
@@ -93,7 +95,7 @@ class TestReplace(MockContext):
         msg = FTL.Message(
             FTL.Identifier(u'welcome'),
             value=REPLACE(
-                self.strings,
+                'test.properties',
                 'welcome',
                 {
                     '#1': EXTERNAL_ARGUMENT('username')
@@ -112,7 +114,7 @@ class TestReplace(MockContext):
         msg = FTL.Message(
             FTL.Identifier(u'first'),
             value=REPLACE(
-                self.strings,
+                'test.properties',
                 'first',
                 {
                     '#1': EXTERNAL_ARGUMENT('foo')
@@ -131,7 +133,7 @@ class TestReplace(MockContext):
         msg = FTL.Message(
             FTL.Identifier(u'last'),
             value=REPLACE(
-                self.strings,
+                'test.properties',
                 'last',
                 {
                     '#1': EXTERNAL_ARGUMENT('bar')

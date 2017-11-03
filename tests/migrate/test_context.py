@@ -7,6 +7,7 @@ import unittest
 
 import fluent.syntax.ast as FTL
 
+from fluent.migrate.errors import NotSupportedError, UnreadableReferenceError
 from fluent.migrate.util import ftl, ftl_resource_to_json, to_json
 from fluent.migrate.context import MergeContext
 from fluent.migrate.transforms import COPY
@@ -25,15 +26,14 @@ class TestMergeContext(unittest.TestCase):
             localization_dir=here('fixtures/pl')
         )
 
-        self.ctx.add_reference('aboutDownloads.ftl')
         try:
-            self.ctx.add_localization('aboutDownloads.dtd')
-            self.ctx.add_localization('aboutDownloads.properties')
+            self.ctx.maybe_add_localization('aboutDownloads.dtd')
+            self.ctx.maybe_add_localization('aboutDownloads.properties')
         except RuntimeError:
             self.skipTest('compare-locales required')
 
     def test_hardcoded_node(self):
-        self.ctx.add_transforms('aboutDownloads.ftl', [
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('about'),
                 value=FTL.Pattern([
@@ -58,7 +58,7 @@ class TestMergeContext(unittest.TestCase):
         )
 
     def test_merge_single_message(self):
-        self.ctx.add_transforms('aboutDownloads.ftl', [
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
                 value=COPY(
@@ -84,7 +84,7 @@ class TestMergeContext(unittest.TestCase):
         )
 
     def test_merge_one_changeset(self):
-        self.ctx.add_transforms('aboutDownloads.ftl', [
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
                 value=COPY(
@@ -123,7 +123,7 @@ class TestMergeContext(unittest.TestCase):
         )
 
     def test_merge_two_changesets(self):
-        self.ctx.add_transforms('aboutDownloads.ftl', [
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
                 value=COPY(
@@ -176,7 +176,7 @@ class TestMergeContext(unittest.TestCase):
         self.assertDictEqual(merged_b, expected_b)
 
     def test_serialize_changeset(self):
-        self.ctx.add_transforms('aboutDownloads.ftl', [
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
                 id=FTL.Identifier('title'),
                 value=COPY(
@@ -245,8 +245,8 @@ class TestIncompleteReference(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def test_missing_reference_file(self):
-        with self.assertRaises(IOError):
-            self.ctx.add_reference('missing.ftl')
+        with self.assertRaises(UnreadableReferenceError):
+            self.ctx.add_transforms('some.ftl', 'missing.ftl', [])
 
 
 class TestIncompleteLocalization(unittest.TestCase):
@@ -260,13 +260,12 @@ class TestIncompleteLocalization(unittest.TestCase):
             localization_dir=here('fixtures/pl')
         )
 
-        self.ctx.add_reference('toolbar.ftl')
         try:
-            self.ctx.add_localization('browser.dtd')
+            self.ctx.maybe_add_localization('browser.dtd')
         except RuntimeError:
             self.skipTest('compare-locales required')
 
-        self.ctx.add_transforms('toolbar.ftl', [
+        self.ctx.add_transforms('toolbar.ftl', 'toolbar.ftl', [
             FTL.Message(
                 id=FTL.Identifier('urlbar-textbox'),
                 attributes=[
@@ -309,3 +308,122 @@ class TestIncompleteLocalization(unittest.TestCase):
             to_json(self.ctx.merge_changeset()),
             expected
         )
+
+
+class TestExistingTarget(unittest.TestCase):
+    def setUp(self):
+        # Silence all logging.
+        logging.disable(logging.CRITICAL)
+
+        self.ctx = MergeContext(
+            lang='pl',
+            reference_dir=here('fixtures/en-US'),
+            localization_dir=here('fixtures/pl')
+        )
+
+        try:
+            self.ctx.maybe_add_localization('privacy.dtd')
+        except RuntimeError:
+            self.skipTest('compare-locales required')
+
+    def tearDown(self):
+        # Resume logging.
+        logging.disable(logging.NOTSET)
+
+    def test_existing_target_ftl_missing_string(self):
+        self.ctx.add_transforms('privacy.ftl', 'privacy.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('dnt-learn-more'),
+                value=COPY(
+                    'privacy.dtd',
+                    'doNotTrack.learnMore.label'
+                )
+            ),
+        ])
+
+        expected = {
+            'privacy.ftl': ftl_resource_to_json('''
+        // This Source Code Form is subject to the terms of the Mozilla Public
+        // License, v. 2.0. If a copy of the MPL was not distributed with this
+        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+        dnt-description = New Description in Polish
+        dnt-learn-more = Więcej informacji
+            ''')
+        }
+
+        self.maxDiff = None
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            expected
+        )
+
+    def test_existing_target_ftl_existing_string(self):
+        self.ctx.add_transforms('privacy.ftl', 'privacy.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('dnt-description'),
+                value=COPY(
+                    'privacy.dtd',
+                    'doNotTrack.description'
+                )
+            ),
+
+            # Migrate an extra string to populate the iterator returned by
+            # ctx.merge_changeset(). Otherwise it won't yield anything if the
+            # merged contents are the same as the existing file.
+            FTL.Message(
+                id=FTL.Identifier('dnt-always'),
+                value=COPY(
+                    'privacy.dtd',
+                    'doNotTrack.always.label'
+                )
+            ),
+        ])
+
+        expected = {
+            'privacy.ftl': ftl_resource_to_json('''
+        // This Source Code Form is subject to the terms of the Mozilla Public
+        // License, v. 2.0. If a copy of the MPL was not distributed with this
+        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+        dnt-description = New Description in Polish
+        dnt-always = Zawsze
+            ''')
+        }
+
+        self.maxDiff = None
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            expected
+        )
+
+    def test_existing_target_ftl_with_all_messages(self):
+        self.ctx.add_transforms('privacy.ftl', 'privacy.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('dnt-description'),
+                value=COPY(
+                    'privacy.dtd',
+                    'doNotTrack.description'
+                )
+            ),
+        ])
+
+        # All migrated messages are already in the target FTL and the result of
+        # merge_changeset is an empty iterator.
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            {}
+        )
+
+
+class TestNotSupportedError(unittest.TestCase):
+    def test_add_ftl(self):
+        pattern = ('Migrating translations from Fluent files is not supported')
+        with self.assertRaisesRegexp(NotSupportedError, pattern):
+            ctx = MergeContext(
+                lang='pl',
+                reference_dir=here('fixtures/en-US'),
+                localization_dir=here('fixtures/pl')
+            )
+
+            ctx.maybe_add_localization('privacy.ftl')

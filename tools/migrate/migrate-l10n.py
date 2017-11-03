@@ -2,14 +2,18 @@
 # coding=utf8
 
 import os
+import sys
 import json
+import logging
 import argparse
 import importlib
 
 import hglib
 from hglib.util import b
 
-from fluent.migrate import MergeContext, convert_blame_to_changesets
+from fluent.migrate import (
+    MergeContext, MigrationError, convert_blame_to_changesets
+)
 from blame import Blame
 
 
@@ -25,18 +29,20 @@ def main(lang, reference_dir, localization_dir, blame, migrations, dry_run):
         # For each migration create a new context.
         ctx = MergeContext(lang, reference_dir, localization_dir)
 
-        # Add the migration spec.
-        migration.migrate(ctx)
+        try:
+            # Add the migration spec.
+            migration.migrate(ctx)
+        except MigrationError as err:
+            sys.exit(err.message)
 
         # Keep track of how many changesets we're committing.
         index = 0
 
         for changeset in changesets:
-            # Run the migration.
+            # Run the migration for the changeset.
             snapshot = ctx.serialize_changeset(changeset['changes'])
 
-            # The current changeset didn't touch any of the translations
-            # affected by the migration.
+            # Did it change any files?
             if not snapshot:
                 continue
 
@@ -94,6 +100,9 @@ if __name__ == '__main__':
         help='do not write to disk nor commit any changes'
     )
     parser.set_defaults(dry_run=False)
+
+    logger = logging.getLogger('migrate')
+    logger.setLevel(logging.INFO)
 
     args = parser.parse_args()
 

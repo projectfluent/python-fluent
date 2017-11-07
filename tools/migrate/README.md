@@ -20,6 +20,13 @@ Then run migrations passing the `examples` directory as the reference:
 Here's what the output should look like:
 
     Annotating /home/stas/moz/l10n-central/it
+    Running migration examples.bug_1291693
+      Writing to /home/stas/moz/l10n-central/it/browser/branding/official/brand.ftl
+        Committing changeset: Bug 1291693 - Migrate the menubar to FTL, part 1
+      Writing to /home/stas/moz/l10n-central/it/browser/menubar.ftl
+      Writing to /home/stas/moz/l10n-central/it/browser/toolbar.ftl
+      Writing to /home/stas/moz/l10n-central/it/browser/branding/official/brand.ftl
+        Committing changeset: Bug 1291693 - Migrate the menubar to FTL, part 2
     Running migration examples.about_dialog
       Writing to /home/stas/moz/l10n-central/it/browser/about_dialog.ftl
         Committing changeset: Migrate about:dialog, part 1
@@ -30,13 +37,3 @@ Here's what the output should look like:
         Committing changeset: Migrate about:download in Firefox for Android, part 2
       Writing to /home/stas/moz/l10n-central/it/mobile/about_downloads.ftl
         Committing changeset: Migrate about:download in Firefox for Android, part 3
-    Running migration examples.bug_1291693
-      Writing to /home/stas/moz/l10n-central/it/browser/menubar.ftl
-      Writing to /home/stas/moz/l10n-central/it/browser/toolbar.ftl
-        Committing changeset: Bug 1291693 - Migrate the menubar to FTL, part 1
-      Writing to /home/stas/moz/l10n-central/it/browser/branding/official/brand.ftl
-        Committing changeset: Bug 1291693 - Migrate the menubar to FTL, part 2
-      Writing to /home/stas/moz/l10n-central/it/browser/menubar.ftl
-      Writing to /home/stas/moz/l10n-central/it/browser/toolbar.ftl
-      Writing to /home/stas/moz/l10n-central/it/browser/branding/official/brand.ftl
-        Committing changeset: Bug 1291693 - Migrate the menubar to FTL, part 3

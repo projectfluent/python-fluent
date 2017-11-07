@@ -2,9 +2,13 @@
 from __future__ import unicode_literals
 
 import os
-import sys
 import codecs
 import logging
+
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
 
 import fluent.syntax.ast as FTL
 from fluent.syntax.parser import FluentParser
@@ -202,6 +206,29 @@ class MergeContext(object):
         resource = self.localization_resources[path]
         return resource.get(key, None)
 
+    def messages_equal(self, res1, res2):
+        """Compare messages of two FTL resources.
+
+        Uses FTL.BaseNode.equals to compare all messages in two FTL resources.
+        If the order or number of messages differ, the result is also False.
+        """
+        def message_id(message):
+            "Return the message's identifer name for sorting purposes."
+            return message.id.name
+
+        messages1 = sorted(
+            (entry for entry in res1.body if isinstance(entry, FTL.Message)),
+            key=message_id)
+        messages2 = sorted(
+            (entry for entry in res2.body if isinstance(entry, FTL.Message)),
+            key=message_id)
+        for msg1, msg2 in zip_longest(messages1, messages2):
+            if msg1 is None or msg2 is None:
+                return False
+            if not msg1.equals(msg2):
+                return False
+        return True
+
     def merge_changeset(self, changeset=None):
         """Return a generator of FTL ASTs for the changeset.
 
@@ -256,16 +283,14 @@ class MergeContext(object):
                 self, reference, current, transforms, in_changeset
             )
 
-            # Skip this path if the merged snapshot is identical to the current
-            # state of the localization file. This may happen when:
+            # Skip this path if the messages in the merged snapshot are
+            # identical to those in the current state of the localization file.
+            # This may happen when:
             #
             #   - none of the transforms is in the changset, or
             #   - all messages which would be migrated by the context's
             #     transforms already exist in the current state.
-            #
-            # We compare JSON trees rather then use filtering by `in_changeset`
-            # to account for translations removed from `reference`.
-            if snapshot.to_json() == current.to_json():
+            if self.messages_equal(current, snapshot):
                 continue
 
             # Store the merged snapshot on the context so that the next merge

@@ -236,6 +236,13 @@ class PLURALS(Source):
         selector = evaluate(ctx, self.selector)
         variants = value.split(';')
         keys = ctx.plural_categories
+
+        # A special case for languages with one plural category. We don't need
+        # to insert a SelectExpression at all for them.
+        if len(keys) == len(variants) == 1:
+            variant, = variants
+            return evaluate(ctx, self.foreach(variant))
+
         last_index = min(len(variants), len(keys)) - 1
 
         def createVariant(zipped_enum):

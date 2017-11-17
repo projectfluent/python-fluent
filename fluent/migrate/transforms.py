@@ -93,25 +93,18 @@ class Transform(FTL.BaseNode):
 class Source(Transform):
     """Declare the source translation to be migrated with other transforms.
 
-    When evaluated `Source` returns a simple string value.  All \\uXXXX from
-    the original translations are converted beforehand to the literal
-    characters they encode.
+    When evaluated, `Source` returns a simple string value. Escaped characters
+    are unescaped by the compare-locales parser according to the file format:
 
-    HTML entities are left unchanged for now because we can't know if they
-    should be converted to the characters they represent or not.  Consider the
-    following example in which `&amp;` could be replaced with the literal `&`:
+      - in properties files: \\uXXXX,
+      - in DTD files: known named, decimal, and hexadecimal HTML entities.
 
-        Privacy &amp; History
+    Consult the following files for the list of known named HTML entities:
 
-    vs. these two examples where the HTML encoding should be preserved:
-
-        Erreur&nbsp;!
-        Use /help &lt;command&gt; for more information.
+    https://github.com/python/cpython/blob/2.7/Lib/htmlentitydefs.py
+    https://github.com/python/cpython/blob/3.6/Lib/html/entities.py
 
     """
-
-    # XXX Perhaps there's a strict subset of HTML entities which must or must
-    # not be replaced?
 
     def __init__(self, path, key):
         if path.endswith('.ftl'):

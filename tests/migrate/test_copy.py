@@ -25,11 +25,8 @@ class TestCopy(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
             foo = Foo
-            foo.unicode.middle = Foo\\u0020Bar
             foo.unicode.begin = \\u0020Foo
             foo.unicode.end = Foo\\u0020
-
-            foo.html.entity = &lt;&#x21E7;&#x2318;K&gt;
         ''')
 
     def test_copy(self):
@@ -42,19 +39,6 @@ class TestCopy(MockContext):
             evaluate(self, msg).to_json(),
             ftl_message_to_json('''
                 foo = Foo
-            ''')
-        )
-
-    def test_copy_escape_unicode_middle(self):
-        msg = FTL.Message(
-            FTL.Identifier('foo-unicode-middle'),
-            value=COPY('test.properties', 'foo.unicode.middle')
-        )
-
-        self.assertEqual(
-            evaluate(self, msg).to_json(),
-            ftl_message_to_json('''
-                foo-unicode-middle = Foo Bar
             ''')
         )
 
@@ -83,19 +67,6 @@ class TestCopy(MockContext):
             evaluate(self, msg).to_json(),
             ftl_message_to_json('''
                 foo-unicode-end = Foo
-            ''')
-        )
-
-    def test_copy_html_entity(self):
-        msg = FTL.Message(
-            FTL.Identifier('foo-html-entity'),
-            value=COPY('test.properties', 'foo.html.entity')
-        )
-
-        self.assertEqual(
-            evaluate(self, msg).to_json(),
-            ftl_message_to_json('''
-                foo-html-entity = &lt;&#x21E7;&#x2318;K&gt;
             ''')
         )
 

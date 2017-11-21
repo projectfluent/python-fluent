@@ -1,7 +1,7 @@
 Project Fluent
 ==============
 
-This is a Rust implementation of Project Fluent, a localization framework
+This is a Python implementation of Project Fluent, a localization framework
 designed to unleash the entire expressive power of natural language
 translations.
 

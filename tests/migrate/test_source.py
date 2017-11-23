@@ -103,7 +103,7 @@ class TestDTD(MockContext):
         self.strings = parse(DTDParser, '''
             <!ENTITY foo "Foo">
 
-            <!ENTITY unicodeEscape "FOO\\u0020BAR">
+            <!ENTITY unicodeEscape "Foo\\u0020Bar">
 
             <!ENTITY named "&amp;">
             <!ENTITY decimal "&#38;">
@@ -113,25 +113,29 @@ class TestDTD(MockContext):
         ''')
 
     def test_simple_text(self):
-        source = Source('test.properties', 'foo')
+        source = Source('test.dtd', 'foo')
         self.assertEqual(source(self), 'Foo')
 
+    def test_backslash_unicode_escape(self):
+        source = Source('test.dtd', 'unicodeEscape')
+        self.assertEqual(source(self), 'Foo\\u0020Bar')
+
     def test_named_entity(self):
-        source = Source('test.properties', 'named')
+        source = Source('test.dtd', 'named')
         self.assertEqual(source(self), '&')
 
     def test_decimal_entity(self):
-        source = Source('test.properties', 'decimal')
+        source = Source('test.dtd', 'decimal')
         self.assertEqual(source(self), '&')
 
     def test_shorthex_entity(self):
-        source = Source('test.properties', 'shorthexcode')
+        source = Source('test.dtd', 'shorthexcode')
         self.assertEqual(source(self), '&')
 
     def test_longhex_entity(self):
-        source = Source('test.properties', 'longhexcode')
+        source = Source('test.dtd', 'longhexcode')
         self.assertEqual(source(self), '&')
 
     def test_unknown_entity(self):
-        source = Source('test.properties', 'unknown')
+        source = Source('test.dtd', 'unknown')
         self.assertEqual(source(self), '&unknownEntity;')

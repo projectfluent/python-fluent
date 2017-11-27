@@ -7,11 +7,6 @@ from fluent.migrate import EXTERNAL_ARGUMENT, COPY, PLURALS, REPLACE_IN_TEXT
 def migrate(ctx):
     """Migrate about:download in Firefox for Android, part {index}"""
 
-    ctx.maybe_add_localization(
-        'mobile/android/chrome/aboutDownloads.dtd')
-    ctx.maybe_add_localization(
-        'mobile/android/chrome/aboutDownloads.properties')
-
     ctx.add_transforms('mobile/about_downloads.ftl', 'about_downloads.ftl', [
         FTL.Message(
             id=FTL.Identifier('title'),

@@ -9,8 +9,6 @@ from fluent.migrate import (
 def migrate(ctx):
     """Migrate about:dialog, part {index}"""
 
-    ctx.maybe_add_localization('browser/chrome/browser/aboutDialog.dtd')
-
     ctx.add_transforms('browser/about_dialog.ftl', 'about_dialog.ftl', [
         FTL.Message(
             id=FTL.Identifier('update-failed'),

@@ -4,6 +4,11 @@ from __future__ import unicode_literals
 import os
 import unittest
 
+try:
+    import compare_locales
+except ImportError:
+    compare_locales = None
+
 import fluent.syntax.ast as FTL
 
 from fluent.migrate.util import ftl_resource_to_json, to_json
@@ -19,6 +24,7 @@ def here(*parts):
     return os.path.join(dirname, *parts)
 
 
+@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestMergeAboutDownloads(unittest.TestCase):
     def setUp(self):
         self.ctx = MergeContext(
@@ -26,12 +32,6 @@ class TestMergeAboutDownloads(unittest.TestCase):
             reference_dir=here('fixtures/en-US'),
             localization_dir=here('fixtures/pl')
         )
-
-        try:
-            self.ctx.maybe_add_localization('aboutDownloads.dtd')
-            self.ctx.maybe_add_localization('aboutDownloads.properties')
-        except RuntimeError:
-            self.skipTest('compare-locales required')
 
         self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
@@ -279,6 +279,7 @@ class TestMergeAboutDownloads(unittest.TestCase):
         )
 
 
+@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestMergeAboutDialog(unittest.TestCase):
     def setUp(self):
         self.ctx = MergeContext(
@@ -286,11 +287,6 @@ class TestMergeAboutDialog(unittest.TestCase):
             reference_dir=here('fixtures/en-US'),
             localization_dir=here('fixtures/pl')
         )
-
-        try:
-            self.ctx.maybe_add_localization('aboutDialog.dtd')
-        except RuntimeError:
-            self.skipTest('compare-locales required')
 
         self.ctx.add_transforms('aboutDialog.ftl', 'aboutDialog.ftl', [
             FTL.Message(

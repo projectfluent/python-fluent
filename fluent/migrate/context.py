@@ -139,8 +139,12 @@ class MergeContext(object):
         else:
             self.localization_resources[path] = collection
 
-    def add_transforms(self, path, reference, transforms):
-        """Define transforms for path using reference as template.
+    def add_transforms(self, target, reference, transforms):
+        """Define transforms for target using reference as template.
+
+        `target` is a path of the destination FTL file relative to the
+        localization directory. `reference` is a path to the template FTL
+        file relative to the reference directory.
 
         Each transform is an extended FTL node with `Transform` nodes as some
         values.  Transforms are stored in their lazy AST form until
@@ -169,34 +173,38 @@ class MergeContext(object):
         else:
             # The reference file will be used by the merge function as
             # a template for serializing the merge results.
-            self.reference_resources[path] = ast
+            self.reference_resources[target] = ast
 
         for node in transforms:
             # Scan `node` for `Source` nodes and collect the information they
             # store into a set of dependencies.
             dependencies = fold(get_sources, node, set())
             # Set these sources as dependencies for the current transform.
-            self.dependencies[(path, node.id.name)] = dependencies
+            self.dependencies[(target, node.id.name)] = dependencies
 
-        path_transforms = self.transforms.setdefault(path, [])
+            # Read all legacy translation files defined in Source transforms.
+            for path in set(path for path, _ in dependencies):
+                self.maybe_add_localization(path)
+
+        path_transforms = self.transforms.setdefault(target, [])
         path_transforms += transforms
 
-        if path not in self.localization_resources:
-            fullpath = os.path.join(self.localization_dir, path)
+        if target not in self.localization_resources:
+            fullpath = os.path.join(self.localization_dir, target)
             try:
                 ast = self.read_ftl_resource(fullpath)
             except IOError:
                 logger = logging.getLogger('migrate')
                 logger.info(
                     'Localization file {} does not exist and '
-                    'it will be created'.format(path))
+                    'it will be created'.format(target))
             except UnicodeDecodeError:
                 logger = logging.getLogger('migrate')
                 logger.warn(
                     'Localization file {} will be re-created and some '
-                    'translations might be lost'.format(path))
+                    'translations might be lost'.format(target))
             else:
-                self.localization_resources[path] = ast
+                self.localization_resources[target] = ast
 
     def get_source(self, path, key):
         """Get an entity value from a localized legacy source.

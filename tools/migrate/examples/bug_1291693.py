@@ -7,11 +7,6 @@ from fluent.migrate import MESSAGE_REFERENCE, COPY, REPLACE
 def migrate(ctx):
     """Bug 1291693 - Migrate the menubar to FTL, part {index}"""
 
-    ctx.maybe_add_localization('browser/chrome/browser/browser.dtd')
-    ctx.maybe_add_localization('browser/chrome/browser/browser.properties')
-    ctx.maybe_add_localization('browser/branding/official/brand.dtd')
-    ctx.maybe_add_localization('browser/branding/official/brand.properties')
-
     ctx.add_transforms('browser/menubar.ftl', 'menubar.ftl', [
         FTL.Message(
             id=FTL.Identifier('file-menu'),

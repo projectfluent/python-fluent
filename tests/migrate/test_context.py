@@ -5,6 +5,11 @@ import os
 import logging
 import unittest
 
+try:
+    import compare_locales
+except ImportError:
+    compare_locales = None
+
 import fluent.syntax.ast as FTL
 
 from fluent.migrate.errors import NotSupportedError, UnreadableReferenceError
@@ -18,6 +23,7 @@ def here(*parts):
     return os.path.join(dirname, *parts)
 
 
+@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestMergeContext(unittest.TestCase):
     def setUp(self):
         self.ctx = MergeContext(
@@ -25,12 +31,6 @@ class TestMergeContext(unittest.TestCase):
             reference_dir=here('fixtures/en-US'),
             localization_dir=here('fixtures/pl')
         )
-
-        try:
-            self.ctx.maybe_add_localization('aboutDownloads.dtd')
-            self.ctx.maybe_add_localization('aboutDownloads.properties')
-        except RuntimeError:
-            self.skipTest('compare-locales required')
 
     def test_hardcoded_node(self):
         self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
@@ -249,6 +249,7 @@ class TestIncompleteReference(unittest.TestCase):
             self.ctx.add_transforms('some.ftl', 'missing.ftl', [])
 
 
+@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestIncompleteLocalization(unittest.TestCase):
     def setUp(self):
         # Silence all logging.
@@ -259,11 +260,6 @@ class TestIncompleteLocalization(unittest.TestCase):
             reference_dir=here('fixtures/en-US'),
             localization_dir=here('fixtures/pl')
         )
-
-        try:
-            self.ctx.maybe_add_localization('browser.dtd')
-        except RuntimeError:
-            self.skipTest('compare-locales required')
 
         self.ctx.add_transforms('toolbar.ftl', 'toolbar.ftl', [
             FTL.Message(
@@ -299,6 +295,7 @@ class TestIncompleteLocalization(unittest.TestCase):
         )
 
 
+@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestExistingTarget(unittest.TestCase):
     maxDiff = None
 
@@ -311,11 +308,6 @@ class TestExistingTarget(unittest.TestCase):
             reference_dir=here('fixtures/en-US'),
             localization_dir=here('fixtures/pl')
         )
-
-        try:
-            self.ctx.maybe_add_localization('privacy.dtd')
-        except RuntimeError:
-            self.skipTest('compare-locales required')
 
     def tearDown(self):
         # Resume logging.

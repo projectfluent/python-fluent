@@ -26,11 +26,7 @@ def merge_resource(ctx, reference, current, transforms, in_changeset):
 
     def merge_entry(entry):
         # All standalone comments will be merged.
-        if isinstance(entry, FTL.Comment):
-            return entry
-
-        # All section headers will be merged.
-        if isinstance(entry, FTL.Section):
+        if isinstance(entry, FTL.BaseComment):
             return entry
 
         # Ignore Junk

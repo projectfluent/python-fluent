@@ -27,7 +27,6 @@ class TestParseEntry(unittest.TestCase):
                 "end": 9,
                 "type": "Span"
             },
-            "tags": [],
             "value": {
                 "elements": [
                     {
@@ -77,7 +76,6 @@ class TestSerializeEntry(unittest.TestCase):
                 "end": 9,
                 "type": "Span"
             },
-            "tags": [],
             "value": {
                 "elements": [
                     {

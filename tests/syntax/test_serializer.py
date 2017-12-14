@@ -130,30 +130,6 @@ class TestSerializer(unittest.TestCase):
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    def test_tag(self):
-        input = """\
-            foo = Foo
-                #tag
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
-
-    def test_tag_multiple(self):
-        input = """\
-            foo = Foo
-                #tag1
-                #tag2
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
-
-    def test_messages_with_tags(self):
-        input = """\
-            foo = Foo
-                #tag1
-            bar = Bar
-                #tag2
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
-
     def test_attribute(self):
         input = """\
             foo

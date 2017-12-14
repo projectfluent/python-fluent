@@ -32,8 +32,6 @@ def get_error_message(code, args):
         return 'Expected one of the variants to be marked as default (*)'
     if code == 'E0011':
         return 'Expected at least one variant after "->"'
-    if code == 'E0012':
-        return 'Tags cannot be added to messages with attributes'
     if code == 'E0013':
         return 'Expected variant key'
     if code == 'E0014':

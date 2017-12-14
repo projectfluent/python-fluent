@@ -77,7 +77,7 @@ class BaseNode(object):
         """Compare two nodes.
 
         Nodes are deeply compared on a field by field basis. If possible, False
-        is returned early. When comparing attributes, tags and variants in
+        is returned early. When comparing attributes and variants in
         SelectExpressions, the order doesn't matter. By default, spans are not
         taken into account.
         """
@@ -98,7 +98,7 @@ class BaseNode(object):
             field2 = getattr(other, key)
 
             # List-typed nodes are compared item-by-item.  When comparing
-            # attributes, tags and variants, the order of items doesn't matter.
+            # attributes and variants, the order of items doesn't matter.
             if isinstance(field1, list) and isinstance(field2, list):
                 if len(field1) != len(field2):
                     return False
@@ -108,7 +108,6 @@ class BaseNode(object):
                 # can't be keyed on any of their fields reliably.
                 field_sorting = {
                     'attributes': lambda elem: elem.id.name,
-                    'tags': lambda elem: elem.name.name,
                     'variants': lambda elem: elem.key.name,
                 }
 
@@ -168,13 +167,12 @@ class Entry(SyntaxNode):
 
 
 class Message(Entry):
-    def __init__(self, id, value=None, attributes=None, tags=None,
+    def __init__(self, id, value=None, attributes=None,
                  comment=None, **kwargs):
         super(Message, self).__init__(**kwargs)
         self.id = id
         self.value = value
         self.attributes = attributes or []
-        self.tags = tags or []
         self.comment = comment
 
 class Pattern(SyntaxNode):
@@ -245,11 +243,6 @@ class Attribute(SyntaxNode):
         super(Attribute, self).__init__(**kwargs)
         self.id = id
         self.value = value
-
-class Tag(SyntaxNode):
-    def __init__(self, name, **kwargs):
-        super(Tag, self).__init__(**kwargs)
-        self.name = name
 
 class Variant(SyntaxNode):
     def __init__(self, key, value, default=False, **kwargs):

@@ -158,7 +158,6 @@ class FluentParser(object):
 
         pattern = None
         attrs = None
-        tags = None
 
         if ps.current_is('='):
             ps.next()
@@ -170,15 +169,10 @@ class FluentParser(object):
         if ps.is_peek_next_line_attribute_start():
             attrs = self.get_attributes(ps)
 
-        if ps.is_peek_next_line_tag_start():
-            if attrs is not None:
-                raise ParseError('E0012')
-            tags = self.get_tags(ps)
-
         if pattern is None and attrs is None:
             raise ParseError('E0005', id.name)
 
-        return ast.Message(id, pattern, attrs, tags, comment)
+        return ast.Message(id, pattern, attrs, comment)
 
     @with_span
     def get_attribute(self, ps):
@@ -209,25 +203,6 @@ class FluentParser(object):
             if not ps.is_peek_next_line_attribute_start():
                 break
         return attrs
-
-    @with_span
-    def get_tag(self, ps):
-        ps.expect_char('#')
-        symb = self.get_symbol(ps)
-        return ast.Tag(symb)
-
-    def get_tags(self, ps):
-        tags = []
-
-        while True:
-            ps.expect_indent()
-
-            tag = self.get_tag(ps)
-            tags.append(tag)
-
-            if not ps.is_peek_next_line_tag_start():
-                break
-        return tags
 
     @with_span
     def get_identifier(self, ps):

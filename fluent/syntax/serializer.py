@@ -81,10 +81,6 @@ def serialize_message(message):
         parts.append(" =")
         parts.append(serialize_value(message.value))
 
-    if message.tags:
-        for tag in message.tags:
-            parts.append(serialize_tag(tag))
-
     if message.attributes:
         for attribute in message.attributes:
             parts.append(serialize_attribute(attribute))
@@ -92,12 +88,6 @@ def serialize_message(message):
     parts.append("\n")
 
     return ''.join(parts)
-
-
-def serialize_tag(tag):
-    return "\n    #{}".format(
-        serialize_symbol(tag.name),
-    )
 
 
 def serialize_attribute(attribute):

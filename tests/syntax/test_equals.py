@@ -69,25 +69,6 @@ class TestEntryEqualToSelf(unittest.TestCase):
         self.assertTrue(message1.equals(message1))
         self.assertTrue(message1.equals(message1.traverse(identity)))
 
-    def test_same_message_with_tag(self):
-        message1 = self.parse_ftl_entry("""\
-            foo = Foo
-                #tag
-        """)
-
-        self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.traverse(identity)))
-
-    def test_same_message_with_tags(self):
-        message1 = self.parse_ftl_entry("""\
-            foo = Foo
-                #tag1
-                #tag2
-        """)
-
-        self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.traverse(identity)))
-
     def test_same_junk(self):
         message1 = self.parse_ftl_entry("""\
             foo = Foo {
@@ -114,21 +95,6 @@ class TestOrderEquals(unittest.TestCase):
             foo
                 .attr2 = Attr2
                 .attr1 = Attr1
-        """)
-
-        self.assertTrue(message1.equals(message2))
-        self.assertTrue(message2.equals(message1))
-
-    def test_tags(self):
-        message1 = self.parse_ftl_entry("""\
-            foo = Foo
-                #tag1
-                #tag2
-        """)
-        message2 = self.parse_ftl_entry("""\
-            foo = Foo
-                #tag2
-                #tag1
         """)
 
         self.assertTrue(message1.equals(message2))

@@ -169,7 +169,6 @@ class FTLParserStream(ParserStream):
 
         if (self.current_peek_is('}') or
                 self.current_peek_is('.') or
-                self.current_peek_is('#') or
                 self.current_peek_is('[') or
                 self.current_peek_is('*')):
             self.reset_peek()
@@ -177,30 +176,6 @@ class FTLParserStream(ParserStream):
 
         self.reset_peek()
         return True
-
-    def is_peek_next_line_tag_start(self):
-
-        if not self.current_peek_is('\n'):
-            return False
-
-        self.peek()
-
-        self.peek_blank_lines()
-
-        ptr = self.get_peek_index()
-
-        self.peek_inline_ws()
-
-        if (self.get_peek_index() - ptr == 0):
-            self.reset_peek()
-            return False
-
-        if self.current_peek_is('#'):
-            self.reset_peek()
-            return True
-
-        self.reset_peek()
-        return False
 
     def skip_to_next_entry_start(self):
         while self.ch:

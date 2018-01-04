@@ -17,9 +17,8 @@ from fluent.migrate import (
 from blame import Blame
 
 
-def main(lang, reference_dir, localization_dir, blame, migrations, dry_run):
+def main(lang, reference_dir, localization_dir, migrations, dry_run):
     """Run migrations and commit files with the result."""
-    changesets = convert_blame_to_changesets(blame)
     client = hglib.open(localization_dir)
 
     for migration in migrations:
@@ -37,6 +36,12 @@ def main(lang, reference_dir, localization_dir, blame, migrations, dry_run):
 
         # Keep track of how many changesets we're committing.
         index = 0
+
+        # Annotate legacy localization files used as sources by this migration
+        # to preserve attribution of translations.
+        files = ctx.localization_resources.keys()
+        blame = Blame(client).attribution(files)
+        changesets = convert_blame_to_changesets(blame)
 
         for changeset in changesets:
             # Run the migration for the changeset.
@@ -92,10 +97,6 @@ if __name__ == '__main__':
         help='directory for localization files'
     )
     parser.add_argument(
-        '--blame', type=argparse.FileType(), default=None,
-        help='path to a JSON with blame information'
-    )
-    parser.add_argument(
         '--dry-run', action='store_true',
         help='do not write to disk nor commit any changes'
     )
@@ -106,19 +107,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.blame:
-        # Load pre-computed blame from a JSON file.
-        blame = json.load(args.blame)
-    else:
-        # Compute blame right now.
-        print('Annotating {}'.format(args.localization_dir))
-        blame = Blame(args.localization_dir).main()
-
     main(
         lang=args.lang,
         reference_dir=args.reference_dir,
         localization_dir=args.localization_dir,
-        blame=blame,
         migrations=map(importlib.import_module, args.migrations),
         dry_run=args.dry_run
     )

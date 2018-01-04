@@ -1,6 +1,6 @@
 import argparse
 import json
-from os.path import join
+import os
 
 from compare_locales.parser import getParser, Junk
 import hglib
@@ -8,12 +8,12 @@ from hglib.util import b, cmdbuilder
 
 
 class Blame(object):
-    def __init__(self, repopath):
-        self.client = hglib.open(repopath)
+    def __init__(self, client):
+        self.client = client
         self.users = []
         self.blame = {}
 
-    def main(self, file_paths):
+    def attribution(self, file_paths):
         args = cmdbuilder(
             b('annotate'), template='json', date=True, user=True,
             cwd=self.client.root(), file=map(b, file_paths))
@@ -36,7 +36,7 @@ class Blame(object):
 
         self.blame[path] = {}
 
-        parser.readFile(join(self.client.root(), path))
+        parser.readFile(os.path.join(self.client.root(), path))
         entities, emap = parser.parse()
         for e in entities:
             if isinstance(e, Junk):
@@ -59,6 +59,6 @@ if __name__ == '__main__':
     parser.add_argument('repo_path')
     parser.add_argument('file_path', nargs='+')
     args = parser.parse_args()
-    blame = Blame(args.repo_path)
-    blimey = blame.main(args.file_path)
-    print(json.dumps(blimey, indent=4, separators=(',', ': ')))
+    blame = Blame(hglib.open(args.repo_path))
+    attrib = blame.attribution(args.file_path)
+    print(json.dumps(attrib, indent=4, separators=(',', ': ')))

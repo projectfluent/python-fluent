@@ -40,7 +40,7 @@ def main(lang, reference_dir, localization_dir, migrations, dry_run):
         # Annotate legacy localization files used as sources by this migration
         # to preserve attribution of translations.
         files = ctx.localization_resources.keys()
-        blame = Blame(localization_dir).main(files)
+        blame = Blame(client).attribution(files)
         changesets = convert_blame_to_changesets(blame)
 
         for changeset in changesets:

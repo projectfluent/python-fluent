@@ -44,9 +44,9 @@ class TestMergeContext(unittest.TestCase):
 
         expected = {
             'aboutDownloads.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         about = Hardcoded Value
             ''')
@@ -70,9 +70,9 @@ class TestMergeContext(unittest.TestCase):
 
         expected = {
             'aboutDownloads.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         title = Pobrane pliki
             ''')
@@ -108,9 +108,9 @@ class TestMergeContext(unittest.TestCase):
 
         expected = {
             'aboutDownloads.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         title = Pobrane pliki
         header = Twoje pobrane pliki
@@ -150,9 +150,9 @@ class TestMergeContext(unittest.TestCase):
 
         expected_a = {
             'aboutDownloads.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         title = Pobrane pliki
             ''')
@@ -160,9 +160,9 @@ class TestMergeContext(unittest.TestCase):
 
         expected_b = {
             'aboutDownloads.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         title = Pobrane pliki
         header = Twoje pobrane pliki
@@ -205,18 +205,18 @@ class TestMergeContext(unittest.TestCase):
         expected = iter([
             {
                 'aboutDownloads.ftl': ftl('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         title = Pobrane pliki
                 ''')
             },
             {
                 'aboutDownloads.ftl': ftl('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         title = Pobrane pliki
         header = Twoje pobrane pliki
@@ -326,9 +326,9 @@ class TestExistingTarget(unittest.TestCase):
 
         expected = {
             'privacy.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         dnt-description = New Description in Polish
         dnt-learn-more = Więcej informacji
@@ -365,9 +365,9 @@ class TestExistingTarget(unittest.TestCase):
 
         expected = {
             'privacy.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         dnt-description = New Description in Polish
         dnt-always = Zawsze

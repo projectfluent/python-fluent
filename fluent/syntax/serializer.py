@@ -16,33 +16,36 @@ def contain_new_line(elems):
 
 
 class FluentSerializer(object):
+    HAS_ENTRIES = 1
+
     def __init__(self, with_junk=False):
         self.with_junk = with_junk
-        self.has_entries = False
 
     def serialize(self, resource):
+        state = 0
+
         parts = []
         for entry in resource.body:
             if not isinstance(entry, ast.Junk) or self.with_junk:
-                parts.append(self.serialize_entry(entry))
-                if self.has_entries is False:
-                    self.has_entries = True
+                parts.append(self.serialize_entry(entry, state))
+                if not state & self.HAS_ENTRIES:
+                    state |= self.HAS_ENTRIES
 
         return "".join(parts)
 
-    def serialize_entry(self, entry):
+    def serialize_entry(self, entry, state=0):
         if isinstance(entry, ast.Message):
             return serialize_message(entry)
         if isinstance(entry, ast.Comment):
-            if self.has_entries:
+            if state & self.HAS_ENTRIES:
                 return "\n{}\n\n".format(serialize_comment(entry))
             return "{}\n\n".format(serialize_comment(entry))
         if isinstance(entry, ast.GroupComment):
-            if self.has_entries:
+            if state & self.HAS_ENTRIES:
                 return "\n{}\n\n".format(serialize_group_comment(entry))
             return "{}\n\n".format(serialize_group_comment(entry))
         if isinstance(entry, ast.ResourceComment):
-            if self.has_entries:
+            if state & self.HAS_ENTRIES:
                 return "\n{}\n\n".format(serialize_resource_comment(entry))
             return "{}\n\n".format(serialize_resource_comment(entry))
         if isinstance(entry, ast.Junk):

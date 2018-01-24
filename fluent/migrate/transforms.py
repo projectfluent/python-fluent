@@ -245,7 +245,7 @@ class PLURALS(Source):
             # variant.  Then evaluate it to a migrated FTL node.
             value = evaluate(ctx, self.foreach(variant))
             return FTL.Variant(
-                key=FTL.Symbol(key),
+                key=FTL.VariantName(key),
                 value=value,
                 default=index == last_index
             )

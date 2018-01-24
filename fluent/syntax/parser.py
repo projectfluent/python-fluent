@@ -105,7 +105,7 @@ class FluentParser(object):
                 return ast.GroupComment(comment.content)
             return None
 
-        if ps.is_id_start() \
+        if ps.is_message_id_start() \
            and (comment is None or isinstance(comment, ast.Comment)):
             return self.get_message(ps, comment)
 
@@ -187,7 +187,7 @@ class FluentParser(object):
 
         ps.skip_inline_ws()
 
-        self.get_symbol(ps)
+        self.get_variant_name(ps)
 
         ps.skip_inline_ws()
 
@@ -199,7 +199,7 @@ class FluentParser(object):
 
     @with_span
     def get_message(self, ps, comment):
-        id = self.get_identifier(ps)
+        id = self.get_private_identifier(ps)
 
         ps.skip_inline_ws()
 
@@ -225,7 +225,7 @@ class FluentParser(object):
     def get_attribute(self, ps):
         ps.expect_char('.')
 
-        key = self.get_identifier(ps)
+        key = self.get_public_identifier(ps)
 
         ps.skip_inline_ws()
         ps.expect_char('=')
@@ -252,10 +252,17 @@ class FluentParser(object):
         return attrs
 
     @with_span
-    def get_identifier(self, ps):
+    def get_private_identifier(self, ps):
+        return self.get_identifier(ps, True)
+
+    @with_span
+    def get_public_identifier(self, ps):
+        return self.get_identifier(ps, False)
+
+    def get_identifier(self, ps, allow_private):
         name = ''
 
-        name += ps.take_id_start()
+        name += ps.take_id_start(allow_private)
 
         ch = ps.take_id_char()
         while ch:
@@ -270,10 +277,11 @@ class FluentParser(object):
         if ch is None:
             raise ParseError('E0013')
 
-        if ps.is_number_start():
+        cc = ord(ch)
+        if ((cc >= 48 and cc <= 57) or cc == 45):  # 0-9, -
             return self.get_number(ps)
 
-        return self.get_symbol(ps)
+        return self.get_variant_name(ps)
 
     @with_span
     def get_variant(self, ps, has_default):
@@ -323,19 +331,19 @@ class FluentParser(object):
         return variants
 
     @with_span
-    def get_symbol(self, ps):
+    def get_variant_name(self, ps):
         name = ''
 
-        name += ps.take_id_start()
+        name += ps.take_id_start(False)
 
         while True:
-            ch = ps.take_symb_char()
+            ch = ps.take_variant_name_char()
             if ch:
                 name += ch
             else:
                 break
 
-        return ast.Symbol(name.rstrip())
+        return ast.VariantName(name.rstrip())
 
     def get_digits(self, ps):
         num = ''
@@ -455,22 +463,37 @@ class FluentParser(object):
 
         if ps.current_is('-'):
             ps.peek()
+
             if not ps.current_peek_is('>'):
                 ps.reset_peek()
-            else:
-                ps.next()
-                ps.next()
+                return selector
 
-                ps.skip_inline_ws()
+            if isinstance(selector, ast.MessageReference):
+                raise ParseError('E0016')
 
-                variants = self.get_variants(ps)
+            if isinstance(selector, ast.AttributeExpression) and \
+               not selector.id.name.startswith('-'):
+                raise ParseError('E0018')
 
-                if len(variants) == 0:
-                    raise ParseError('E0011')
+            if isinstance(selector, ast.VariantExpression):
+                raise ParseError('E0017')
 
-                ps.expect_indent()
+            ps.next()
+            ps.next()
 
-                return ast.SelectExpression(selector, variants)
+            ps.skip_inline_ws()
+
+            variants = self.get_variants(ps)
+
+            if len(variants) == 0:
+                raise ParseError('E0011')
+
+            ps.expect_indent()
+
+            return ast.SelectExpression(selector, variants)
+        elif isinstance(selector, ast.AttributeExpression) and \
+                selector.id.name.startswith('-'):
+            raise ParseError('E0019')
 
         return selector
 
@@ -485,7 +508,7 @@ class FluentParser(object):
 
         if (ch == '.'):
             ps.next()
-            attr = self.get_identifier(ps)
+            attr = self.get_public_identifier(ps)
             return ast.AttributeExpression(literal.id, attr)
 
         if (ch == '['):
@@ -501,7 +524,7 @@ class FluentParser(object):
 
             ps.expect_char(')')
 
-            if not re.match('^[A-Z_-]+$', literal.id.name):
+            if not re.match('^[A-Z][A-Z_?-]*$', literal.id.name):
                 raise ParseError('E0008')
 
             return ast.CallExpression(
@@ -582,14 +605,16 @@ class FluentParser(object):
         if ch is None:
             raise ParseError('E0014')
 
-        if ps.is_number_start():
+        if ch == '$':
+            ps.next()
+            name = self.get_public_identifier(ps)
+            return ast.ExternalArgument(name)
+        elif ps.is_message_id_start():
+            name = self.get_private_identifier(ps)
+            return ast.MessageReference(name)
+        elif ps.is_number_start():
             return self.get_number(ps)
         elif ch == '"':
             return self.get_string(ps)
-        elif ch == '$':
-            ps.next()
-            name = self.get_identifier(ps)
-            return ast.ExternalArgument(name)
 
-        name = self.get_identifier(ps)
-        return ast.MessageReference(name)
+        raise ParseError('E0014')

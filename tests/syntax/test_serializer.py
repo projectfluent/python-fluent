@@ -172,7 +172,7 @@ class TestSerializer(unittest.TestCase):
 
     def test_select_expression(self):
         input = """\
-            foo = { sel ->
+            foo = { $sel ->
                    *[a] A
                     [b] B
                 }
@@ -228,7 +228,7 @@ class TestSerializer(unittest.TestCase):
     def test_select_expression_in_simple_multiline(self):
         input = """\
             foo =
-                Foo { sel ->
+                Foo { $sel ->
                    *[a] A
                     [b] B
                 }
@@ -240,13 +240,13 @@ class TestSerializer(unittest.TestCase):
     def test_select_expression_in_simple_multiline_current(self):
         input = """\
             foo =
-                Foo { sel ->
+                Foo { $sel ->
                    *[a] A
                     [b] B
                 }
         """
         output = """\
-            foo = Foo { sel ->
+            foo = Foo { $sel ->
                    *[a] A
                     [b] B
                 }
@@ -257,7 +257,7 @@ class TestSerializer(unittest.TestCase):
         input = """\
             foo =
                 Foo
-                Bar { sel ->
+                Bar { $sel ->
                    *[a] A
                     [b] B
                 }
@@ -266,18 +266,10 @@ class TestSerializer(unittest.TestCase):
 
     def test_select_expression_nested(self):
         input = """\
-            foo = { sel_a ->
-                   *[a] { sel_b ->
+            foo = { $a ->
+                   *[a] { $b ->
                            *[b] Foo
                         }
-                }
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
-
-    def test_selector_message_reference(self):
-        input = """\
-            foo = { bar ->
-                   *[a] A
                 }
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
@@ -306,17 +298,9 @@ class TestSerializer(unittest.TestCase):
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    def test_selector_variant_expression(self):
-        input = """\
-            foo = { bar[baz] ->
-                   *[a] A
-                }
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
-
     def test_selector_attribute_expression(self):
         input = """\
-            foo = { bar.baz ->
+            foo = { -bar.baz ->
                    *[a] A
                 }
         """

@@ -151,10 +151,9 @@ class SyntaxNode(BaseNode):
 
 
 class Resource(SyntaxNode):
-    def __init__(self, body=None, comment=None, **kwargs):
+    def __init__(self, body=None, **kwargs):
         super(Resource, self).__init__(**kwargs)
         self.body = body or []
-        self.comment = comment
 
 
 class Entry(SyntaxNode):
@@ -266,16 +265,30 @@ class Symbol(Identifier):
     def __init__(self, name, **kwargs):
         super(Symbol, self).__init__(name, **kwargs)
 
-class Comment(Entry):
+
+class BaseComment(Entry):
     def __init__(self, content=None, **kwargs):
-        super(Comment, self).__init__(**kwargs)
+        super(BaseComment, self).__init__(**kwargs)
         self.content = content
 
-class Section(Entry):
-    def __init__(self, name, comment=None, **kwargs):
-        super(Section, self).__init__(**kwargs)
-        self.name = name
-        self.comment = comment
+
+class Comment(BaseComment):
+    def __init__(self, content=None, **kwargs):
+        zero_four_style = kwargs.pop("zero_four_style", False)
+        super(Comment, self).__init__(content, **kwargs)
+        if zero_four_style:
+            self.zero_four_style = True
+
+
+class GroupComment(BaseComment):
+    def __init__(self, content=None, **kwargs):
+        super(GroupComment, self).__init__(content, **kwargs)
+
+
+class ResourceComment(BaseComment):
+    def __init__(self, content=None, **kwargs):
+        super(ResourceComment, self).__init__(content, **kwargs)
+
 
 class Function(Identifier):
     def __init__(self, name, **kwargs):

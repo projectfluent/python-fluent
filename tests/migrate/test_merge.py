@@ -129,18 +129,17 @@ class TestMergeMessages(MockContext):
 class TestMergeAllEntries(MockContext):
     def setUp(self):
         self.en_us_ftl = parse(FluentParser, ftl('''
-            // This Source Code Form is subject to the terms of …
+            # This Source Code Form is subject to the terms of …
 
-            // A generic comment.
+            ### A resource comment.
 
             title  = Downloads
             header = Your Downloads
             empty  = No Downloads
 
-            // A section comment.
-            [[ Menu items ]]
+            ## Menu items
 
-            // A message comment.
+            # A message comment.
             open-menuitem
                 .label = Open
 
@@ -148,7 +147,7 @@ class TestMergeAllEntries(MockContext):
         '''))
 
         self.ab_cd_ftl = parse(FluentParser, ftl('''
-            // This Source Code Form is subject to the terms of …
+            # This Source Code Form is subject to the terms of …
 
             empty = Brak pobranych plików
         '''))
@@ -197,16 +196,15 @@ class TestMergeAllEntries(MockContext):
         self.assertEqual(
             resource.to_json(),
             ftl_resource_to_json('''
-                // This Source Code Form is subject to the terms of …
+                # This Source Code Form is subject to the terms of …
 
-                // A generic comment.
+                ### A resource comment.
 
                 title = Pobrane pliki
 
-                // A section comment.
-                [[ Menu items ]]
+                ## Menu items
 
-                // A message comment.
+                # A message comment.
                 open-menuitem
                     .label = Otwórz
                 download-state-downloading = Pobieranie…
@@ -223,17 +221,16 @@ class TestMergeAllEntries(MockContext):
         self.assertEqual(
             resource.to_json(),
             ftl_resource_to_json('''
-                // This Source Code Form is subject to the terms of …
+                # This Source Code Form is subject to the terms of …
 
-                // A generic comment.
+                ### A resource comment.
 
                 title = Pobrane pliki
                 empty = Brak pobranych plików
 
-                // A section comment.
-                [[ Menu items ]]
+                ## Menu items
 
-                // A message comment.
+                # A message comment.
                 open-menuitem
                     .label = Otwórz
 
@@ -248,18 +245,17 @@ class TestMergeAllEntries(MockContext):
 class TestMergeSubset(MockContext):
     def setUp(self):
         self.en_us_ftl = parse(FluentParser, ftl('''
-            // This Source Code Form is subject to the terms of …
+            # This Source Code Form is subject to the terms of …
 
-            // A generic comment.
+            ### A resource comment.
 
             title  = Downloads
             header = Your Downloads
             empty  = No Downloads
 
-            // A section comment.
-            [[ Menu items ]]
+            ## Menu items
 
-            // A message comment.
+            # A message comment.
             open-menuitem
                 .label = Open
 
@@ -302,14 +298,13 @@ class TestMergeSubset(MockContext):
         self.assertEqual(
             resource.to_json(),
             ftl_resource_to_json('''
-                // This Source Code Form is subject to the terms of …
+                # This Source Code Form is subject to the terms of …
 
-                // A generic comment.
+                ### A resource comment.
 
                 title = Pobrane pliki
 
-                // A section comment.
-                [[ Menu items ]]
+                ## Menu items
             ''')
         )
 
@@ -323,14 +318,13 @@ class TestMergeSubset(MockContext):
         self.assertEqual(
             resource.to_json(),
             ftl_resource_to_json('''
-                // This Source Code Form is subject to the terms of …
+                # This Source Code Form is subject to the terms of …
 
-                // A generic comment.
+                ### A resource comment.
 
                 title = Pobrane pliki
 
-                // A section comment.
-                [[ Menu items ]]
+                ## Menu items
 
                 download-state-downloading = Pobieranie…
             ''')
@@ -338,7 +332,7 @@ class TestMergeSubset(MockContext):
 
     def test_three_way_one_entity(self):
         ab_cd_ftl = parse(FluentParser, ftl('''
-            // This Source Code Form is subject to the terms of …
+            # This Source Code Form is subject to the terms of …
 
             empty = Brak pobranych plików
         '''))
@@ -352,21 +346,20 @@ class TestMergeSubset(MockContext):
         self.assertEqual(
             resource.to_json(),
             ftl_resource_to_json('''
-                // This Source Code Form is subject to the terms of …
+                # This Source Code Form is subject to the terms of …
 
-                // A generic comment.
+                ### A resource comment.
 
                 title = Pobrane pliki
                 empty = Brak pobranych plików
 
-                // A section comment.
-                [[ Menu items ]]
+                ## Menu items
             ''')
         )
 
     def test_three_way_two_entities(self):
         ab_cd_ftl = parse(FluentParser, ftl('''
-            // This Source Code Form is subject to the terms of …
+            # This Source Code Form is subject to the terms of …
 
             empty = Brak pobranych plików
         '''))
@@ -380,15 +373,14 @@ class TestMergeSubset(MockContext):
         self.assertEqual(
             resource.to_json(),
             ftl_resource_to_json('''
-                // This Source Code Form is subject to the terms of …
+                # This Source Code Form is subject to the terms of …
 
-                // A generic comment.
+                ### A resource comment.
 
                 title = Pobrane pliki
                 empty = Brak pobranych plików
 
-                // A section comment.
-                [[ Menu items ]]
+                ## Menu items
 
                 download-state-downloading = Pobieranie…
             ''')
@@ -396,14 +388,13 @@ class TestMergeSubset(MockContext):
 
     def test_three_way_one_entity_existing_section(self):
         ab_cd_ftl = parse(FluentParser, ftl('''
-            // This Source Code Form is subject to the terms of …
+            # This Source Code Form is subject to the terms of …
 
             empty = Brak pobranych plików
 
-            // A section comment.
-            [[ Menu items ]]
+            ## Menu items
 
-            // A message comment.
+            # A message comment.
             open-menuitem
                 .label = Otwórz
         '''))
@@ -417,17 +408,16 @@ class TestMergeSubset(MockContext):
         self.assertEqual(
             resource.to_json(),
             ftl_resource_to_json('''
-                // This Source Code Form is subject to the terms of …
+                # This Source Code Form is subject to the terms of …
 
-                // A generic comment.
+                ### A resource comment.
 
                 title = Pobrane pliki
                 empty = Brak pobranych plików
 
-                // A section comment.
-                [[ Menu items ]]
+                ## Menu items
 
-                // A message comment.
+                # A message comment.
                 open-menuitem
                     .label = Otwórz
             ''')
@@ -435,14 +425,13 @@ class TestMergeSubset(MockContext):
 
     def test_three_way_two_entities_existing_section(self):
         ab_cd_ftl = parse(FluentParser, ftl('''
-            // This Source Code Form is subject to the terms of …
+            # This Source Code Form is subject to the terms of …
 
             empty = Brak pobranych plików
 
-            // A section comment.
-            [[ Menu items ]]
+            ## Menu items
 
-            // A message comment.
+            # A message comment.
             open-menuitem
                 .label = Otwórz
         '''))
@@ -456,17 +445,16 @@ class TestMergeSubset(MockContext):
         self.assertEqual(
             resource.to_json(),
             ftl_resource_to_json('''
-                // This Source Code Form is subject to the terms of …
+                # This Source Code Form is subject to the terms of …
 
-                // A generic comment.
+                ### A resource comment.
 
                 title = Pobrane pliki
                 empty = Brak pobranych plików
 
-                // A section comment.
-                [[ Menu items ]]
+                ## Menu items
 
-                // A message comment.
+                # A message comment.
                 open-menuitem
                     .label = Otwórz
                 download-state-downloading = Pobieranie…

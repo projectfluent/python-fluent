@@ -88,16 +88,45 @@ class FTLParserStream(ParserStream):
 
         return (cc >= 48 and cc <= 57) or cc == 45
 
-    def is_peek_next_line_comment(self):
+    def is_peek_next_line_zero_four_style_comment(self):
         if not self.current_peek_is('\n'):
             return False
 
         self.peek()
+
         if self.current_peek_is('/'):
             self.peek()
             if self.current_peek_is('/'):
                 self.reset_peek()
                 return True
+
+        self.reset_peek()
+        return False
+
+    # -1 - any
+    #  0 - comment
+    #  1 - group comment
+    #  2 - resource comment
+    def is_peek_next_line_comment(self, level=-1):
+        if not self.current_peek_is('\n'):
+            return False
+
+        i = 0
+
+        while (i <= level or (level == -1 and i < 3)):
+            self.peek()
+            if not self.current_peek_is('#'):
+                if i != level and level != -1:
+                    self.reset_peek()
+                    return False
+                break
+            i += 1
+
+        self.peek()
+
+        if self.current_peek() in [' ', '\n']:
+            self.reset_peek()
+            return True
 
         self.reset_peek()
         return False

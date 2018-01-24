@@ -16,39 +16,61 @@ def contain_new_line(elems):
 
 
 class FluentSerializer(object):
+    HAS_ENTRIES = 1
+
     def __init__(self, with_junk=False):
         self.with_junk = with_junk
 
     def serialize(self, resource):
+        state = 0
+
         parts = []
-        if resource.comment:
-            parts.append(
-                "{}\n\n".format(
-                    serialize_comment(resource.comment)
-                )
-            )
         for entry in resource.body:
             if not isinstance(entry, ast.Junk) or self.with_junk:
-                parts.append(self.serialize_entry(entry))
+                parts.append(self.serialize_entry(entry, state))
+                if not state & self.HAS_ENTRIES:
+                    state |= self.HAS_ENTRIES
 
         return "".join(parts)
 
-    def serialize_entry(self, entry):
+    def serialize_entry(self, entry, state=0):
         if isinstance(entry, ast.Message):
             return serialize_message(entry)
-        if isinstance(entry, ast.Section):
-            return serialize_section(entry)
         if isinstance(entry, ast.Comment):
-            return "\n{}\n\n".format(serialize_comment(entry))
+            if state & self.HAS_ENTRIES:
+                return "\n{}\n\n".format(serialize_comment(entry))
+            return "{}\n\n".format(serialize_comment(entry))
+        if isinstance(entry, ast.GroupComment):
+            if state & self.HAS_ENTRIES:
+                return "\n{}\n\n".format(serialize_group_comment(entry))
+            return "{}\n\n".format(serialize_group_comment(entry))
+        if isinstance(entry, ast.ResourceComment):
+            if state & self.HAS_ENTRIES:
+                return "\n{}\n\n".format(serialize_resource_comment(entry))
+            return "{}\n\n".format(serialize_resource_comment(entry))
         if isinstance(entry, ast.Junk):
             return serialize_junk(entry)
         raise Exception('Unknown entry type: {}'.format(entry.type))
 
 
 def serialize_comment(comment):
-    return "".join([
-        "{}{}".format("// ", line)
-        for line in comment.content.splitlines(True)
+    return "\n".join([
+        "#" if len(line) == 0 else "# {}".format(line)
+        for line in comment.content.splitlines(False)
+    ])
+
+
+def serialize_group_comment(comment):
+    return "\n".join([
+        "##" if len(line) == 0 else "## {}".format(line)
+        for line in comment.content.splitlines(False)
+    ])
+
+
+def serialize_resource_comment(comment):
+    return "\n".join([
+        "###" if len(line) == 0 else "### {}".format(line)
+        for line in comment.content.splitlines(False)
     ])
 
 

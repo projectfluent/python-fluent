@@ -71,21 +71,10 @@ class TestSerializer(unittest.TestCase):
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    def test_section(self):
-        input = """\
-            foo = Foo
-
-
-            [[ Section Header ]]
-
-            bar = Bar
-        """
-        self.assertEqual(pretty_ftl(input), dedent_ftl(input))
-
     def test_comment_resource(self):
         input = """\
-            // A multiline
-            // resource comment.
+            ### A multiline
+            ### resource comment.
 
             foo = Foo
         """
@@ -93,20 +82,20 @@ class TestSerializer(unittest.TestCase):
 
     def test_comment_message(self):
         input = """\
-            // A multiline
-            // message comment.
+            # A multiline
+            # message comment.
             foo = Foo
         """
         self.assertEqual(pretty_ftl(input), dedent_ftl(input))
 
-    def test_comment_section(self):
+    def test_comment_group(self):
         input = """\
             foo = Foo
 
-
-            // A multiline
-            // section comment.
-            [[ Section Header ]]
+            ## Comment Header
+            ##
+            ## A multiline
+            ## section comment.
 
             bar = Bar
         """
@@ -116,7 +105,7 @@ class TestSerializer(unittest.TestCase):
         input = """\
             foo = Foo
 
-            // A multiline
+            # A multiline
 
             bar = Bar
         """

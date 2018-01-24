@@ -207,9 +207,9 @@ class TestMergeAboutDownloads(unittest.TestCase):
     def test_merge_context_all_messages(self):
         expected = {
             'aboutDownloads.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         title  = Pobrane pliki
         header = Twoje pobrane pliki
@@ -262,9 +262,9 @@ class TestMergeAboutDownloads(unittest.TestCase):
 
         expected = {
             'aboutDownloads.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         title = Pobrane pliki
         header = Twoje pobrane pliki
@@ -345,9 +345,9 @@ class TestMergeAboutDialog(unittest.TestCase):
     def test_merge_context_all_messages(self):
         expected = {
             'aboutDialog.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         update-failed = Aktualizacja się nie powiodła. <a>Pobierz</a>.
         channel-desc = Obecnie korzystasz z kanału { $channelname }.
@@ -367,9 +367,9 @@ class TestMergeAboutDialog(unittest.TestCase):
 
         expected = {
             'aboutDialog.ftl': ftl_resource_to_json('''
-        // This Source Code Form is subject to the terms of the Mozilla Public
-        // License, v. 2.0. If a copy of the MPL was not distributed with this
-        // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         update-failed = Aktualizacja się nie powiodła. <a>Pobierz</a>.
             ''')

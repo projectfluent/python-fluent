@@ -18,8 +18,8 @@ def with_span(fn):
         if node.span is not None:
             return node
 
-        # Spans of Messages and Sections should include the attached Comment.
-        if isinstance(node, ast.Message) or isinstance(node, ast.Section):
+        # Spans of Messages should include the attached Comment.
+        if isinstance(node, ast.Message):
             if node.comment is not None:
                 start = node.comment.span.start
 
@@ -35,8 +35,6 @@ class FluentParser(object):
         self.with_spans = with_spans
 
     def parse(self, source):
-        comment = None
-
         ps = FTLParserStream(source)
         ps.skip_blank_lines()
 
@@ -45,15 +43,21 @@ class FluentParser(object):
         while ps.current():
             entry = self.get_entry_or_junk(ps)
 
-            if isinstance(entry, ast.Comment) and len(entries) == 0:
-                comment = entry
+            if entry is None:
+                continue
+
+            if isinstance(entry, ast.Comment) \
+               and hasattr(entry, "zero_four_style") and len(entries) == 0:
+                comment = ast.ResourceComment(entry.content)
+                comment.span = entry.span
+                entries.append(comment)
             else:
                 entries.append(entry)
 
             ps.skip_inline_ws()
             ps.skip_blank_lines()
 
-        res = ast.Resource(entries, comment)
+        res = ast.Resource(entries)
 
         if self.with_spans:
             res.add_span(0, ps.get_index())
@@ -88,7 +92,7 @@ class FluentParser(object):
     def get_entry(self, ps):
         comment = None
 
-        if ps.current_is('/'):
+        if ps.current_is('/') or ps.current_is('#'):
             comment = self.get_comment(ps)
 
             # The Comment content doesn't include the trailing newline. Consume
@@ -96,9 +100,13 @@ class FluentParser(object):
             ps.expect_char('\n' if ps.current() else None)
 
         if ps.current_is('['):
-            return self.get_section(ps, comment)
+            self.skip_section(ps)
+            if comment:
+                return ast.GroupComment(comment.content)
+            return None
 
-        if ps.is_id_start():
+        if ps.is_id_start() \
+           and (comment is None or isinstance(comment, ast.Comment)):
             return self.get_message(ps, comment)
 
         if comment:
@@ -107,23 +115,20 @@ class FluentParser(object):
         raise ParseError('E0002')
 
     @with_span
-    def get_comment(self, ps):
+    def get_zero_four_style_comment(self, ps):
         ps.expect_char('/')
         ps.expect_char('/')
         ps.take_char_if(' ')
 
         content = ''
 
-        def until_eol(x):
-            return x != '\n'
-
         while True:
-            ch = ps.take_char(until_eol)
+            ch = ps.take_char(lambda x: x != '\n')
             while ch:
                 content += ch
-                ch = ps.take_char(until_eol)
+                ch = ps.take_char(lambda x: x != '\n')
 
-            if ps.is_peek_next_line_comment():
+            if ps.is_peek_next_line_zero_four_style_comment():
                 content += '\n'
                 ps.next()
                 ps.expect_char('/')
@@ -132,23 +137,65 @@ class FluentParser(object):
             else:
                 break
 
-        return ast.Comment(content)
+        comment = ast.Comment(content)
+        comment.zero_four_style = True
+        return comment
 
     @with_span
-    def get_section(self, ps, comment):
+    def get_comment(self, ps):
+        if ps.current_is('/'):
+            return self.get_zero_four_style_comment(ps)
+
+        # 0 - comment
+        # 1 - group comment
+        # 2 - resource comment
+        level = -1
+        content = ''
+
+        while True:
+            i = -1
+            while ps.current_is('#') and (i < (2 if level == -1 else level)):
+                ps.next()
+                i += 1
+
+            if level == -1:
+                level = i
+
+            if not ps.current_is('\n'):
+                ps.expect_char(' ')
+                ch = ps.take_char(lambda x: x != '\n')
+                while ch:
+                    content += ch
+                    ch = ps.take_char(lambda x: x != '\n')
+
+            if ps.is_peek_next_line_comment(level):
+                content += '\n'
+                ps.next()
+            else:
+                break
+
+        if level == 0:
+            return ast.Comment(content)
+        elif level == 1:
+            return ast.GroupComment(content)
+        elif level == 2:
+            return ast.ResourceComment(content)
+
+    def skip_section(self, ps):
         ps.expect_char('[')
         ps.expect_char('[')
 
         ps.skip_inline_ws()
 
-        symb = self.get_symbol(ps)
+        self.get_symbol(ps)
 
         ps.skip_inline_ws()
 
         ps.expect_char(']')
         ps.expect_char(']')
 
-        return ast.Section(symb, comment)
+        ps.skip_inline_ws()
+        ps.next()
 
     @with_span
     def get_message(self, ps, comment):

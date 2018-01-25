@@ -261,9 +261,9 @@ class Identifier(SyntaxNode):
         super(Identifier, self).__init__(**kwargs)
         self.name = name
 
-class Symbol(Identifier):
+class VariantName(Identifier):
     def __init__(self, name, **kwargs):
-        super(Symbol, self).__init__(name, **kwargs)
+        super(VariantName, self).__init__(name, **kwargs)
 
 
 class BaseComment(Entry):

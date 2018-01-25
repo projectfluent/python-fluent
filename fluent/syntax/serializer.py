@@ -78,11 +78,11 @@ def serialize_section(section):
     if section.comment:
         return "\n\n{}\n[[ {} ]]\n\n".format(
             serialize_comment(section.comment),
-            serialize_symbol(section.name)
+            serialize_variant_name(section.name)
         )
     else:
         return "\n\n[[ {} ]]\n\n".format(
-            serialize_symbol(section.name)
+            serialize_variant_name(section.name)
         )
 
 
@@ -269,13 +269,13 @@ def serialize_identifier(identifier):
     return identifier.name
 
 
-def serialize_symbol(symbol):
+def serialize_variant_name(symbol):
     return symbol.name
 
 
 def serialize_variant_key(key):
-    if isinstance(key, ast.Symbol):
-        return serialize_symbol(key)
+    if isinstance(key, ast.VariantName):
+        return serialize_variant_name(key)
     if isinstance(key, ast.NumberExpression):
         return serialize_number_expression(key)
     raise Exception('Unknown variant key type: {}'.format(key.type))

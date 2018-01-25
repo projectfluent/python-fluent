@@ -73,20 +73,31 @@ class FTLParserStream(ParserStream):
             return ch
         return None
 
-    def is_id_start(self):
-        if self.ch is None:
+    def is_char_id_start(self, ch=None):
+        if ch is None:
             return False
 
-        cc = ord(self.ch)
-
+        cc = ord(ch)
         return (cc >= 97 and cc <= 122) or \
-               (cc >= 65 and cc <= 90) or \
-            cc == 95
+               (cc >= 65 and cc <= 90)
+
+    def is_message_id_start(self):
+        if self.current_is('-'):
+            self.peek()
+
+        ch = self.current_peek()
+        is_id = self.is_char_id_start(ch)
+        self.reset_peek()
+        return is_id
 
     def is_number_start(self):
-        cc = ord(self.ch)
+        if self.current_is('-'):
+            self.peek()
 
-        return (cc >= 48 and cc <= 57) or cc == 45
+        cc = ord(self.current_peek())
+        is_digit = cc >= 48 and cc <= 57
+        self.reset_peek()
+        return is_digit
 
     def is_peek_next_line_zero_four_style_comment(self):
         if not self.current_peek_is('\n'):
@@ -211,19 +222,24 @@ class FTLParserStream(ParserStream):
             if self.current_is('\n') and not self.peek_char_is('\n'):
                 self.next()
 
-                if self.ch is None or self.is_id_start() or \
+                if self.ch is None or self.is_message_id_start() or \
                    (self.current_is('/') and self.peek_char_is('/')) or \
                    (self.current_is('[') and self.peek_char_is('[')):
                     break
             self.next()
 
-    def take_id_start(self):
-        if self.is_id_start():
+    def take_id_start(self, allow_private):
+        if allow_private and self.current_is('-'):
+            self.next()
+            return '-'
+
+        if self.is_char_id_start(self.ch):
             ret = self.ch
             self.next()
             return ret
 
-        raise ParseError('E0004', 'a-zA-Z_')
+        allowed_range = 'a-zA-Z-' if allow_private else 'a-zA-Z'
+        raise ParseError('E0004', allowed_range)
 
     def take_id_char(self):
         def closure(ch):
@@ -234,7 +250,7 @@ class FTLParserStream(ParserStream):
                     cc == 95 or cc == 45)
         return self.take_char(closure)
 
-    def take_symb_char(self):
+    def take_variant_name_char(self):
         def closure(ch):
             if ch is None:
                 return False

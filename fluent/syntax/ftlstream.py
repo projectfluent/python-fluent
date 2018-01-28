@@ -7,6 +7,8 @@ INLINE_WS = (' ', '\t')
 
 
 class FTLParserStream(ParserStream):
+    last_comment_zero_four_syntax = False
+
     def peek_inline_ws(self):
         ch = self.current_peek()
         while ch:

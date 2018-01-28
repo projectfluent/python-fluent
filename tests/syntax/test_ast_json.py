@@ -29,9 +29,9 @@ class TestASTJSON(unittest.TestCase):
 
     def test_complex_resource(self):
         input = """\
-            // A Resource comment
+            ### A Resource comment
 
-            // A comment about shared-photos
+            # A comment about shared-photos
             shared-photos =
                 { $user_name } { $photo_count ->
                     [0] hasn't added any photos yet
@@ -40,10 +40,9 @@ class TestASTJSON(unittest.TestCase):
                 }.
 
 
-            // A Section comment
-            [[ Section ]]
+            ## A Section comment
 
-            // A comment about liked-comment
+            // A Syntax 0.4 comment about liked-comment
             liked-comment =
                 { $user_name } liked your comment on { $user_gender ->
                     [male] his

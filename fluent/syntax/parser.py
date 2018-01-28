@@ -47,12 +47,15 @@ class FluentParser(object):
                 continue
 
             if isinstance(entry, ast.Comment) \
-               and hasattr(entry, "zero_four_style") and len(entries) == 0:
+               and ps.last_comment_zero_four_syntax \
+               and len(entries) == 0:
                 comment = ast.ResourceComment(entry.content)
                 comment.span = entry.span
                 entries.append(comment)
             else:
                 entries.append(entry)
+
+            ps.last_comment_zero_four_syntax = False
 
             ps.skip_inline_ws()
             ps.skip_blank_lines()
@@ -138,7 +141,7 @@ class FluentParser(object):
                 break
 
         comment = ast.Comment(content)
-        comment.zero_four_style = True
+        ps.last_comment_zero_four_syntax = True
         return comment
 
     @with_span

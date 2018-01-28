@@ -44,7 +44,6 @@
       "type": "Comment",
       "annotations": [],
       "content": "This is a standalone comment",
-      "zero_four_style": true,
       "span": {
         "type": "Span",
         "start": 13,

@@ -8,6 +8,8 @@ def to_json(value):
         return value.to_json()
     if isinstance(value, list):
         return list(map(to_json, value))
+    if isinstance(value, tuple):
+        return list(map(to_json, value))
     else:
         return value
 

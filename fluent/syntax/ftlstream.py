@@ -4,10 +4,17 @@ from .errors import ParseError
 
 
 INLINE_WS = (' ', '\t')
+SPECIAL_LINE_START_CHARS = ('}', '.', '[', '*')
 
 
 class FTLParserStream(ParserStream):
     last_comment_zero_four_syntax = False
+
+    def skip_inline_ws(self):
+        while self.ch:
+            if self.ch not in INLINE_WS:
+                break
+            self.next()
 
     def peek_inline_ws(self):
         ch = self.current_peek()
@@ -39,11 +46,9 @@ class FTLParserStream(ParserStream):
                 self.reset_peek(line_start)
                 break
 
-    def skip_inline_ws(self):
-        while self.ch:
-            if self.ch not in INLINE_WS:
-                break
-            self.next()
+    def skip_indent(self):
+        self.skip_blank_lines()
+        self.skip_inline_ws()
 
     def expect_char(self, ch):
         if self.ch == ch:
@@ -100,6 +105,19 @@ class FTLParserStream(ParserStream):
         is_digit = cc >= 48 and cc <= 57
         self.reset_peek()
         return is_digit
+
+    def is_char_pattern_start(self, ch):
+        return ch not in SPECIAL_LINE_START_CHARS
+
+    def is_peek_pattern_start(self):
+        self.peek_inline_ws()
+
+        if self.current_peek_is('\n'):
+            return self.is_peek_next_line_pattern_start()
+
+        is_pattern = self.is_char_pattern_start(self.current_peek())
+        self.reset_peek()
+        return is_pattern
 
     def is_peek_next_line_zero_four_style_comment(self):
         if not self.current_peek_is('\n'):
@@ -193,7 +211,7 @@ class FTLParserStream(ParserStream):
         self.reset_peek()
         return False
 
-    def is_peek_next_non_blank_line_pattern(self):
+    def is_peek_next_line_pattern_start(self):
         if not self.current_peek_is('\n'):
             return False
 
@@ -209,10 +227,7 @@ class FTLParserStream(ParserStream):
             self.reset_peek()
             return False
 
-        if (self.current_peek_is('}') or
-                self.current_peek_is('.') or
-                self.current_peek_is('[') or
-                self.current_peek_is('*')):
+        if not self.is_char_pattern_start(self.current_peek()):
             self.reset_peek()
             return False
 

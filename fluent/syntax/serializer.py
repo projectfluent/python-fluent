@@ -98,9 +98,9 @@ def serialize_message(message):
         parts.append("\n")
 
     parts.append(serialize_identifier(message.id))
+    parts.append(" =")
 
     if message.value:
-        parts.append(" =")
         parts.append(serialize_value(message.value))
 
     if message.attributes:

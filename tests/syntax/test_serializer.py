@@ -31,6 +31,12 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
+    def test_simple_term(self):
+        input = """\
+            -foo = Foo
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+
     def test_two_simple_messages(self):
         input = """\
             foo = Foo
@@ -49,6 +55,12 @@ class TestSerializeResource(unittest.TestCase):
     def test_message_reference(self):
         input = """\
             foo = Foo { bar }
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+
+    def test_term_reference(self):
+        input = """\
+            foo = Foo { -bar }
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
@@ -72,7 +84,7 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_variant_expression(self):
         input = """\
-            foo = Foo { bar[baz] }
+            foo = Foo { -bar[baz] }
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 

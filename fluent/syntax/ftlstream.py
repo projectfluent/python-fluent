@@ -88,7 +88,7 @@ class FTLParserStream(ParserStream):
         return (cc >= 97 and cc <= 122) or \
                (cc >= 65 and cc <= 90)
 
-    def is_message_id_start(self):
+    def is_entry_id_start(self):
         if self.current_is('-'):
             self.peek()
 
@@ -240,15 +240,15 @@ class FTLParserStream(ParserStream):
                 self.next()
 
                 if self.ch is None or \
-                   self.is_message_id_start() or \
+                   self.is_entry_id_start() or \
                    self.current_is('#') or \
                    (self.current_is('/') and self.peek_char_is('/')) or \
                    (self.current_is('[') and self.peek_char_is('[')):
                     break
             self.next()
 
-    def take_id_start(self, allow_private):
-        if allow_private and self.current_is('-'):
+    def take_id_start(self, allow_term):
+        if allow_term and self.current_is('-'):
             self.next()
             return '-'
 
@@ -257,7 +257,7 @@ class FTLParserStream(ParserStream):
             self.next()
             return ret
 
-        allowed_range = 'a-zA-Z-' if allow_private else 'a-zA-Z'
+        allowed_range = 'a-zA-Z-' if allow_term else 'a-zA-Z'
         raise ParseError('E0004', allowed_range)
 
     def take_id_char(self):

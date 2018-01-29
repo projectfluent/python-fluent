@@ -176,6 +176,15 @@ class Message(Entry):
         self.attributes = attributes or []
         self.comment = comment
 
+class Term(Entry):
+    def __init__(self, id, value, attributes=None,
+                 comment=None, **kwargs):
+        super(Term, self).__init__(**kwargs)
+        self.id = id
+        self.value = value
+        self.attributes = attributes or []
+        self.comment = comment
+
 class Pattern(SyntaxNode):
     def __init__(self, elements, **kwargs):
         super(Pattern, self).__init__(**kwargs)

@@ -39,6 +39,8 @@ class FluentSerializer(object):
     def serialize_entry(self, entry, state=0):
         if isinstance(entry, ast.Message):
             return serialize_message(entry)
+        if isinstance(entry, ast.Term):
+            return serialize_message(entry)
         if isinstance(entry, ast.Comment):
             if state & self.HAS_ENTRIES:
                 return "\n{}\n\n".format(serialize_comment(entry))

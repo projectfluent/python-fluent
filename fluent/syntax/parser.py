@@ -106,7 +106,7 @@ class FluentParser(object):
                 return ast.GroupComment(comment.content)
             return None
 
-        if ps.is_message_id_start() \
+        if ps.is_entry_id_start() \
            and (comment is None or isinstance(comment, ast.Comment)):
             return self.get_message(ps, comment)
 
@@ -200,7 +200,7 @@ class FluentParser(object):
 
     @with_span
     def get_message(self, ps, comment):
-        id = self.get_private_identifier(ps)
+        id = self.get_entry_identifier(ps)
 
         ps.skip_inline_ws()
 
@@ -221,6 +221,9 @@ class FluentParser(object):
         if pattern is None and attrs is None:
             raise ParseError('E0005', id.name)
 
+        if id.name.startswith('-'):
+            return ast.Term(id, pattern, attrs, comment)
+
         return ast.Message(id, pattern, attrs, comment)
 
     @with_span
@@ -228,7 +231,7 @@ class FluentParser(object):
         ps.expect_indent()
         ps.expect_char('.')
 
-        key = self.get_public_identifier(ps)
+        key = self.get_identifier(ps)
 
         ps.skip_inline_ws()
         ps.expect_char('=')
@@ -251,18 +254,14 @@ class FluentParser(object):
                 break
         return attrs
 
-    @with_span
-    def get_private_identifier(self, ps):
+    def get_entry_identifier(self, ps):
         return self.get_identifier(ps, True)
 
     @with_span
-    def get_public_identifier(self, ps):
-        return self.get_identifier(ps, False)
-
-    def get_identifier(self, ps, allow_private):
+    def get_identifier(self, ps, allow_term=False):
         name = ''
 
-        name += ps.take_id_start(allow_private)
+        name += ps.take_id_start(allow_term)
 
         ch = ps.take_id_char()
         while ch:
@@ -501,7 +500,7 @@ class FluentParser(object):
 
         if (ch == '.'):
             ps.next()
-            attr = self.get_public_identifier(ps)
+            attr = self.get_identifier(ps)
             return ast.AttributeExpression(literal.id, attr)
 
         if (ch == '['):
@@ -603,10 +602,10 @@ class FluentParser(object):
 
         if ch == '$':
             ps.next()
-            name = self.get_public_identifier(ps)
+            name = self.get_identifier(ps)
             return ast.ExternalArgument(name)
-        elif ps.is_message_id_start():
-            name = self.get_private_identifier(ps)
+        elif ps.is_entry_id_start():
+            name = self.get_entry_identifier(ps)
             return ast.MessageReference(name)
         elif ps.is_number_start():
             return self.get_number(ps)

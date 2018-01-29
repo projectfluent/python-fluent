@@ -22,6 +22,9 @@ class FluentSerializer(object):
         self.with_junk = with_junk
 
     def serialize(self, resource):
+        if not isinstance(resource, ast.Resource):
+            raise Exception('Unknown resource type: {}'.format(type(resource)))
+
         state = 0
 
         parts = []
@@ -50,7 +53,10 @@ class FluentSerializer(object):
             return "{}\n\n".format(serialize_resource_comment(entry))
         if isinstance(entry, ast.Junk):
             return serialize_junk(entry)
-        raise Exception('Unknown entry type: {}'.format(entry.type))
+        raise Exception('Unknown entry type: {}'.format(type(entry)))
+
+    def serialize_expression(self, expr):
+        return serialize_expression(expr)
 
 
 def serialize_comment(comment):
@@ -139,7 +145,7 @@ def serialize_element(element):
         return serialize_text_element(element)
     if isinstance(element, ast.Placeable):
         return serialize_placeable(element)
-    raise Exception('Unknown element type: {}'.format(element.type))
+    raise Exception('Unknown element type: {}'.format(type(element)))
 
 
 def serialize_text_element(text):
@@ -150,14 +156,18 @@ def serialize_placeable(placeable):
     expr = placeable.expression
 
     if isinstance(expr, ast.Placeable):
-        return "{{{}}}".format(
-            serialize_placeable(expr))
+        return "{{{}}}".format(serialize_placeable(expr))
     if isinstance(expr, ast.SelectExpression):
-        return "{{{}}}".format(
-            serialize_select_expression(expr))
+        # Special-case select expressions to control the withespace around the
+        # opening and the closing brace.
+        if expr.expression is not None:
+            # A select expression with a selector.
+            return "{{ {}}}".format(serialize_select_expression(expr))
+        else:
+            # A variant list without a selector.
+            return "{{{}}}".format(serialize_select_expression(expr))
     if isinstance(expr, ast.Expression):
-        return "{{ {} }}".format(
-            serialize_expression(expr))
+        return "{{ {} }}".format(serialize_expression(expr))
 
 
 def serialize_expression(expression):
@@ -175,7 +185,9 @@ def serialize_expression(expression):
         return serialize_variant_expression(expression)
     if isinstance(expression, ast.CallExpression):
         return serialize_call_expression(expression)
-    raise Exception('Unknown expression type: {}'.format(expression.type))
+    if isinstance(expression, ast.SelectExpression):
+        return serialize_select_expression(expression)
+    raise Exception('Unknown expression type: {}'.format(type(expression)))
 
 
 def serialize_string_expression(expr):
@@ -198,7 +210,7 @@ def serialize_select_expression(expr):
     parts = []
 
     if expr.expression:
-        selector = " {} ->".format(
+        selector = "{} ->".format(
             serialize_expression(expr.expression)
         )
         parts.append(selector)
@@ -262,7 +274,7 @@ def serialize_argument_value(argval):
         return serialize_string_expression(argval)
     if isinstance(argval, ast.NumberExpression):
         return serialize_number_expression(argval)
-    raise Exception('Unknown argument type: {}'.format(argval.type))
+    raise Exception('Unknown argument type: {}'.format(type(argval)))
 
 
 def serialize_identifier(identifier):
@@ -278,7 +290,7 @@ def serialize_variant_key(key):
         return serialize_variant_name(key)
     if isinstance(key, ast.NumberExpression):
         return serialize_number_expression(key)
-    raise Exception('Unknown variant key type: {}'.format(key.type))
+    raise Exception('Unknown variant key type: {}'.format(type(key)))
 
 
 def serialize_function(function):

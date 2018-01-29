@@ -56,8 +56,6 @@ class FluentParser(object):
                 entries.append(entry)
 
             ps.last_comment_zero_four_syntax = False
-
-            ps.skip_inline_ws()
             ps.skip_blank_lines()
 
         res = ast.Resource(entries)
@@ -209,12 +207,13 @@ class FluentParser(object):
         pattern = None
         attrs = None
 
+        # XXX Syntax 0.4 compat
         if ps.current_is('='):
             ps.next()
-            ps.skip_inline_ws()
-            ps.skip_blank_lines()
 
-            pattern = self.get_pattern(ps)
+            if ps.is_peek_pattern_start():
+                ps.skip_indent()
+                pattern = self.get_pattern(ps)
 
         if ps.is_peek_next_line_attribute_start():
             attrs = self.get_attributes(ps)
@@ -226,27 +225,25 @@ class FluentParser(object):
 
     @with_span
     def get_attribute(self, ps):
+        ps.expect_indent()
         ps.expect_char('.')
 
         key = self.get_public_identifier(ps)
 
         ps.skip_inline_ws()
         ps.expect_char('=')
-        ps.skip_inline_ws()
 
-        value = self.get_pattern(ps)
+        if ps.is_peek_pattern_start():
+            ps.skip_indent()
+            value = self.get_pattern(ps)
+            return ast.Attribute(key, value)
 
-        if value is None:
-            raise ParseError('E0006', 'value')
-
-        return ast.Attribute(key, value)
+        raise ParseError('E0006', 'value')
 
     def get_attributes(self, ps):
         attrs = []
 
         while True:
-            ps.expect_indent()
-
             attr = self.get_attribute(ps)
             attrs.append(attr)
 
@@ -288,6 +285,8 @@ class FluentParser(object):
 
     @with_span
     def get_variant(self, ps, has_default):
+        ps.expect_indent()
+
         default_index = False
 
         if ps.current_is('*'):
@@ -302,22 +301,18 @@ class FluentParser(object):
 
         ps.expect_char(']')
 
-        ps.skip_inline_ws()
+        if ps.is_peek_pattern_start():
+            ps.skip_indent()
+            value = self.get_pattern(ps)
+            return ast.Variant(key, value, default_index)
 
-        value = self.get_pattern(ps)
-
-        if value is None:
-            raise ParseError('E0006', 'value')
-
-        return ast.Variant(key, value, default_index)
+        raise ParseError('E0006', 'value')
 
     def get_variants(self, ps):
         variants = []
         has_default = False
 
         while True:
-            ps.expect_indent()
-
             variant = self.get_variant(ps, has_default)
 
             if variant.default:
@@ -383,17 +378,12 @@ class FluentParser(object):
         elements = []
         ps.skip_inline_ws()
 
-        # Special-case: trim leading whitespace and newlines.
-        if ps.is_peek_next_non_blank_line_pattern():
-            ps.skip_blank_lines()
-            ps.skip_inline_ws()
-
         while ps.current():
             ch = ps.current()
 
             # The end condition for get_pattern's while loop is a newline
             # which is not followed by a valid pattern continuation.
-            if ch == '\n' and not ps.is_peek_next_non_blank_line_pattern():
+            if ch == '\n' and not ps.is_peek_next_line_pattern_start():
                 break
 
             if ch == '{':
@@ -416,7 +406,7 @@ class FluentParser(object):
                 return ast.TextElement(buf)
 
             if ch == '\n':
-                if not ps.is_peek_next_non_blank_line_pattern():
+                if not ps.is_peek_next_line_pattern_start():
                     return ast.TextElement(buf)
 
                 ps.next()

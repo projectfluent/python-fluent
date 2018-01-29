@@ -2,23 +2,23 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-urlbar-textbox
+urlbar-textbox =
     .placeholder = Search or enter address
     .accesskey = d
 
 
 ## Toolbar items
 
-view-bookmarks-broadcaster
+view-bookmarks-broadcaster =
     .label = Bookmarks
-view-bookmarks-command
+view-bookmarks-command =
     .key = b
-view-bookmarks-command-win
+view-bookmarks-command-win =
     .key = i
 
-view-history-broadcaster
+view-history-broadcaster =
     .label = History
-view-history-command
+view-history-command =
     .key = h
-view-tabs-broadcaster
+view-tabs-broadcaster =
     .label = Synced Tabs

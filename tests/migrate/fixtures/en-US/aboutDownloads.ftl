@@ -7,19 +7,19 @@ header = Your Downloads
 empty = No Downloads
 about = About Downloads
 
-open-menuitem
+open-menuitem =
     .label = Open
-retry-menuitem
+retry-menuitem =
     .label = Retry
-remove-menuitem
+remove-menuitem =
     .label = Delete
-pause-menuitem
+pause-menuitem =
     .label = Pause
-resume-menuitem
+resume-menuitem =
     .label = Resume
-cancel-menuitem
+cancel-menuitem =
     .label = Cancel
-remove-all-menuitem
+remove-all-menuitem =
     .label = Delete All
 
 delete-all-title = Delete All

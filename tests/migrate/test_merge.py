@@ -32,7 +32,7 @@ class TestMergeMessages(MockContext):
             empty  = No Downloads
             about  = About Downloads
 
-            open-menuitem
+            open-menuitem =
                 .label = Open
 
             download-state-downloading = Downloading…
@@ -96,7 +96,7 @@ class TestMergeMessages(MockContext):
                 title = Pobrane pliki
                 about = Hardcoded Value
 
-                open-menuitem
+                open-menuitem =
                     .label = Otwórz
 
                 download-state-downloading = Pobieranie…
@@ -116,7 +116,7 @@ class TestMergeMessages(MockContext):
                 empty = Brak pobranych plików
                 about = Previously Hardcoded Value
 
-                open-menuitem
+                open-menuitem =
                     .label = Otwórz
 
                 download-state-downloading = Pobieranie…
@@ -140,7 +140,7 @@ class TestMergeAllEntries(MockContext):
             ## Menu items
 
             # A message comment.
-            open-menuitem
+            open-menuitem =
                 .label = Open
 
             download-state-downloading = Downloading…
@@ -205,7 +205,7 @@ class TestMergeAllEntries(MockContext):
                 ## Menu items
 
                 # A message comment.
-                open-menuitem
+                open-menuitem =
                     .label = Otwórz
                 download-state-downloading = Pobieranie…
 
@@ -231,7 +231,7 @@ class TestMergeAllEntries(MockContext):
                 ## Menu items
 
                 # A message comment.
-                open-menuitem
+                open-menuitem =
                     .label = Otwórz
 
                 download-state-downloading = Pobieranie…
@@ -256,7 +256,7 @@ class TestMergeSubset(MockContext):
             ## Menu items
 
             # A message comment.
-            open-menuitem
+            open-menuitem =
                 .label = Open
 
             download-state-downloading = Downloading…
@@ -395,7 +395,7 @@ class TestMergeSubset(MockContext):
             ## Menu items
 
             # A message comment.
-            open-menuitem
+            open-menuitem =
                 .label = Otwórz
         '''))
 
@@ -418,7 +418,7 @@ class TestMergeSubset(MockContext):
                 ## Menu items
 
                 # A message comment.
-                open-menuitem
+                open-menuitem =
                     .label = Otwórz
             ''')
         )
@@ -432,7 +432,7 @@ class TestMergeSubset(MockContext):
             ## Menu items
 
             # A message comment.
-            open-menuitem
+            open-menuitem =
                 .label = Otwórz
         '''))
 
@@ -455,7 +455,7 @@ class TestMergeSubset(MockContext):
                 ## Menu items
 
                 # A message comment.
-                open-menuitem
+                open-menuitem =
                     .label = Otwórz
                 download-state-downloading = Pobieranie…
             ''')

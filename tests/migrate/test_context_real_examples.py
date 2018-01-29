@@ -215,19 +215,19 @@ class TestMergeAboutDownloads(unittest.TestCase):
         header = Twoje pobrane pliki
         empty  = Brak pobranych plików
 
-        open-menuitem
+        open-menuitem =
             .label = Otwórz
-        retry-menuitem
+        retry-menuitem =
             .label = Spróbuj ponownie
-        remove-menuitem
+        remove-menuitem =
             .label = Usuń
-        pause-menuitem
+        pause-menuitem =
             .label = Wstrzymaj
-        resume-menuitem
+        resume-menuitem =
             .label = Wznów
-        cancel-menuitem
+        cancel-menuitem =
             .label = Anuluj
-        remove-all-menuitem
+        remove-all-menuitem =
             .label = Usuń wszystko
 
         delete-all-title   = Usuń wszystko

@@ -80,18 +80,6 @@ def serialize_resource_comment(comment):
     ])
 
 
-def serialize_section(section):
-    if section.comment:
-        return "\n\n{}\n[[ {} ]]\n\n".format(
-            serialize_comment(section.comment),
-            serialize_variant_name(section.name)
-        )
-    else:
-        return "\n\n[[ {} ]]\n\n".format(
-            serialize_variant_name(section.name)
-        )
-
-
 def serialize_junk(junk):
     return junk.content
 

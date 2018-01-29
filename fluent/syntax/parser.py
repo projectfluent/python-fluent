@@ -215,14 +215,17 @@ class FluentParser(object):
                 ps.skip_indent()
                 pattern = self.get_pattern(ps)
 
+        if id.name.startswith('-') and pattern is None:
+            raise ParseError('E0006', id.name)
+
         if ps.is_peek_next_line_attribute_start():
             attrs = self.get_attributes(ps)
 
-        if pattern is None and attrs is None:
-            raise ParseError('E0005', id.name)
-
         if id.name.startswith('-'):
             return ast.Term(id, pattern, attrs, comment)
+
+        if pattern is None and attrs is None:
+            raise ParseError('E0005', id.name)
 
         return ast.Message(id, pattern, attrs, comment)
 
@@ -241,7 +244,7 @@ class FluentParser(object):
             value = self.get_pattern(ps)
             return ast.Attribute(key, value)
 
-        raise ParseError('E0006', 'value')
+        raise ParseError('E0012')
 
     def get_attributes(self, ps):
         attrs = []
@@ -305,7 +308,7 @@ class FluentParser(object):
             value = self.get_pattern(ps)
             return ast.Variant(key, value, default_index)
 
-        raise ParseError('E0006', 'value')
+        raise ParseError('E0012')
 
     def get_variants(self, ps):
         variants = []
@@ -573,7 +576,7 @@ class FluentParser(object):
             return self.get_number(ps)
         elif ps.current_is('"'):
             return self.get_string(ps)
-        raise ParseError('E0006', 'value')
+        raise ParseError('E0012')
 
     @with_span
     def get_string(self, ps):

@@ -18,10 +18,11 @@ def get_error_message(code, args):
     if code == 'E0004':
         return 'Expected a character from range: "{}"'.format(args[0])
     if code == 'E0005':
-        msg = 'Expected entry "{}" to have a value or attributes'
+        msg = 'Expected message "{}" to have a value or attributes'
         return msg.format(args[0])
     if code == 'E0006':
-        return 'Expected field: "{}"'.format(args[0])
+        msg = 'Expected term "{}" to have a value'
+        return msg.format(args[0])
     if code == 'E0007':
         return 'Keyword cannot end with a whitespace'
     if code == 'E0008':
@@ -32,6 +33,8 @@ def get_error_message(code, args):
         return 'Expected one of the variants to be marked as default (*)'
     if code == 'E0011':
         return 'Expected at least one variant after "->"'
+    if code == 'E0012':
+        return 'Expected value'
     if code == 'E0013':
         return 'Expected variant key'
     if code == 'E0014':

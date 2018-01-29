@@ -582,10 +582,13 @@ class FluentParser(object):
 
         ps.expect_char('"')
 
-        ch = ps.take_char(lambda x: x != '"')
+        ch = ps.take_char(lambda x: x != '"' and x != '\n')
         while ch:
             val += ch
-            ch = ps.take_char(lambda x: x != '"')
+            ch = ps.take_char(lambda x: x != '"' and x != '\n')
+
+        if ps.current_is('\n'):
+            raise ParseError('E0020')
 
         ps.next()
 

@@ -103,7 +103,10 @@ class FluentParser(object):
         if ps.current_is('['):
             self.skip_section(ps)
             if comment:
-                return ast.GroupComment(comment.content)
+                group_comment = ast.GroupComment(comment.content)
+                if self.with_spans:
+                    group_comment.span = comment.span
+                return group_comment
             return None
 
         if ps.is_entry_id_start() \

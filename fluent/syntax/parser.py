@@ -234,7 +234,6 @@ class FluentParser(object):
 
     @with_span
     def get_attribute(self, ps):
-        ps.expect_indent()
         ps.expect_char('.')
 
         key = self.get_identifier(ps)
@@ -253,6 +252,7 @@ class FluentParser(object):
         attrs = []
 
         while True:
+            ps.expect_indent()
             attr = self.get_attribute(ps)
             attrs.append(attr)
 
@@ -290,8 +290,6 @@ class FluentParser(object):
 
     @with_span
     def get_variant(self, ps, has_default):
-        ps.expect_indent()
-
         default_index = False
 
         if ps.current_is('*'):
@@ -318,6 +316,7 @@ class FluentParser(object):
         has_default = False
 
         while True:
+            ps.expect_indent()
             variant = self.get_variant(ps, has_default)
 
             if variant.default:

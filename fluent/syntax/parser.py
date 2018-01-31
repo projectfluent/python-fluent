@@ -101,10 +101,12 @@ class FluentParser(object):
             ps.expect_char('\n' if ps.current() else None)
 
         if ps.current_is('['):
-            self.skip_section(ps)
-            if comment:
-                return ast.GroupComment(comment.content)
-            return None
+            group_comment = self.get_group_comment_from_section(ps, comment)
+            if comment and self.with_spans:
+                # The Group Comment should start where the section comment
+                # starts.
+                group_comment.span.start = comment.span.start
+            return group_comment
 
         if ps.is_entry_id_start() \
            and (comment is None or isinstance(comment, ast.Comment)):
@@ -182,7 +184,8 @@ class FluentParser(object):
         elif level == 2:
             return ast.ResourceComment(content)
 
-    def skip_section(self, ps):
+    @with_span
+    def get_group_comment_from_section(self, ps, comment):
         ps.expect_char('[')
         ps.expect_char('[')
 
@@ -195,8 +198,12 @@ class FluentParser(object):
         ps.expect_char(']')
         ps.expect_char(']')
 
-        ps.skip_inline_ws()
-        ps.next()
+        if comment:
+            return ast.GroupComment(comment.content)
+
+        # A Section without a comment is like an empty Group Comment.
+        # Semantically it ends the previous group and starts a new one.
+        return ast.GroupComment('')
 
     @with_span
     def get_message(self, ps, comment):
@@ -231,7 +238,6 @@ class FluentParser(object):
 
     @with_span
     def get_attribute(self, ps):
-        ps.expect_indent()
         ps.expect_char('.')
 
         key = self.get_identifier(ps)
@@ -250,6 +256,7 @@ class FluentParser(object):
         attrs = []
 
         while True:
+            ps.expect_indent()
             attr = self.get_attribute(ps)
             attrs.append(attr)
 
@@ -287,8 +294,6 @@ class FluentParser(object):
 
     @with_span
     def get_variant(self, ps, has_default):
-        ps.expect_indent()
-
         default_index = False
 
         if ps.current_is('*'):
@@ -315,6 +320,7 @@ class FluentParser(object):
         has_default = False
 
         while True:
+            ps.expect_indent()
             variant = self.get_variant(ps, has_default)
 
             if variant.default:

@@ -285,10 +285,7 @@ class BaseComment(Entry):
 
 class Comment(BaseComment):
     def __init__(self, content=None, **kwargs):
-        zero_four_style = kwargs.pop("zero_four_style", False)
         super(Comment, self).__init__(content, **kwargs)
-        if zero_four_style:
-            self.zero_four_style = True
 
 
 class GroupComment(BaseComment):

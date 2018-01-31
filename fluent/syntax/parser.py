@@ -101,13 +101,12 @@ class FluentParser(object):
             ps.expect_char('\n' if ps.current() else None)
 
         if ps.current_is('['):
-            self.skip_section(ps)
-            if comment:
-                group_comment = ast.GroupComment(comment.content)
-                if self.with_spans:
-                    group_comment.span = comment.span
-                return group_comment
-            return None
+            group_comment = self.get_group_comment_from_section(ps, comment)
+            if comment and self.with_spans:
+                # The Group Comment should start where the section comment
+                # starts.
+                group_comment.span.start = comment.span.start
+            return group_comment
 
         if ps.is_entry_id_start() \
            and (comment is None or isinstance(comment, ast.Comment)):
@@ -185,7 +184,8 @@ class FluentParser(object):
         elif level == 2:
             return ast.ResourceComment(content)
 
-    def skip_section(self, ps):
+    @with_span
+    def get_group_comment_from_section(self, ps, comment):
         ps.expect_char('[')
         ps.expect_char('[')
 
@@ -198,8 +198,12 @@ class FluentParser(object):
         ps.expect_char(']')
         ps.expect_char(']')
 
-        ps.skip_inline_ws()
-        ps.next()
+        if comment:
+            return ast.GroupComment(comment.content)
+
+        # A Section without a comment is like an empty Group Comment.
+        # Semantically it ends the previous group and starts a new one.
+        return ast.GroupComment('')
 
     @with_span
     def get_message(self, ps, comment):

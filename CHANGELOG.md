@@ -1,8 +1,32 @@
 # Changelog
 
-## Unreleased
 
-  - …
+## fluent 0.6.0 (January 31, 2018)
+
+  - Implement Fluent Syntax 0.5.
+
+    - Add support for terms.
+    - Add support for `#`, `##` and `###` comments.
+    - Remove support for tags.
+    - Add support for `=` after the identifier in message and term
+      defintions.
+    - Forbid newlines in string expressions.
+    - Allow trailing comma in call expression argument lists.
+
+    In fluent-syntax 0.6.x the new Syntax 0.5 is supported alongside the old
+    Syntax 0.4. This should make migrations easier.
+
+    `FluentParser` will correctly parse Syntax 0.4 comments (prefixed with
+    `//`), sections and message definitions without the `=` after the
+    identifier. The one exception are tags which are no longer supported.
+    Please use attributed defined on terms instead.
+
+    `FluentSerializer` always serializes using the new Syntax 0.5.
+
+  - Expose `FluentSerializer.serializeExpression`. (#134)
+
+  - Fix Bug 1428000 - Migrate: only annotate affected files (#34)
+
 
 ## fluent 0.4.4 (November 29, 2017)
 

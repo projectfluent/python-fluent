@@ -15,6 +15,8 @@ from fluent.migrate.transforms import evaluate, CONCAT, COPY, REPLACE
 
 
 class MockContext(unittest.TestCase):
+    maxDiff = None
+
     def get_source(self, path, key):
         # Ignore path (test.properties) and get translations from self.strings
         # defined in setUp.

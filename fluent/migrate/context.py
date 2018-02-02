@@ -23,6 +23,7 @@ except ImportError:
 from .cldr import get_plural_categories
 from .transforms import Source
 from .merge import merge_resource
+from .util import get_message
 from .errors import (
     EmptyLocalizationError, NotSupportedError, UnreadableReferenceError)
 
@@ -205,11 +206,20 @@ class MergeContext(object):
         self.reference_resources[target] = reference_ast
 
         for node in transforms:
+            ident = node.id.name
             # Scan `node` for `Source` nodes and collect the information they
             # store into a set of dependencies.
             dependencies = fold(get_sources, node, set())
             # Set these sources as dependencies for the current transform.
-            self.dependencies[(target, node.id.name)] = dependencies
+            self.dependencies[(target, ident)] = dependencies
+
+            # The target Fluent message should exist in the reference file. If
+            # it doesn't, it's probably a typo.
+            if get_message(reference_ast.body, ident) is None:
+                logger = logging.getLogger('migrate')
+                logger.warn(
+                    '{} "{}" was not found in {}'.format(
+                        type(node).__name__, ident, reference))
 
         # Keep track of localization resource paths which were defined as
         # sources in the transforms.

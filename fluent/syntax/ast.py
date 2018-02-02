@@ -190,12 +190,15 @@ class Pattern(SyntaxNode):
         super(Pattern, self).__init__(**kwargs)
         self.elements = elements
 
-class TextElement(SyntaxNode):
+class PatternElement(SyntaxNode):
+    pass
+
+class TextElement(PatternElement):
     def __init__(self, value, **kwargs):
         super(TextElement, self).__init__(**kwargs)
         self.value = value
 
-class Placeable(SyntaxNode):
+class Placeable(PatternElement):
     def __init__(self, expression, **kwargs):
         super(Placeable, self).__init__(**kwargs)
         self.expression = expression

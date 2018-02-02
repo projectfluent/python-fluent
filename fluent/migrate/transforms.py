@@ -64,6 +64,7 @@ them.
 """
 
 from __future__ import unicode_literals
+import itertools
 
 import fluent.syntax.ast as FTL
 from .errors import NotSupportedError
@@ -128,11 +129,11 @@ class COPY(Source):
 
 
 class REPLACE_IN_TEXT(Transform):
-    """Replace various placeables in the translation with FTL placeables.
+    """Replace various placeables in the translation with FTL.
 
     The original placeables are defined as keys on the `replacements` dict.
-    For each key the value is defined as a list of FTL Expressions to be
-    interpolated.
+    For each key the value is defined as a FTL Pattern, Placeable,
+    TextElement or Expressions to be interpolated.
     """
 
     def __init__(self, value, replacements):
@@ -141,7 +142,7 @@ class REPLACE_IN_TEXT(Transform):
 
     def __call__(self, ctx):
 
-        # Only replace placeable which are present in the translation.
+        # Only replace placeables which are present in the translation.
         replacements = {
             key: evaluate(ctx, repl)
             for key, repl in self.replacements.iteritems()
@@ -154,40 +155,43 @@ class REPLACE_IN_TEXT(Transform):
             lambda x, y: self.value.find(x) - self.value.find(y)
         )
 
-        # Used to reduce the `keys_in_order` list.
-        def replace(acc, cur):
-            """Convert original placeables and text into FTL Nodes.
+        # A list of PatternElements built from the legacy translation and the
+        # FTL replacements. It may contain empty or adjacent TextElements.
+        parts = []
+        tail = self.value
 
-            For each original placeable the translation will be partitioned
-            around it and the text before it will be converted into an
-            `FTL.TextElement` and the placeable will be replaced with its
-            replacement. The text following the placebale will be fed again to
-            the `replace` function.
-            """
+        # Convert original placeables and text into FTL Nodes. For each
+        # original placeable the translation will be partitioned around it and
+        # the text before it will be converted into an `FTL.TextElement` and
+        # the placeable will be replaced with its replacement.
+        for key in keys_in_order:
+            before, key, tail = tail.partition(key)
 
-            parts, rest = acc
-            before, key, after = rest.value.partition(cur)
+            # The replacement value can be of different types.
+            replacement = replacements[key]
+            if isinstance(replacement, FTL.Pattern):
+                repl_elements = replacement.elements
+            elif isinstance(replacement, FTL.PatternElement):
+                repl_elements = [replacement]
+            elif isinstance(replacement, FTL.Expression):
+                repl_elements = [FTL.Placeable(replacement)]
 
-            placeable = FTL.Placeable(replacements[key])
+            parts.append(FTL.TextElement(before))
+            parts.extend(repl_elements)
 
-            # Return the elements found and converted so far, and the remaining
-            # text which hasn't been scanned for placeables yet.
-            return (
-                parts + [FTL.TextElement(before), placeable],
-                FTL.TextElement(after)
-            )
+        # Dont' forget about the tail after the loop ends.
+        parts.append(FTL.TextElement(tail))
 
-        def is_non_empty(elem):
-            """Used for filtering empty `FTL.TextElement` nodes out."""
-            return not isinstance(elem, FTL.TextElement) or len(elem.value)
-
-        # Start with an empty list of elements and the original translation.
-        init = ([], FTL.TextElement(self.value))
-        parts, tail = reduce(replace, keys_in_order, init)
-
-        # Explicitly concat the trailing part to get the full list of elements
-        # and filter out the empty ones.
-        elements = filter(is_non_empty, parts + [tail])
+        # Join adjacent TextElements.
+        elements = []
+        for elem_type, elems in itertools.groupby(parts, key=type):
+            if elem_type is FTL.TextElement:
+                text = FTL.TextElement(''.join(elem.value for elem in elems))
+                # And remove empty ones.
+                if len(text.value) > 0:
+                    elements.append(text)
+            else:
+                elements.extend(elems)
 
         return FTL.Pattern(elements)
 

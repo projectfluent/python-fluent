@@ -15,6 +15,8 @@ from fluent.migrate.transforms import evaluate, REPLACE
 
 
 class MockContext(unittest.TestCase):
+    maxDiff = None
+
     def get_source(self, path, key):
         # Ignore path (test.properties) and get translations from self.strings
         # defined in setUp.
@@ -145,6 +147,72 @@ class TestReplace(MockContext):
             evaluate(self, msg).to_json(),
             ftl_message_to_json('''
                 last = Foo { $bar }
+            ''')
+        )
+
+    def test_replace_with_placeable(self):
+        msg = FTL.Message(
+            FTL.Identifier(u'hello'),
+            value=REPLACE(
+                'test.properties',
+                'hello',
+                {
+                    '#1': FTL.Placeable(
+                        EXTERNAL_ARGUMENT('user')
+                    )
+                }
+            )
+        )
+
+        self.assertEqual(
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                hello = Hello, { $user }!
+            ''')
+        )
+
+    def test_replace_with_text_element(self):
+        msg = FTL.Message(
+            FTL.Identifier(u'hello'),
+            value=REPLACE(
+                'test.properties',
+                'hello',
+                {
+                    '#1': FTL.TextElement('you')
+                }
+            )
+        )
+
+        self.assertEqual(
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                hello = Hello, you!
+            ''')
+        )
+
+    def test_replace_with_pattern(self):
+        msg = FTL.Message(
+            FTL.Identifier(u'hello'),
+            value=REPLACE(
+                'test.properties',
+                'hello',
+                {
+                    '#1': FTL.Pattern(
+                        elements=[
+                            FTL.TextElement('<img> '),
+                            FTL.Placeable(
+                                EXTERNAL_ARGUMENT('user')
+                            )
+                        ]
+                    )
+                }
+            )
+        )
+
+        self.assertEqual(
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                hello = Hello, <img> { $user }!
             ''')
         )
 

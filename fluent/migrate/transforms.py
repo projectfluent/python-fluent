@@ -64,6 +64,7 @@ them.
 """
 
 from __future__ import unicode_literals
+from functools import reduce
 
 import fluent.syntax.ast as FTL
 from .errors import NotSupportedError
@@ -128,11 +129,11 @@ class COPY(Source):
 
 
 class REPLACE_IN_TEXT(Transform):
-    """Replace various placeables in the translation with FTL placeables.
+    """Replace various placeables in the translation with FTL.
 
     The original placeables are defined as keys on the `replacements` dict.
-    For each key the value is defined as a list of FTL Expressions to be
-    interpolated.
+    For each key the value is defined as a FTL Pattern, Placeable,
+    TextElement or Expressions to be interpolated.
     """
 
     def __init__(self, value, replacements):
@@ -168,27 +169,39 @@ class REPLACE_IN_TEXT(Transform):
             parts, rest = acc
             before, key, after = rest.value.partition(cur)
 
-            placeable = FTL.Placeable(replacements[key])
+            # The replacement value can be of different types.
+            replacement = replacements[key]
+            if isinstance(replacement, FTL.Pattern):
+                elements = replacement.elements
+            elif isinstance(replacement, FTL.PatternElement):
+                elements = [replacement]
+            elif isinstance(replacement, FTL.Expression):
+                elements = [FTL.Placeable(replacement)]
 
             # Return the elements found and converted so far, and the remaining
             # text which hasn't been scanned for placeables yet.
             return (
-                parts + [FTL.TextElement(before), placeable],
+                parts + [FTL.TextElement(before)] + elements,
                 FTL.TextElement(after)
             )
 
-        def is_non_empty(elem):
-            """Used for filtering empty `FTL.TextElement` nodes out."""
-            return not isinstance(elem, FTL.TextElement) or len(elem.value)
+        def prune(acc, cur):
+            """Join adjacent TextElements and remove the empty ones."""
+            if isinstance(cur, FTL.TextElement):
+                if len(cur.value) == 0:
+                    return acc
+                if len(acc) and isinstance(acc[-1], FTL.TextElement):
+                    acc[-1].value += cur.value
+                    return acc
+            return acc + [cur]
 
         # Start with an empty list of elements and the original translation.
         init = ([], FTL.TextElement(self.value))
-        parts, tail = reduce(replace, keys_in_order, init)
+        elements, tail = reduce(replace, keys_in_order, init)
 
-        # Explicitly concat the trailing part to get the full list of elements
-        # and filter out the empty ones.
-        elements = filter(is_non_empty, parts + [tail])
-
+        # Explicitly append the trailing TextElement.
+        elements.append(tail)
+        elements = reduce(prune, elements, [])
         return FTL.Pattern(elements)
 
 

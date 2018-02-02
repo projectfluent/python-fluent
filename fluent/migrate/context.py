@@ -60,8 +60,8 @@ class MergeContext(object):
         try:
             self.plural_categories = get_plural_categories(lang)
         except RuntimeError as e:
-            print(e.message)
-            self.plural_categories = 'en'
+            logging.getLogger('migrate').warn(e)
+            self.plural_categories = get_plural_categories('en')
 
         # Paths to directories with input data, relative to CWD.
         self.reference_dir = reference_dir

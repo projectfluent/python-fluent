@@ -23,7 +23,7 @@ def main(lang, reference_dir, localization_dir, migrations, dry_run):
 
     for migration in migrations:
 
-        print('Running migration {} for {}'.format(
+        print('\nRunning migration {} for {}'.format(
             migration.__name__, lang))
 
         # For each migration create a new context.

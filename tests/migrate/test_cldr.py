@@ -33,5 +33,5 @@ class TestPluralCategories(unittest.TestCase):
         )
 
     def test_unknown_language(self):
-        with self.assertRaisesRegex(RuntimeError, 'Unknown language'):
+        with self.assertRaisesRegex(RuntimeError, 'Missing plural categories'):
             get_plural_categories('i-default')

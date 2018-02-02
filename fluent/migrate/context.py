@@ -23,7 +23,8 @@ except ImportError:
 from .cldr import get_plural_categories
 from .transforms import Source
 from .merge import merge_resource
-from .errors import NotSupportedError, UnreadableReferenceError
+from .errors import (
+    EmptyLocalizationError, NotSupportedError, UnreadableReferenceError)
 
 
 class MergeContext(object):
@@ -114,6 +115,47 @@ class MergeContext(object):
         # Transform the parsed result which is an iterator into a dict.
         return {entity.key: entity.val for entity in parser}
 
+    def read_reference_ftl(self, path):
+        """Read and parse a reference FTL file.
+
+        A missing resource file is a fatal error and will raise an
+        UnreadableReferenceError.
+        """
+        fullpath = os.path.join(self.reference_dir, path)
+        try:
+            return self.read_ftl_resource(fullpath)
+        except IOError as err:
+            error_message = 'Missing reference file: {}'.format(fullpath)
+            logging.getLogger('migrate').error(error_message)
+            raise UnreadableReferenceError(error_message)
+        except UnicodeDecodeError as err:
+            error_message = 'Error reading file {}: {}'.format(fullpath, err)
+            logging.getLogger('migrate').error(error_message)
+            raise UnreadableReferenceError(error_message)
+
+    def read_localization_ftl(self, path):
+        """Read and parse an existing localization FTL file.
+
+        Create a new FTL.Resource if the file doesn't exist or can't be
+        decoded.
+        """
+        fullpath = os.path.join(self.localization_dir, path)
+        try:
+            return self.read_ftl_resource(fullpath)
+        except IOError:
+            logger = logging.getLogger('migrate')
+            logger.info(
+                'Localization file {} does not exist and '
+                'it will be created'.format(path))
+            return FTL.Resource()
+        except UnicodeDecodeError:
+            logger = logging.getLogger('migrate')
+            logger.warn(
+                'Localization file {} has broken encoding. '
+                'It will be re-created and some translations '
+                'may be lost'.format(path))
+            return FTL.Resource()
+
     def maybe_add_localization(self, path):
         """Add a localization resource to migrate translations from.
 
@@ -159,21 +201,8 @@ class MergeContext(object):
                 acc.add((cur.path, cur.key))
             return acc
 
-        refpath = os.path.join(self.reference_dir, reference)
-        try:
-            ast = self.read_ftl_resource(refpath)
-        except IOError as err:
-            error_message = 'Missing reference file: {}'.format(refpath)
-            logging.getLogger('migrate').error(error_message)
-            raise UnreadableReferenceError(error_message)
-        except UnicodeDecodeError as err:
-            error_message = 'Error reading file {}: {}'.format(refpath, err)
-            logging.getLogger('migrate').error(error_message)
-            raise UnreadableReferenceError(error_message)
-        else:
-            # The reference file will be used by the merge function as
-            # a template for serializing the merge results.
-            self.reference_resources[target] = ast
+        reference_ast = self.read_reference_ftl(reference)
+        self.reference_resources[target] = reference_ast
 
         for node in transforms:
             # Scan `node` for `Source` nodes and collect the information they
@@ -182,29 +211,33 @@ class MergeContext(object):
             # Set these sources as dependencies for the current transform.
             self.dependencies[(target, node.id.name)] = dependencies
 
-            # Read all legacy translation files defined in Source transforms.
+        # Keep track of localization resource paths which were defined as
+        # sources in the transforms.
+        expected_paths = set()
+
+        # Read all legacy translation files defined in Source transforms. This
+        # may fail but a single missing legacy resource doesn't mean that the
+        # migration can't succeed.
+        for dependencies in self.dependencies.values():
             for path in set(path for path, _ in dependencies):
+                expected_paths.add(path)
                 self.maybe_add_localization(path)
 
+        # However, if all legacy resources are missing, bail out early. There
+        # are no translations to migrate. We'd also get errors in hg annotate.
+        if len(expected_paths) > 0 and len(self.localization_resources) == 0:
+            error_message = 'No localization files were found'
+            logging.getLogger('migrate').error(error_message)
+            raise EmptyLocalizationError(error_message)
+
+        # Add the current transforms to any other transforms added earlier for
+        # this path.
         path_transforms = self.transforms.setdefault(target, [])
         path_transforms += transforms
 
         if target not in self.localization_resources:
-            fullpath = os.path.join(self.localization_dir, target)
-            try:
-                ast = self.read_ftl_resource(fullpath)
-            except IOError:
-                logger = logging.getLogger('migrate')
-                logger.info(
-                    'Localization file {} does not exist and '
-                    'it will be created'.format(target))
-            except UnicodeDecodeError:
-                logger = logging.getLogger('migrate')
-                logger.warn(
-                    'Localization file {} will be re-created and some '
-                    'translations might be lost'.format(target))
-            else:
-                self.localization_resources[target] = ast
+            target_ast = self.read_localization_ftl(target)
+            self.localization_resources[target] = target_ast
 
     def get_source(self, path, key):
         """Get an entity value from a localized legacy source.
@@ -259,7 +292,7 @@ class MergeContext(object):
             }
 
         for path, reference in self.reference_resources.iteritems():
-            current = self.localization_resources.get(path, FTL.Resource())
+            current = self.localization_resources[path]
             transforms = self.transforms.get(path, [])
 
             def in_changeset(ident):

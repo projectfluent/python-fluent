@@ -23,7 +23,8 @@ def main(lang, reference_dir, localization_dir, migrations, dry_run):
 
     for migration in migrations:
 
-        print('Running migration {}'.format(migration.__name__))
+        print('Running migration {} for {}'.format(
+            migration.__name__, lang))
 
         # For each migration create a new context.
         ctx = MergeContext(lang, reference_dir, localization_dir)
@@ -31,8 +32,10 @@ def main(lang, reference_dir, localization_dir, migrations, dry_run):
         try:
             # Add the migration spec.
             migration.migrate(ctx)
-        except MigrationError as err:
-            sys.exit(err.message)
+        except MigrationError:
+            print('  Skipping migration {} for {}'.format(
+                migration.__name__, lang))
+            continue
 
         # Keep track of how many changesets we're committing.
         index = 0

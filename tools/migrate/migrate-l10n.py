@@ -42,7 +42,9 @@ def main(lang, reference_dir, localization_dir, migrations, dry_run):
 
         # Annotate legacy localization files used as sources by this migration
         # to preserve attribution of translations.
-        files = ctx.localization_resources.keys()
+        files = (
+            path for path in ctx.localization_resources.keys()
+            if not path.endswith('.ftl'))
         blame = Blame(client).attribution(files)
         changesets = convert_blame_to_changesets(blame)
 

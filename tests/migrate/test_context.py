@@ -12,7 +12,8 @@ except ImportError:
 
 import fluent.syntax.ast as FTL
 
-from fluent.migrate.errors import NotSupportedError, UnreadableReferenceError
+from fluent.migrate.errors import (
+    EmptyLocalizationError, NotSupportedError, UnreadableReferenceError)
 from fluent.migrate.util import ftl, ftl_resource_to_json, to_json
 from fluent.migrate.context import MergeContext
 from fluent.migrate.transforms import COPY
@@ -250,6 +251,36 @@ class TestIncompleteReference(unittest.TestCase):
 
 
 @unittest.skipUnless(compare_locales, 'compare-locales requried')
+class TestEmptyLocalization(unittest.TestCase):
+    def setUp(self):
+        # Silence all logging.
+        logging.disable(logging.CRITICAL)
+
+        self.ctx = MergeContext(
+            lang='pl',
+            reference_dir=here('fixtures/en-US'),
+            localization_dir=here('fixtures/pl')
+        )
+
+    def tearDown(self):
+        # Resume logging.
+        logging.disable(logging.NOTSET)
+
+    def test_all_localization_missing(self):
+        pattern = ('No localization files were found')
+        with self.assertRaisesRegexp(EmptyLocalizationError, pattern):
+            self.ctx.add_transforms('existing.ftl', 'existing.ftl', [
+                FTL.Message(
+                    id=FTL.Identifier('foo'),
+                    value=COPY(
+                        'missing.dtd',
+                        'foo'
+                    )
+                ),
+            ])
+
+
+@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestIncompleteLocalization(unittest.TestCase):
     def setUp(self):
         # Silence all logging.
@@ -261,34 +292,28 @@ class TestIncompleteLocalization(unittest.TestCase):
             localization_dir=here('fixtures/pl')
         )
 
-        self.ctx.add_transforms('toolbar.ftl', 'toolbar.ftl', [
-            FTL.Message(
-                id=FTL.Identifier('urlbar-textbox'),
-                attributes=[
-                    FTL.Attribute(
-                        id=FTL.Identifier('placeholder'),
-                        value=COPY(
-                            'browser.dtd',
-                            'urlbar.placeholder2'
-                        )
-                    ),
-                    FTL.Attribute(
-                        id=FTL.Identifier('accesskey'),
-                        value=COPY(
-                            'browser.dtd',
-                            'urlbar.accesskey'
-                        )
-                    ),
-                ]
-            ),
-        ])
-
     def tearDown(self):
         # Resume logging.
         logging.disable(logging.NOTSET)
 
     def test_missing_localization_file(self):
-        self.maxDiff = None
+        self.ctx.add_transforms('existing.ftl', 'existing.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('foo'),
+                value=COPY(
+                    'existing.dtd',
+                    'foo'
+                )
+            ),
+            FTL.Message(
+                id=FTL.Identifier('bar'),
+                value=COPY(
+                    'missing.dtd',
+                    'bar'
+                )
+            ),
+        ])
+
         self.assertDictEqual(
             to_json(self.ctx.merge_changeset()),
             {}

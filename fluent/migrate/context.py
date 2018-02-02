@@ -23,7 +23,8 @@ except ImportError:
 from .cldr import get_plural_categories
 from .transforms import Source
 from .merge import merge_resource
-from .errors import NotSupportedError, UnreadableReferenceError
+from .errors import (
+    EmptyLocalizationError, NotSupportedError, UnreadableReferenceError)
 
 
 class MergeContext(object):
@@ -181,11 +182,28 @@ class MergeContext(object):
             dependencies = fold(get_sources, node, set())
             # Set these sources as dependencies for the current transform.
             self.dependencies[(target, node.id.name)] = dependencies
+        
+        # Keep track of localization resource paths which were defined as
+        # sources in the transforms.
+        expected_paths = set()
 
-            # Read all legacy translation files defined in Source transforms.
+        # Read all legacy translation files defined in Source transforms. This
+        # may fail but a single missing legacy resource doesn't mean that the
+        # migration can't succeed.
+        for dependencies in self.dependencies.values():
             for path in set(path for path, _ in dependencies):
+                expected_paths.add(path)
                 self.maybe_add_localization(path)
+        
+        # However, if all legacy resources are missing, bail out early. There
+        # are no translations to migrate. We'd also get errors in hg annotate.
+        if len(expected_paths) > 0 and len(self.localization_resources) == 0:
+            error_message = 'No localization files were found'
+            logging.getLogger('migrate').error(error_message)
+            raise EmptyLocalizationError(error_message)
 
+        # Add the current transforms to any other transforms added earlier for
+        # this path.
         path_transforms = self.transforms.setdefault(target, [])
         path_transforms += transforms
 

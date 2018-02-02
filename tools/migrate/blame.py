@@ -15,8 +15,8 @@ class Blame(object):
 
     def attribution(self, file_paths):
         args = cmdbuilder(
-            b('annotate'), template='json', date=True, user=True,
-            cwd=self.client.root(), file=map(b, file_paths))
+            b('annotate'), *map(b, file_paths), template='json',
+            date=True, user=True, cwd=self.client.root())
         blame_json = ''.join(self.client.rawcommand(args))
         file_blames = json.loads(blame_json)
 

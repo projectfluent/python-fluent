@@ -246,10 +246,10 @@ class VariantExpression(Expression):
         self.key = key
 
 class CallExpression(Expression):
-    def __init__(self, callee, args, **kwargs):
+    def __init__(self, callee, args=None, **kwargs):
         super(CallExpression, self).__init__(**kwargs)
         self.callee = callee
-        self.args = args
+        self.args = args or []
 
 class Attribute(SyntaxNode):
     def __init__(self, id, value, **kwargs):

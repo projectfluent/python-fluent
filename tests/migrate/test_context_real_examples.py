@@ -281,6 +281,8 @@ class TestMergeAboutDownloads(unittest.TestCase):
 
 @unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestMergeAboutDialog(unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         self.ctx = MergeContext(
             lang='pl',
@@ -363,6 +365,8 @@ class TestMergeAboutDialog(unittest.TestCase):
     def test_merge_context_some_messages(self):
         changeset = {
             ('aboutDialog.dtd', 'update.failed.start'),
+            ('aboutDialog.dtd', 'update.failed.linkText'),
+            ('aboutDialog.dtd', 'update.failed.end'),
         }
 
         expected = {
@@ -378,4 +382,15 @@ class TestMergeAboutDialog(unittest.TestCase):
         self.assertDictEqual(
             to_json(self.ctx.merge_changeset(changeset)),
             expected
+        )
+
+    def test_merge_context_too_few_messages(self):
+        changeset = {
+            ('aboutDialog.dtd', 'update.failed.start'),
+            ('aboutDialog.dtd', 'update.failed.linkText'),
+        }
+
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset(changeset)),
+            {}
         )

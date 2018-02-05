@@ -285,7 +285,15 @@ class MergeContext(object):
 
         The input data must be configured earlier using the `add_*` methods.
         if given, `changeset` must be a set of (path, key) tuples describing
-        which legacy translations are to be merged.
+        which legacy translations are to be merged. If `changeset` is None,
+        all legacy translations will be allowed to be migrated in a single
+        changeset.
+
+        The inner `in_changeset` function is used to determine if a message
+        should be migrated for the given changeset. It compares the legacy
+        dependencies of the transform defined for the message with legacy
+        translations available in the changeset. If all dependencies are
+        present, the message will be migrated.
 
         Given `changeset`, return a dict whose keys are resource paths and
         values are `FTL.Resource` instances.  The values will also be used to
@@ -306,10 +314,18 @@ class MergeContext(object):
             transforms = self.transforms.get(path, [])
 
             def in_changeset(ident):
-                """Check if entity should be merged.
+                """Check if a message should be migrated.
 
-                If at least one dependency of the entity is in the current
-                set of changeset, merge it.
+                A message will be migrated only if all of its dependencies
+                are present in the currently processed changeset.
+
+                If a transform defined for this message points to a missing
+                legacy translation, this message will not be merged. The
+                missing legacy dependency won't be present in the changeset.
+
+                This also means that partially translated messages (e.g.
+                constructed from two legacy strings out of which only one is
+                avaiable) will never be migrated.
                 """
                 message_deps = self.dependencies.get((path, ident), None)
 
@@ -324,9 +340,11 @@ class MergeContext(object):
                 if len(message_deps) == 0:
                     return True
 
-                # If the intersection of the dependencies and the current
-                # changeset is non-empty, merge this message.
-                return message_deps & changeset
+                # Make sure all the dependencies are present in the current
+                # changeset. Partial migrations are not currently supported.
+                # See https://bugzilla.mozilla.org/show_bug.cgi?id=1321271
+                available_deps = message_deps & changeset
+                return message_deps == available_deps
 
             # Merge legacy translations with the existing ones using the
             # reference as a template.

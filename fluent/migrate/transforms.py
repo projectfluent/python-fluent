@@ -90,6 +90,38 @@ class Transform(FTL.BaseNode):
     def __call__(self, ctx):
         raise NotImplementedError
 
+    @staticmethod
+    def flatten_elements(elements):
+        '''Flatten a list of FTL nodes into valid Pattern's elements'''
+        flattened = []
+        for element in elements:
+            if isinstance(element, FTL.Pattern):
+                flattened.extend(element.elements)
+            elif isinstance(element, FTL.PatternElement):
+                flattened.append(element)
+            elif isinstance(element, FTL.Expression):
+                flattened.append(FTL.Placeable(element))
+            else:
+                raise RuntimeError(
+                    'Expected Pattern, PatternElement or Expression')
+        return flattened
+
+    @staticmethod
+    def prune_text_elements(elements):
+        '''Join adjacent TextElements and remove empty ones'''
+        pruned = []
+        # Group elements in contiguous sequences of the same type.
+        for elem_type, elems in itertools.groupby(elements, key=type):
+            if elem_type is FTL.TextElement:
+                # Join adjacent TextElements.
+                text = FTL.TextElement(''.join(elem.value for elem in elems))
+                # And remove empty ones.
+                if len(text.value) > 0:
+                    pruned.append(text)
+            else:
+                pruned.extend(elems)
+        return pruned
+
 
 class Source(Transform):
     """Declare the source translation to be migrated with other transforms.
@@ -157,7 +189,7 @@ class REPLACE_IN_TEXT(Transform):
 
         # A list of PatternElements built from the legacy translation and the
         # FTL replacements. It may contain empty or adjacent TextElements.
-        parts = []
+        elements = []
         tail = self.value
 
         # Convert original placeables and text into FTL Nodes. For each
@@ -166,33 +198,14 @@ class REPLACE_IN_TEXT(Transform):
         # the placeable will be replaced with its replacement.
         for key in keys_in_order:
             before, key, tail = tail.partition(key)
-
-            # The replacement value can be of different types.
-            replacement = replacements[key]
-            if isinstance(replacement, FTL.Pattern):
-                repl_elements = replacement.elements
-            elif isinstance(replacement, FTL.PatternElement):
-                repl_elements = [replacement]
-            elif isinstance(replacement, FTL.Expression):
-                repl_elements = [FTL.Placeable(replacement)]
-
-            parts.append(FTL.TextElement(before))
-            parts.extend(repl_elements)
+            elements.append(FTL.TextElement(before))
+            elements.append(replacements[key])
 
         # Dont' forget about the tail after the loop ends.
-        parts.append(FTL.TextElement(tail))
+        elements.append(FTL.TextElement(tail))
 
-        # Join adjacent TextElements.
-        elements = []
-        for elem_type, elems in itertools.groupby(parts, key=type):
-            if elem_type is FTL.TextElement:
-                text = FTL.TextElement(''.join(elem.value for elem in elems))
-                # And remove empty ones.
-                if len(text.value) > 0:
-                    elements.append(text)
-            else:
-                elements.extend(elems)
-
+        elements = self.flatten_elements(elements)
+        elements = self.prune_text_elements(elements)
         return FTL.Pattern(elements)
 
 
@@ -270,34 +283,8 @@ class CONCAT(Transform):
         self.patterns = list(patterns)
 
     def __call__(self, ctx):
-        # Flatten the list of patterns of which each has a list of elements.
-        def concat_elements(acc, cur):
-            if isinstance(cur, FTL.Pattern):
-                acc.extend(cur.elements)
-                return acc
-            elif (isinstance(cur, FTL.TextElement) or
-                  isinstance(cur, FTL.Placeable)):
-                acc.append(cur)
-                return acc
-
-            raise RuntimeError(
-                'CONCAT accepts FTL Patterns, TextElements and Placeables.'
-            )
-
-        # Merge adjecent `FTL.TextElement` nodes.
-        def merge_adjecent_text(acc, cur):
-            if type(cur) == FTL.TextElement and len(acc):
-                last = acc[-1]
-                if type(last) == FTL.TextElement:
-                    last.value += cur.value
-                else:
-                    acc.append(cur)
-            else:
-                acc.append(cur)
-            return acc
-
-        elements = reduce(concat_elements, self.patterns, [])
-        elements = reduce(merge_adjecent_text, elements, [])
+        elements = self.flatten_elements(self.patterns)
+        elements = self.prune_text_elements(elements)
         return FTL.Pattern(elements)
 
     def traverse(self, fun):

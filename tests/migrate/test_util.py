@@ -27,11 +27,11 @@ class TestTraverse(unittest.TestCase):
         result = node.traverse(lambda x: x)
 
         self.assertEqual(
-            result.value.patterns[0].key,
+            result.value.elements[0].key,
             'key1'
         )
         self.assertEqual(
-            result.value.patterns[1].key,
+            result.value.elements[1].key,
             'key2'
         )
 

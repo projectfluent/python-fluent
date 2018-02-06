@@ -157,12 +157,29 @@ class TestConcatInterpolate(MockContext):
             <!ENTITY channel.description.end    " channel.">
         ''')
 
-    def test_concat_replace(self):
+    def test_concat_placeable(self):
         msg = FTL.Message(
             FTL.Identifier('channel-desc'),
             value=CONCAT(
                 COPY('test.properties', 'channel.description.start'),
                 FTL.Placeable(EXTERNAL_ARGUMENT('channelname')),
+                COPY('test.properties', 'channel.description.end'),
+            )
+        )
+
+        self.assertEqual(
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                channel-desc = You are on the { $channelname } channel.
+            ''')
+        )
+
+    def test_concat_expression(self):
+        msg = FTL.Message(
+            FTL.Identifier('channel-desc'),
+            value=CONCAT(
+                COPY('test.properties', 'channel.description.start'),
+                EXTERNAL_ARGUMENT('channelname'),
                 COPY('test.properties', 'channel.description.end'),
             )
         )

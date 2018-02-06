@@ -11,9 +11,9 @@ import importlib
 import hglib
 from hglib.util import b
 
-from fluent.migrate import (
-    MergeContext, MigrationError, convert_blame_to_changesets
-)
+from fluent.migrate.context import MergeContext
+from fluent.migrate.errors import MigrationError
+from fluent.migrate.changesets import convert_blame_to_changesets
 from blame import Blame
 
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## fluent 0.6.1 (February 6, 2018)
+
+Various fixes to `fluent.migrate` for [bug 1424682][].
+
+[bug 1424682]: https://bugzilla.mozilla.org/show_bug.cgi?id=1424682
+
+  - Accept `Patterns` and `PatternElements` in `REPLACE`. (#41)
+
+    `REPLACE` can now use `Patterns`, `PatternElements` and `Expressions` as
+    replacement values. This makes `REPLACE` accept the same Transforms as
+    `CONCAT`.
+
+  - Never migrate partial translations. (#44)
+
+    Partial translations may break the AST because they produce
+    `TextElements` with `None` values. For now, we explicitly skip any
+    transforms which depend on at least one missing legacy string to avoid
+    serialization errors.
+
+  - Warn about unknown FTL entries in transforms. (#40)
+  - Fix how files are passed to `hg annotate`. (#39)
 
 ## fluent 0.6.0 (January 31, 2018)
 

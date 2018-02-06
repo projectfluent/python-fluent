@@ -16,7 +16,7 @@ from fluent.migrate.errors import (
     EmptyLocalizationError, NotSupportedError, UnreadableReferenceError)
 from fluent.migrate.util import ftl, ftl_resource_to_json, to_json
 from fluent.migrate.context import MergeContext
-from fluent.migrate.transforms import COPY
+from fluent.migrate.transforms import CONCAT, COPY
 
 
 def here(*parts):
@@ -251,7 +251,7 @@ class TestIncompleteReference(unittest.TestCase):
 
 
 @unittest.skipUnless(compare_locales, 'compare-locales requried')
-class TestEmptyLocalization(unittest.TestCase):
+class TestMissingLocalizationFiles(unittest.TestCase):
     def setUp(self):
         # Silence all logging.
         logging.disable(logging.CRITICAL)
@@ -266,7 +266,40 @@ class TestEmptyLocalization(unittest.TestCase):
         # Resume logging.
         logging.disable(logging.NOTSET)
 
-    def test_all_localization_missing(self):
+    def test_missing_file(self):
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('title'),
+                value=COPY(
+                    'aboutDownloads.dtd',
+                    'aboutDownloads.title'
+                )
+            ),
+            FTL.Message(
+                id=FTL.Identifier('header'),
+                value=COPY(
+                    'missing.dtd',
+                    'missing'
+                )
+            ),
+        ])
+
+        expected = {
+            'aboutDownloads.ftl': ftl_resource_to_json('''
+        # This Source Code Form is subject to the terms of the Mozilla Public
+        # License, v. 2.0. If a copy of the MPL was not distributed with this
+        # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+        title = Pobrane pliki
+            ''')
+        }
+
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            expected
+        )
+
+    def test_all_files_missing(self):
         pattern = ('No localization files were found')
         with self.assertRaisesRegexp(EmptyLocalizationError, pattern):
             self.ctx.add_transforms('existing.ftl', 'existing.ftl', [
@@ -281,7 +314,9 @@ class TestEmptyLocalization(unittest.TestCase):
 
 
 @unittest.skipUnless(compare_locales, 'compare-locales requried')
-class TestIncompleteLocalization(unittest.TestCase):
+class TestMissingLocalizationStrings(unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         # Silence all logging.
         logging.disable(logging.CRITICAL)
@@ -296,21 +331,194 @@ class TestIncompleteLocalization(unittest.TestCase):
         # Resume logging.
         logging.disable(logging.NOTSET)
 
-    def test_missing_localization_file(self):
-        self.ctx.add_transforms('existing.ftl', 'existing.ftl', [
+    def test_missing_string_in_simple_value(self):
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
-                id=FTL.Identifier('foo'),
+                id=FTL.Identifier('title'),
                 value=COPY(
-                    'existing.dtd',
-                    'foo'
+                    'aboutDownloads.dtd',
+                    'missing'
                 )
             ),
+        ])
+
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            {}
+        )
+
+    def test_missing_string_in_only_variant(self):
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
             FTL.Message(
-                id=FTL.Identifier('bar'),
-                value=COPY(
-                    'missing.dtd',
-                    'bar'
+                id=FTL.Identifier('title'),
+                value=CONCAT(
+                    FTL.SelectExpression(
+                        expression=FTL.CallExpression(
+                            callee=FTL.Identifier('PLATFORM')
+                        ),
+                        variants=[
+                            FTL.Variant(
+                                key=FTL.VariantName('other'),
+                                default=True,
+                                value=COPY(
+                                    'aboutDownloads.dtd',
+                                    'missing'
+                                )
+                            ),
+                        ]
+                    ),
                 )
+            ),
+        ])
+
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            {}
+        )
+
+    def test_missing_string_in_all_variants(self):
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('title'),
+                value=CONCAT(
+                    FTL.SelectExpression(
+                        expression=FTL.CallExpression(
+                            callee=FTL.Identifier('PLATFORM')
+                        ),
+                        variants=[
+                            FTL.Variant(
+                                key=FTL.VariantName('windows'),
+                                default=False,
+                                value=COPY(
+                                    'aboutDownloads.dtd',
+                                    'missing.windows'
+                                )
+                            ),
+                            FTL.Variant(
+                                key=FTL.VariantName('other'),
+                                default=True,
+                                value=COPY(
+                                    'aboutDownloads.dtd',
+                                    'missing.other'
+                                )
+                            ),
+                        ]
+                    ),
+                )
+            ),
+        ])
+
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            {}
+        )
+
+    def test_missing_string_in_one_of_variants(self):
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('title'),
+                value=CONCAT(
+                    FTL.SelectExpression(
+                        expression=FTL.CallExpression(
+                            callee=FTL.Identifier('PLATFORM')
+                        ),
+                        variants=[
+                            FTL.Variant(
+                                key=FTL.VariantName('windows'),
+                                default=False,
+                                value=COPY(
+                                    'aboutDownloads.dtd',
+                                    'aboutDownloads.title'
+                                )
+                            ),
+                            FTL.Variant(
+                                key=FTL.VariantName('other'),
+                                default=True,
+                                value=COPY(
+                                    'aboutDownloads.dtd',
+                                    'missing.other'
+                                )
+                            ),
+                        ]
+                    ),
+                )
+            ),
+        ])
+
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            {}
+        )
+
+    def test_missing_string_in_only_attribute(self):
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('title'),
+                attributes=[
+                    FTL.Attribute(
+                        FTL.Identifier('one'),
+                        COPY(
+                            'aboutDownloads.dtd',
+                            'missing'
+                        )
+                    ),
+                ]
+            ),
+        ])
+
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            {}
+        )
+
+    def test_missing_string_in_all_attributes(self):
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('title'),
+                attributes=[
+                    FTL.Attribute(
+                        FTL.Identifier('one'),
+                        COPY(
+                            'aboutDownloads.dtd',
+                            'missing.one'
+                        )
+                    ),
+                    FTL.Attribute(
+                        FTL.Identifier('two'),
+                        COPY(
+                            'aboutDownloads.dtd',
+                            'missing.two'
+                        )
+                    ),
+                ]
+            ),
+        ])
+
+        self.assertDictEqual(
+            to_json(self.ctx.merge_changeset()),
+            {}
+        )
+
+    def test_missing_string_in_one_of_attributes(self):
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('title'),
+                attributes=[
+                    FTL.Attribute(
+                        FTL.Identifier('title'),
+                        COPY(
+                            'aboutDownloads.dtd',
+                            'aboutDownloads.title'
+                        )
+                    ),
+                    FTL.Attribute(
+                        FTL.Identifier('missing'),
+                        COPY(
+                            'aboutDownloads.dtd',
+                            'missing'
+                        )
+                    ),
+                ]
             ),
         ])
 
@@ -360,7 +568,6 @@ class TestExistingTarget(unittest.TestCase):
             ''')
         }
 
-        self.maxDiff = None
         self.assertDictEqual(
             to_json(self.ctx.merge_changeset()),
             expected
@@ -399,7 +606,6 @@ class TestExistingTarget(unittest.TestCase):
             ''')
         }
 
-        self.maxDiff = None
         self.assertDictEqual(
             to_json(self.ctx.merge_changeset()),
             expected

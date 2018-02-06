@@ -19,12 +19,17 @@ class MockContext(unittest.TestCase):
     def get_source(self, path, key):
         # Ignore path (test.properties) and get translations from
         # self.ab_cd_legacy defined in setUp.
-        return self.ab_cd_legacy.get(key, None).val
+        translation = self.ab_cd_legacy.get(key, None)
+
+        if translation is not None:
+            return translation.val
 
 
 @unittest.skipUnless(PropertiesParser and DTDParser,
                      'compare-locales required')
 class TestMergeMessages(MockContext):
+    maxDiff = None
+
     def setUp(self):
         self.en_us_ftl = parse(FluentParser, ftl('''
             title  = Downloads

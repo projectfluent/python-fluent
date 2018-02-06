@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import os
 import codecs
+from functools import partial
 import logging
 
 try:
@@ -290,11 +291,8 @@ class MergeContext(object):
         all legacy translations will be allowed to be migrated in a single
         changeset.
 
-        The inner `in_changeset` function is used to determine if a message
-        should be migrated for the given changeset. It compares the legacy
-        dependencies of the transform defined for the message with legacy
-        translations available in the changeset. If all dependencies are
-        present, the message will be migrated.
+        We use the `in_changeset` method to determine if a message should be
+        migrated for the given changeset.
 
         Given `changeset`, return a dict whose keys are resource paths and
         values are `FTL.Resource` instances.  The values will also be used to
@@ -316,42 +314,7 @@ class MergeContext(object):
         for path, reference in self.reference_resources.iteritems():
             current = self.localization_resources[path]
             transforms = self.transforms.get(path, [])
-
-            def in_changeset(ident):
-                """Check if a message should be migrated.
-
-                A message will be migrated only if all of its dependencies
-                are present in the currently processed changeset.
-
-                If a transform defined for this message points to a missing
-                legacy translation, this message will not be merged. The
-                missing legacy dependency won't be present in the changeset.
-
-                This also means that partially translated messages (e.g.
-                constructed from two legacy strings out of which only one is
-                avaiable) will never be migrated.
-                """
-                message_deps = self.dependencies.get((path, ident), None)
-
-                # Don't merge if we don't have a transform for this message.
-                if message_deps is None:
-                    return False
-
-                # As a special case, if a transform exists but has no
-                # dependecies, it's a hardcoded `FTL.Node` which doesn't
-                # migrate any existing translation but rather creates a new
-                # one.  Merge it.
-                if len(message_deps) == 0:
-                    return True
-
-                # Make sure all the dependencies are present in the current
-                # changeset. Partial migrations are not currently supported.
-                # See https://bugzilla.mozilla.org/show_bug.cgi?id=1321271
-                # We only return True if our current changeset touches
-                # the transform, and we have all of the dependencies.
-                active_deps = message_deps & changeset
-                available_deps = message_deps & known_translations
-                return active_deps and message_deps == available_deps
+            in_changeset = partial(self.in_changeset, changeset, known_translations, path)
 
             # Merge legacy translations with the existing ones using the
             # reference as a template.
@@ -375,6 +338,45 @@ class MergeContext(object):
 
             # The result for this path is a complete `FTL.Resource`.
             yield path, snapshot
+
+    def in_changeset(self, changeset, known_translations, path, ident):
+        """Check if a message should be migrated in this changeset.
+
+        The message is identified by path and ident.
+
+
+        A message will be migrated only if all of its dependencies
+        are present in the currently processed changeset.
+
+        If a transform defined for this message points to a missing
+        legacy translation, this message will not be merged. The
+        missing legacy dependency won't be present in the changeset.
+
+        This also means that partially translated messages (e.g.
+        constructed from two legacy strings out of which only one is
+        avaiable) will never be migrated.
+        """
+        message_deps = self.dependencies.get((path, ident), None)
+
+        # Don't merge if we don't have a transform for this message.
+        if message_deps is None:
+            return False
+
+        # As a special case, if a transform exists but has no
+        # dependecies, it's a hardcoded `FTL.Node` which doesn't
+        # migrate any existing translation but rather creates a new
+        # one.  Merge it.
+        if len(message_deps) == 0:
+            return True
+
+        # Make sure all the dependencies are present in the current
+        # changeset. Partial migrations are not currently supported.
+        # See https://bugzilla.mozilla.org/show_bug.cgi?id=1321271
+        # We only return True if our current changeset touches
+        # the transform, and we have all of the dependencies.
+        active_deps = message_deps & changeset
+        available_deps = message_deps & known_translations
+        return active_deps and message_deps == available_deps
 
     def serialize_changeset(self, changeset, known_translations=None):
         """Return a dict of serialized FTLs for the changeset.

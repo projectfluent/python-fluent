@@ -66,12 +66,10 @@ class BaseNode(object):
             else:
                 return fun(value)
 
+        # Use all attributes found on the node as kwargs to the constructor.
+        kwargs = vars(self).items()
         node = self.__class__(
-            **{
-                name: visit(value)
-                for name, value in vars(self).items()
-            }
-        )
+            **{name: visit(value) for name, value in kwargs})
 
         return fun(node)
 

@@ -277,43 +277,16 @@ class PLURALS(Source):
 
 
 class CONCAT(Transform):
-    """Concatenate elements of many patterns."""
+    """Create a new Pattern from Patterns, PatternElements and Expressions."""
 
-    def __init__(self, *patterns):
-        self.patterns = list(patterns)
+    def __init__(self, *elements, **kwargs):
+        # We want to support both passing elements as *elements in the
+        # migration specs and as elements=[]. The latter is used by
+        # FTL.BaseNode.traverse when it recreates the traversed node using its
+        # attributes as kwargs.
+        self.elements = list(kwargs.get('elements', elements))
 
     def __call__(self, ctx):
-        elements = self.flatten_elements(self.patterns)
+        elements = self.flatten_elements(self.elements)
         elements = self.prune_text_elements(elements)
         return FTL.Pattern(elements)
-
-    def traverse(self, fun):
-        def visit(value):
-            if isinstance(value, FTL.BaseNode):
-                return value.traverse(fun)
-            if isinstance(value, list):
-                return fun(map(visit, value))
-            else:
-                return fun(value)
-
-        node = self.__class__(
-            *[
-                visit(value) for value in self.patterns
-            ]
-        )
-
-        return fun(node)
-
-    def to_json(self):
-        def to_json(value):
-            if isinstance(value, FTL.BaseNode):
-                return value.to_json()
-            else:
-                return value
-
-        return {
-            'type': self.__class__.__name__,
-            'patterns': [
-                to_json(value) for value in self.patterns
-            ]
-        }

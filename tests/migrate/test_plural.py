@@ -74,6 +74,39 @@ class TestPlural(MockContext):
         )
 
 
+class TestPluralOrder(MockContext):
+    # Plural categories corresponding to Lithuanian (lt).
+    plural_categories = ('one', 'few', 'other')
+
+    def setUp(self):
+        self.strings = parse(PropertiesParser, '''
+            # These forms correspond to (one, other, few) in CLDR
+            deleteAll = Pašalinti #1 atsiuntimą?;Pašalinti #1 atsiuntimų?;Pašalinti #1 atsiuntimus?
+        ''')
+
+        self.message = FTL.Message(
+            FTL.Identifier('delete-all'),
+            value=PLURALS(
+                'test.properties',
+                'deleteAll',
+                EXTERNAL_ARGUMENT('num')
+            )
+        )
+
+    def test_plural(self):
+        self.assertEqual(
+            evaluate(self, self.message).to_json(),
+            ftl_message_to_json('''
+                delete-all =
+                    { $num ->
+                        [one] Pašalinti #1 atsiuntimą?
+                        [few] Pašalinti #1 atsiuntimus?
+                       *[other] Pašalinti #1 atsiuntimų?
+                    }
+            ''')
+        )
+
+
 class TestPluralLiteral(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''

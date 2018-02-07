@@ -2,6 +2,7 @@
 
 import pkgutil
 import json
+from compare_locales.plurals import CATEGORIES_BY_LOCALE
 
 
 def in_canonical_order(item):
@@ -53,3 +54,9 @@ def get_plural_categories(lang):
         return get_plural_categories(fallback_lang)
 
     return langs_categories
+
+
+def get_gecko_plural_categories(lang):
+    fallback = ('one', 'other')
+
+    return CATEGORIES_BY_LOCALE.get(lang, fallback)

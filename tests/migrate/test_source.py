@@ -2,14 +2,9 @@
 from __future__ import unicode_literals
 
 import unittest
-
-try:
-    from compare_locales.parser import PropertiesParser, DTDParser
-except ImportError:
-    PropertiesParser = DTDParser = None
+from compare_locales.parser import PropertiesParser, DTDParser
 
 import fluent.syntax.ast as FTL
-
 from fluent.migrate.errors import NotSupportedError
 from fluent.migrate.transforms import Source, COPY, PLURALS, REPLACE
 from fluent.migrate.util import parse
@@ -63,7 +58,6 @@ class MockContext(unittest.TestCase):
         return self.strings[key].val
 
 
-@unittest.skipUnless(PropertiesParser, 'compare-locales required')
 class TestProperties(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
@@ -97,7 +91,6 @@ class TestProperties(MockContext):
         self.assertEqual(source(self), '&lt;&#x21E7;&#x2318;K&gt;')
 
 
-@unittest.skipUnless(DTDParser, 'compare-locales required')
 class TestDTD(MockContext):
     def setUp(self):
         self.strings = parse(DTDParser, '''

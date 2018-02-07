@@ -4,14 +4,9 @@ from __future__ import unicode_literals
 import os
 import logging
 import unittest
-
-try:
-    import compare_locales
-except ImportError:
-    compare_locales = None
+import compare_locales
 
 import fluent.syntax.ast as FTL
-
 from fluent.migrate.errors import (
     EmptyLocalizationError, NotSupportedError, UnreadableReferenceError)
 from fluent.migrate.util import ftl, ftl_resource_to_json, to_json
@@ -24,7 +19,6 @@ def here(*parts):
     return os.path.join(dirname, *parts)
 
 
-@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestMergeContext(unittest.TestCase):
     def setUp(self):
         self.ctx = MergeContext(
@@ -250,7 +244,6 @@ class TestIncompleteReference(unittest.TestCase):
             self.ctx.add_transforms('some.ftl', 'missing.ftl', [])
 
 
-@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestMissingLocalizationFiles(unittest.TestCase):
     def setUp(self):
         # Silence all logging.
@@ -313,7 +306,6 @@ class TestMissingLocalizationFiles(unittest.TestCase):
             ])
 
 
-@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestMissingLocalizationStrings(unittest.TestCase):
     maxDiff = None
 
@@ -528,7 +520,6 @@ class TestMissingLocalizationStrings(unittest.TestCase):
         )
 
 
-@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestExistingTarget(unittest.TestCase):
     maxDiff = None
 

@@ -2,13 +2,9 @@
 from __future__ import unicode_literals
 
 import unittest
+from compare_locales.parser import PropertiesParser, DTDParser
 
 import fluent.syntax.ast as FTL
-try:
-    from compare_locales.parser import PropertiesParser, DTDParser
-except ImportError:
-    DTDParser = PropertiesParser = None
-
 from fluent.migrate.util import parse, ftl_message_to_json
 from fluent.migrate.helpers import EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
 from fluent.migrate.transforms import evaluate, CONCAT, COPY, REPLACE
@@ -23,7 +19,6 @@ class MockContext(unittest.TestCase):
         return self.strings.get(key, None).val
 
 
-@unittest.skipUnless(PropertiesParser, 'compare-locales required')
 class TestConcatCopy(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
@@ -120,7 +115,6 @@ class TestConcatCopy(MockContext):
         )
 
 
-@unittest.skipUnless(DTDParser, 'compare-locales required')
 class TestConcatLiteral(MockContext):
     def setUp(self):
         self.strings = parse(DTDParser, '''
@@ -149,7 +143,6 @@ class TestConcatLiteral(MockContext):
         )
 
 
-@unittest.skipUnless(DTDParser, 'compare-locales required')
 class TestConcatInterpolate(MockContext):
     def setUp(self):
         self.strings = parse(DTDParser, '''
@@ -192,7 +185,6 @@ class TestConcatInterpolate(MockContext):
         )
 
 
-@unittest.skipUnless(DTDParser, 'compare-locales required')
 class TestConcatReplace(MockContext):
     def setUp(self):
         self.strings = parse(DTDParser, '''

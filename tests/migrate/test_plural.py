@@ -2,13 +2,9 @@
 from __future__ import unicode_literals
 
 import unittest
+from compare_locales.parser import PropertiesParser
 
 import fluent.syntax.ast as FTL
-try:
-    from compare_locales.parser import PropertiesParser
-except ImportError:
-    PropertiesParser = None
-
 from fluent.migrate.util import parse, ftl_message_to_json
 from fluent.migrate.helpers import EXTERNAL_ARGUMENT
 from fluent.migrate.transforms import evaluate, PLURALS, REPLACE_IN_TEXT
@@ -25,7 +21,6 @@ class MockContext(unittest.TestCase):
         return self.strings.get(key, None).val
 
 
-@unittest.skipUnless(PropertiesParser, 'compare-locales required')
 class TestPlural(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
@@ -79,7 +74,6 @@ class TestPlural(MockContext):
         )
 
 
-@unittest.skipUnless(PropertiesParser, 'compare-locales required')
 class TestPluralLiteral(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
@@ -108,7 +102,6 @@ class TestPluralLiteral(MockContext):
         )
 
 
-@unittest.skipUnless(PropertiesParser, 'compare-locales required')
 class TestPluralReplace(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
@@ -143,7 +136,6 @@ class TestPluralReplace(MockContext):
         )
 
 
-@unittest.skipUnless(PropertiesParser, 'compare-locales required')
 class TestOneCategory(MockContext):
     # Plural categories corresponding to Turkish (tr).
     plural_categories = ('other',)
@@ -177,7 +169,6 @@ class TestOneCategory(MockContext):
         )
 
 
-@unittest.skipUnless(PropertiesParser, 'compare-locales required')
 class TestManyCategories(MockContext):
     # Plural categories corresponding to Polish (pl).
     plural_categories = ('one', 'few', 'many', 'other')

@@ -14,11 +14,7 @@ import fluent.syntax.ast as FTL
 from fluent.syntax.parser import FluentParser
 from fluent.syntax.serializer import FluentSerializer
 from fluent.util import fold
-try:
-    from compare_locales.parser import getParser
-except ImportError:
-    def getParser(path):
-        raise RuntimeError('compare-locales required')
+from compare_locales.parser import getParser
 
 from .cldr import get_plural_categories
 from .transforms import Source

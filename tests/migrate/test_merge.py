@@ -2,14 +2,10 @@
 from __future__ import unicode_literals
 
 import unittest
+from compare_locales.parser import PropertiesParser, DTDParser
 
 import fluent.syntax.ast as FTL
 from fluent.syntax.parser import FluentParser
-try:
-    from compare_locales.parser import PropertiesParser, DTDParser
-except ImportError:
-    PropertiesParser = DTDParser = None
-
 from fluent.migrate.util import parse, ftl, ftl_resource_to_json
 from fluent.migrate.merge import merge_resource
 from fluent.migrate.transforms import COPY
@@ -25,8 +21,6 @@ class MockContext(unittest.TestCase):
             return translation.val
 
 
-@unittest.skipUnless(PropertiesParser and DTDParser,
-                     'compare-locales required')
 class TestMergeMessages(MockContext):
     maxDiff = None
 
@@ -129,8 +123,6 @@ class TestMergeMessages(MockContext):
         )
 
 
-@unittest.skipUnless(PropertiesParser and DTDParser,
-                     'compare-locales required')
 class TestMergeAllEntries(MockContext):
     def setUp(self):
         self.en_us_ftl = parse(FluentParser, ftl('''
@@ -245,8 +237,6 @@ class TestMergeAllEntries(MockContext):
         )
 
 
-@unittest.skipUnless(PropertiesParser and DTDParser,
-                     'compare-locales required')
 class TestMergeSubset(MockContext):
     def setUp(self):
         self.en_us_ftl = parse(FluentParser, ftl('''

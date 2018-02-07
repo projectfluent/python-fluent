@@ -3,14 +3,9 @@ from __future__ import unicode_literals
 
 import os
 import unittest
-
-try:
-    import compare_locales
-except ImportError:
-    compare_locales = None
+import compare_locales
 
 import fluent.syntax.ast as FTL
-
 from fluent.migrate.util import ftl_resource_to_json, to_json
 from fluent.migrate.context import MergeContext
 from fluent.migrate.helpers import EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
@@ -24,7 +19,6 @@ def here(*parts):
     return os.path.join(dirname, *parts)
 
 
-@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestMergeAboutDownloads(unittest.TestCase):
     def setUp(self):
         self.ctx = MergeContext(
@@ -279,7 +273,6 @@ class TestMergeAboutDownloads(unittest.TestCase):
         )
 
 
-@unittest.skipUnless(compare_locales, 'compare-locales requried')
 class TestMergeAboutDialog(unittest.TestCase):
     maxDiff = None
 

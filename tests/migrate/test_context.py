@@ -19,6 +19,36 @@ def here(*parts):
     return os.path.join(dirname, *parts)
 
 
+class TestMergeContext_AddTransforms(unittest.TestCase):
+    def setUp(self):
+        self.ctx = MergeContext(
+            lang='pl',
+            reference_dir=here('fixtures/en-US'),
+            localization_dir=here('fixtures/pl')
+        )
+
+    def test_hardcoded_node(self):
+        self.ctx.add_transforms('aboutDownloads.ftl', 'aboutDownloads.ftl', [
+            FTL.Message(
+                id=FTL.Identifier('about'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
+            ),
+        ])
+        self.assertSetEqual(
+            self.ctx.dependencies[(u'aboutDownloads.ftl', u'about')],
+            set()
+        )
+        self.assertTrue(
+            self.ctx.in_changeset(
+                set(),
+                set(),
+                'aboutDownloads.ftl', 'about'
+            )
+        )
+
+
 class TestMergeContext(unittest.TestCase):
     def setUp(self):
         self.ctx = MergeContext(

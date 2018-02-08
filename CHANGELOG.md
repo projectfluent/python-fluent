@@ -1,5 +1,20 @@
 # Changelog
 
+## fluent 0.6.2 (February 8, 2018)
+
+  - Inline Patterns may start with any character. (#48)
+
+    `}`, `.`, `*` and `[` are only special when they appear at the beginning of
+    indented Pattern lines. When a Pattern starts on the same line as `id =` or
+    `[variant key]`, its first character doesn't carry any special meaning and
+    it may be one of those four ones as well.
+
+    This also fixes a regression from 0.6.0 where a message at the EOF without
+    value nor attributes was incorrectly parsed as a message with an empty
+    Pattern rather than produce a syntax error.
+
+  - Require compare-locales to run and test fluent.migrate. (#47)
+
 ## fluent 0.6.1 (February 6, 2018)
 
 Various fixes to `fluent.migrate` for [bug 1424682][].

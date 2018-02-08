@@ -106,18 +106,18 @@ class FTLParserStream(ParserStream):
         self.reset_peek()
         return is_digit
 
-    def is_char_pattern_start(self, ch):
+    def is_char_pattern_continuation(self, ch):
         return ch not in SPECIAL_LINE_START_CHARS
 
     def is_peek_pattern_start(self):
         self.peek_inline_ws()
+        ch = self.current_peek()
 
-        if self.current_peek_is('\n'):
-            return self.is_peek_next_line_pattern_start()
+        # Inline Patterns may start with any char.
+        if ch is not None and ch != '\n':
+            return True
 
-        is_pattern = self.is_char_pattern_start(self.current_peek())
-        self.reset_peek()
-        return is_pattern
+        return self.is_peek_next_line_pattern_start()
 
     def is_peek_next_line_zero_four_style_comment(self):
         if not self.current_peek_is('\n'):
@@ -227,7 +227,7 @@ class FTLParserStream(ParserStream):
             self.reset_peek()
             return False
 
-        if not self.is_char_pattern_start(self.current_peek()):
+        if not self.is_char_pattern_continuation(self.current_peek()):
             self.reset_peek()
             return False
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## fluent 0.6.3 (February 13, 2018)
+
+  - Fix merge code to handle Terms properly
+
 ## fluent 0.6.2 (February 8, 2018)
 
   - Inline Patterns may start with any character. (#48)

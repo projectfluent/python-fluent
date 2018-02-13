@@ -659,3 +659,132 @@ class TestNotSupportedError(unittest.TestCase):
             )
 
             ctx.maybe_add_localization('privacy.ftl')
+
+
+class TestMessagesEqual(unittest.TestCase):
+    maxDiff = None
+
+    def setUp(self):
+        # Silence all logging.
+        logging.disable(logging.CRITICAL)
+
+        self.ctx = MergeContext(
+            lang='pl',
+            reference_dir=here('fixtures/en-US'),
+            localization_dir=here('fixtures/pl')
+        )
+
+    def tearDown(self):
+        # Resume logging.
+        logging.disable(logging.NOTSET)
+
+    def test_messages_equal(self):
+        first = FTL.Resource([
+            FTL.Message(
+                id=FTL.Identifier('bar'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
+            ),
+        ])
+        second = FTL.Resource([
+            FTL.Message(
+                id=FTL.Identifier('bar'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
+            ),
+        ])
+        self.assertTrue(self.ctx.messages_equal(first, second))
+
+    def test_messages_different_attributes(self):
+        first = FTL.Resource([
+            FTL.Message(
+                id=FTL.Identifier('bar'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
+            ),
+        ])
+        second = FTL.Resource([
+            FTL.Message(
+                id=FTL.Identifier('bar'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ]),
+                attributes=[
+                    FTL.Attribute(
+                        FTL.Identifier('one'),
+                        value=FTL.Pattern([
+                            FTL.TextElement('Attribute Value')
+                        ])
+                    ),
+                ]
+            ),
+        ])
+        self.assertFalse(self.ctx.messages_equal(first, second))
+
+    def test_terms_equal(self):
+        first = FTL.Resource([
+            FTL.Term(
+                id=FTL.Identifier('-bar'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
+            ),
+        ])
+        second = FTL.Resource([
+            FTL.Term(
+                id=FTL.Identifier('-bar'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
+            ),
+        ])
+        self.assertTrue(self.ctx.messages_equal(first, second))
+
+    def test_terms_different_attributes(self):
+        first = FTL.Resource([
+            FTL.Term(
+                id=FTL.Identifier('-bar'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
+            ),
+        ])
+        second = FTL.Resource([
+            FTL.Term(
+                id=FTL.Identifier('-bar'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ]),
+                attributes=[
+                    FTL.Attribute(
+                        FTL.Identifier('one'),
+                        value=FTL.Pattern([
+                            FTL.TextElement('Attribute Value')
+                        ])
+                    ),
+                ]
+            ),
+        ])
+        self.assertFalse(self.ctx.messages_equal(first, second))
+
+    def test_term_and_message(self):
+        first = FTL.Resource([
+            FTL.Term(
+                id=FTL.Identifier('-bar'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
+            ),
+        ])
+        second = FTL.Resource([
+            FTL.Message(
+                id=FTL.Identifier('bar'),
+                value=FTL.Pattern([
+                    FTL.TextElement('Hardcoded Value')
+                ])
+            ),
+        ])
+        self.assertFalse(self.ctx.messages_equal(first, second))

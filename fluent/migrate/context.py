@@ -15,8 +15,8 @@ from fluent.syntax.parser import FluentParser
 from fluent.syntax.serializer import FluentSerializer
 from fluent.util import fold
 from compare_locales.parser import getParser
+from compare_locales.plurals import CATEGORIES_BY_LOCALE
 
-from .cldr import get_plural_categories
 from .transforms import Source
 from .merge import merge_resource
 from .util import get_message
@@ -55,10 +55,10 @@ class MergeContext(object):
         # An iterable of plural category names relevant to the context's
         # language.  E.g. ('one', 'other') for English.
         try:
-            self.plural_categories = get_plural_categories(lang)
-        except RuntimeError as e:
+            self.plural_categories = CATEGORIES_BY_LOCALE[lang]
+        except IndexError as e:
             logging.getLogger('migrate').warn(e)
-            self.plural_categories = get_plural_categories('en')
+            self.plural_categories = ('one', 'other')
 
         # Paths to directories with input data, relative to CWD.
         self.reference_dir = reference_dir

@@ -18,9 +18,6 @@ setup(name='fluent',
           'Programming Language :: Python :: 3.5',
       ],
       packages=['fluent', 'fluent.syntax', 'fluent.migrate'],
-      package_data={
-          'fluent.migrate': ['cldr_data/*']
-      },
       tests_require=['six'],
       test_suite='tests.syntax'
 )

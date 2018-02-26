@@ -44,13 +44,25 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_multiline_simple(self):
+    def test_block_multiline(self):
         input = """\
             foo =
                 Foo
                 Bar
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+
+    def test_inline_multiline(self):
+        input = """\
+            foo = Foo
+                Bar
+        """
+        output = """\
+            foo =
+                Foo
+                Bar
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
 
     def test_message_reference(self):
         input = """\
@@ -210,7 +222,8 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_select_expression_no_selector(self):
         input = """\
-            foo = {
+            foo =
+                {
                    *[a] A
                     [b] B
                 }
@@ -219,25 +232,36 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_select_expression(self):
         input = """\
-            foo = { $sel ->
+            foo =
+                { $sel ->
                    *[a] A
                     [b] B
                 }
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    # XXX The variant contains a new-line so the serializer defaults to
-    # multiline formatting for all of its contents.
-    # https://bugzilla.mozilla.org/show_bug.cgi?id=1397760
+    def test_variant_multiline(self):
+        input = """\
+            foo =
+                {
+                   *[a]
+                        AAA
+                        BBB
+                }
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+
     def test_variant_multiline_first_inline(self):
         input = """\
-            foo = {
+            foo =
+                {
                    *[a] AAA
                         BBB
                 }
         """
         output = """\
-            foo = {
+            foo =
+                {
                    *[a]
                         AAA
                         BBB
@@ -245,19 +269,10 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
 
-    def test_variant_multiline(self):
-        input = """\
-            foo = {
-                   *[a]
-                        AAA
-                        BBB
-                }
-        """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
-
     def test_variant_key_words(self):
         input = """\
-            foo = {
+            foo =
+                {
                    *[a b c] A B C
                 }
         """
@@ -265,14 +280,14 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_variant_key_number(self):
         input = """\
-            foo = {
+            foo =
+                {
                    *[1] 1
                 }
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    @unittest.skip("The serializer doesn't know it's multiline.")
-    def test_select_expression_in_simple_multiline(self):
+    def test_select_expression_in_block_value(self):
         input = """\
             foo =
                 Foo { $sel ->
@@ -282,18 +297,16 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    # None of the Text elements contain a new-line, so the serializer outputs
-    # a single-line value.
-    def test_select_expression_in_simple_multiline_current(self):
+    def test_select_expression_in_inline_value(self):
         input = """\
-            foo =
-                Foo { $sel ->
+            foo = Foo { $sel ->
                    *[a] A
                     [b] B
                 }
         """
         output = """\
-            foo = Foo { $sel ->
+            foo =
+                Foo { $sel ->
                    *[a] A
                     [b] B
                 }
@@ -313,8 +326,10 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_select_expression_nested(self):
         input = """\
-            foo = { $a ->
-                   *[a] { $b ->
+            foo =
+                { $a ->
+                   *[a]
+                        { $b ->
                            *[b] Foo
                         }
                 }
@@ -323,7 +338,8 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_selector_external_argument(self):
         input = """\
-            foo = { $bar ->
+            foo =
+                { $bar ->
                    *[a] A
                 }
         """
@@ -331,7 +347,8 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_selector_number_expression(self):
         input = """\
-            foo = { 1 ->
+            foo =
+                { 1 ->
                    *[a] A
                 }
         """
@@ -339,7 +356,8 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_selector_string_expression(self):
         input = """\
-            foo = { "bar" ->
+            foo =
+                { "bar" ->
                    *[a] A
                 }
         """
@@ -347,7 +365,8 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_selector_attribute_expression(self):
         input = """\
-            foo = { -bar.baz ->
+            foo =
+                { -bar.baz ->
                    *[a] A
                 }
         """

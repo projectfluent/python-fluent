@@ -119,6 +119,25 @@ class TestOrderEquals(unittest.TestCase):
         self.assertTrue(message1.equals(message2))
         self.assertTrue(message2.equals(message1))
 
+    def test_variants_with_numbers(self):
+        message1 = self.parse_ftl_entry("""\
+            foo =
+                { $num ->
+                    [1] A
+                   *[b] B
+                }
+        """)
+        message2 = self.parse_ftl_entry("""\
+            foo =
+                { $num ->
+                   *[b] B
+                    [1] A
+                }
+        """)
+
+        self.assertTrue(message1.equals(message2))
+        self.assertTrue(message2.equals(message1))
+
 
 class TestEqualWithSpans(unittest.TestCase):
     def test_default_behavior(self):

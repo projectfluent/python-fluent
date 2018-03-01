@@ -62,7 +62,10 @@ class TestProperties(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
             foo = Foo
+            value-empty =
+            value-whitespace =    
 
+            unicode-all = \\u0020
             unicode-start = \\u0020Foo
             unicode-middle = Foo\\u0020Bar
             unicode-end = Foo\\u0020
@@ -72,29 +75,60 @@ class TestProperties(MockContext):
 
     def test_simple_text(self):
         source = Source('test.properties', 'foo')
-        self.assertEqual(source(self), 'Foo')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, 'Foo')
+
+    def test_empty_value(self):
+        source = Source('test.properties', 'value-empty')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, '')
+
+    def test_whitespace_value(self):
+        source = Source('test.properties', 'value-whitespace')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, '')
+
+    def test_escape_unicode_all(self):
+        source = Source('test.properties', 'unicode-all')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, ' ')
 
     def test_escape_unicode_start(self):
         source = Source('test.properties', 'unicode-start')
-        self.assertEqual(source(self), ' Foo')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, ' Foo')
 
     def test_escape_unicode_middle(self):
         source = Source('test.properties', 'unicode-middle')
-        self.assertEqual(source(self), 'Foo Bar')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, 'Foo Bar')
 
     def test_escape_unicode_end(self):
         source = Source('test.properties', 'unicode-end')
-        self.assertEqual(source(self), 'Foo ')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, 'Foo ')
 
     def test_html_entity(self):
         source = Source('test.properties', 'html-entity')
-        self.assertEqual(source(self), '&lt;&#x21E7;&#x2318;K&gt;')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, '&lt;&#x21E7;&#x2318;K&gt;')
 
 
 class TestDTD(MockContext):
     def setUp(self):
         self.strings = parse(DTDParser, '''
             <!ENTITY foo "Foo">
+
+            <!ENTITY valueEmpty "">
+            <!ENTITY valueWhitespace "    ">
 
             <!ENTITY unicodeEscape "Foo\\u0020Bar">
 
@@ -107,28 +141,54 @@ class TestDTD(MockContext):
 
     def test_simple_text(self):
         source = Source('test.dtd', 'foo')
-        self.assertEqual(source(self), 'Foo')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, 'Foo')
+
+    def test_empty_value(self):
+        source = Source('test.dtd', 'valueEmpty')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, '')
+
+    def test_whitespace_value(self):
+        source = Source('test.dtd', 'valueWhitespace')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, '    ')
 
     def test_backslash_unicode_escape(self):
         source = Source('test.dtd', 'unicodeEscape')
-        self.assertEqual(source(self), 'Foo\\u0020Bar')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, 'Foo\\u0020Bar')
 
     def test_named_entity(self):
         source = Source('test.dtd', 'named')
-        self.assertEqual(source(self), '&')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, '&')
 
     def test_decimal_entity(self):
         source = Source('test.dtd', 'decimal')
-        self.assertEqual(source(self), '&')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, '&')
 
     def test_shorthex_entity(self):
         source = Source('test.dtd', 'shorthexcode')
-        self.assertEqual(source(self), '&')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, '&')
 
     def test_longhex_entity(self):
         source = Source('test.dtd', 'longhexcode')
-        self.assertEqual(source(self), '&')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, '&')
 
     def test_unknown_entity(self):
         source = Source('test.dtd', 'unknown')
-        self.assertEqual(source(self), '&unknownEntity;')
+        element = source(self)
+        self.assertIsInstance(element, FTL.TextElement)
+        self.assertEqual(element.value, '&unknownEntity;')

@@ -12,8 +12,6 @@ from fluent.migrate.transforms import evaluate, PLURALS, REPLACE_IN_TEXT
 
 class MockContext(unittest.TestCase):
     maxDiff = None
-    # Plural categories corresponding to English (en-US).
-    plural_categories = ('one', 'other')
 
     def get_source(self, path, key):
         # Ignore path (test.properties) and get translations from self.strings
@@ -24,26 +22,28 @@ class MockContext(unittest.TestCase):
 class TestPlural(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
-            deleteAll=Delete this download?;Delete all downloads?
+            plural = One;Few;Many
         ''')
 
         self.message = FTL.Message(
-            FTL.Identifier('delete-all'),
+            FTL.Identifier('plural'),
             value=PLURALS(
                 'test.properties',
-                'deleteAll',
+                'plural',
                 EXTERNAL_ARGUMENT('num')
             )
         )
 
     def test_plural(self):
+        self.plural_categories = ('one', 'few', 'many')
         self.assertEqual(
             evaluate(self, self.message).to_json(),
             ftl_message_to_json('''
-                delete-all =
+                plural =
                     { $num ->
-                        [one] Delete this download?
-                       *[other] Delete all downloads?
+                        [one] One
+                        [few] Few
+                       *[many] Many
                     }
             ''')
         )
@@ -53,43 +53,43 @@ class TestPlural(MockContext):
         self.assertEqual(
             evaluate(self, self.message).to_json(),
             ftl_message_to_json('''
-                delete-all =
+                plural =
                     { $num ->
-                        [one] Delete this download?
-                        [few] Delete all downloads?
-                       *[other] Delete all downloads?
+                        [one] One
+                        [few] Few
+                        [many] Many
+                       *[other] Many
                     }
             ''')
         )
 
     def test_plural_too_many_variants(self):
-        self.plural_categories = ('one',)
+        self.plural_categories = ('one', 'few')
         self.assertEqual(
             evaluate(self, self.message).to_json(),
             ftl_message_to_json('''
-                delete-all =
+                plural =
                     { $num ->
-                       *[one] Delete this download?
+                        [one] One
+                       *[few] Few
                     }
             ''')
         )
 
 
 class TestPluralOrder(MockContext):
-    # Plural categories corresponding to Lithuanian (lt).
     plural_categories = ('one', 'other', 'few')
 
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
-            # These forms correspond to (one, other, few) in CLDR
-            deleteAll = Pašalinti #1 atsiuntimą?;Pašalinti #1 atsiuntimų?;Pašalinti #1 atsiuntimus?
+            plural = One;Other;Few
         ''')
 
         self.message = FTL.Message(
-            FTL.Identifier('delete-all'),
+            FTL.Identifier('plural'),
             value=PLURALS(
                 'test.properties',
-                'deleteAll',
+                'plural',
                 EXTERNAL_ARGUMENT('num')
             )
         )
@@ -98,56 +98,30 @@ class TestPluralOrder(MockContext):
         self.assertEqual(
             evaluate(self, self.message).to_json(),
             ftl_message_to_json('''
-                delete-all =
+                plural =
                     { $num ->
-                        [one] Pašalinti #1 atsiuntimą?
-                        [few] Pašalinti #1 atsiuntimus?
-                       *[other] Pašalinti #1 atsiuntimų?
-                    }
-            ''')
-        )
-
-
-class TestPluralLiteral(MockContext):
-    def setUp(self):
-        self.strings = parse(PropertiesParser, '''
-            deleteAll=Delete this download?;Delete all downloads?
-        ''')
-
-        self.message = FTL.Message(
-            FTL.Identifier('delete-all'),
-            value=PLURALS(
-                'test.properties',
-                'deleteAll',
-                EXTERNAL_ARGUMENT('num')
-            )
-        )
-
-    def test_plural_literal(self):
-        self.assertEqual(
-            evaluate(self, self.message).to_json(),
-            ftl_message_to_json('''
-                delete-all =
-                    { $num ->
-                        [one] Delete this download?
-                       *[other] Delete all downloads?
+                        [one] One
+                        [few] Few
+                       *[other] Other
                     }
             ''')
         )
 
 
 class TestPluralReplace(MockContext):
+    plural_categories = ('one', 'few', 'many')
+
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
-            deleteAll=Delete this download?;Delete #1 downloads?
+            plural = One;Few #1;Many #1
         ''')
 
     def test_plural_replace(self):
         msg = FTL.Message(
-            FTL.Identifier('delete-all'),
+            FTL.Identifier('plural'),
             value=PLURALS(
                 'test.properties',
-                'deleteAll',
+                'plural',
                 EXTERNAL_ARGUMENT('num'),
                 lambda text: REPLACE_IN_TEXT(
                     text,
@@ -161,85 +135,151 @@ class TestPluralReplace(MockContext):
         self.assertEqual(
             evaluate(self, msg).to_json(),
             ftl_message_to_json('''
-                delete-all =
+                plural =
                     { $num ->
-                        [one] Delete this download?
-                       *[other] Delete { $num } downloads?
+                        [one] One
+                        [few] Few { $num }
+                       *[many] Many { $num }
                     }
             ''')
         )
 
 
-class TestOneCategory(MockContext):
-    # Plural categories corresponding to Turkish (tr).
-    plural_categories = ('other',)
-
+class TestNoPlural(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
-            deleteAll=#1 indirme silinsin mi?
+            plural-other = Other
+            plural-one-other = One;Other
         ''')
 
-        self.message = FTL.Message(
-            FTL.Identifier('delete-all'),
+    def test_one_category_one_variant(self):
+        self.plural_categories = ('other',)
+        message = FTL.Message(
+            FTL.Identifier('plural'),
             value=PLURALS(
                 'test.properties',
-                'deleteAll',
-                EXTERNAL_ARGUMENT('num'),
-                lambda text: REPLACE_IN_TEXT(
-                    text,
-                    {
-                        '#1': EXTERNAL_ARGUMENT('num')
-                    }
-                )
+                'plural-other',
+                EXTERNAL_ARGUMENT('num')
             )
         )
 
-    def test_no_select_expression(self):
         self.assertEqual(
-            evaluate(self, self.message).to_json(),
+            evaluate(self, message).to_json(),
             ftl_message_to_json('''
-                delete-all = { $num } indirme silinsin mi?
+                plural = Other
+            ''')
+        )
+
+    def test_one_category_many_variants(self):
+        self.plural_categories = ('other',)
+        message = FTL.Message(
+            FTL.Identifier('plural'),
+            value=PLURALS(
+                'test.properties',
+                'plural-one-other',
+                EXTERNAL_ARGUMENT('num')
+            )
+        )
+
+        self.assertEqual(
+            evaluate(self, message).to_json(),
+            ftl_message_to_json('''
+                plural = One
+            ''')
+        )
+
+    def test_many_categories_one_variant(self):
+        self.plural_categories = ('one', 'other')
+        message = FTL.Message(
+            FTL.Identifier('plural'),
+            value=PLURALS(
+                'test.properties',
+                'plural-other',
+                EXTERNAL_ARGUMENT('num')
+            )
+        )
+
+        self.assertEqual(
+            evaluate(self, message).to_json(),
+            ftl_message_to_json('''
+                plural = Other
             ''')
         )
 
 
-class TestManyCategories(MockContext):
-    # Plural categories corresponding to Polish (pl).
+class TestEmpty(MockContext):
     plural_categories = ('one', 'few', 'many')
 
     def setUp(self):
-        self.strings = parse(PropertiesParser, '''
-            deleteAll=Usunąć plik?;Usunąć #1 pliki?
-        ''')
-
         self.message = FTL.Message(
-            FTL.Identifier('delete-all'),
+            FTL.Identifier('plural'),
             value=PLURALS(
                 'test.properties',
-                'deleteAll',
-                EXTERNAL_ARGUMENT('num'),
-                lambda text: REPLACE_IN_TEXT(
-                    text,
-                    {
-                        '#1': EXTERNAL_ARGUMENT('num')
-                    }
-                )
+                'plural',
+                EXTERNAL_ARGUMENT('num')
             )
         )
 
-    def test_too_few_variants(self):
-        # StringBundle's plural rule #9 used for Polish has three categories
-        # which is one fewer than the CLDR's. The migrated string will not have
-        # the [other] variant and [many] will be marked as the default.
+    def test_non_default_empty(self):
+        self.strings = parse(PropertiesParser, '''
+            plural = ;Few;Many
+        ''')
+
         self.assertEqual(
             evaluate(self, self.message).to_json(),
             ftl_message_to_json('''
-                delete-all =
+                plural =
                     { $num ->
-                        [one] Usunąć plik?
-                        [few] Usunąć { $num } pliki?
-                       *[many] Usunąć { $num } pliki?
+                        [one] {""}
+                        [few] Few
+                       *[many] Many
                     }
+            ''')
+        )
+
+    def test_default_empty(self):
+        self.strings = parse(PropertiesParser, '''
+            plural = One;Few;
+        ''')
+
+        self.assertEqual(
+            evaluate(self, self.message).to_json(),
+            ftl_message_to_json('''
+                plural =
+                    { $num ->
+                        [one] One
+                        [few] Few
+                       *[many] {""}
+                    }
+            ''')
+        )
+
+    def test_all_empty(self):
+        self.strings = parse(PropertiesParser, '''
+            plural = ;
+        ''')
+
+        self.assertEqual(
+            evaluate(self, self.message).to_json(),
+            ftl_message_to_json('''
+                plural =
+                    { $num ->
+                        [one] {""}
+                        [few] {""}
+                       *[many] {""}
+                    }
+            ''')
+        )
+
+    def test_no_value(self):
+        self.strings = parse(PropertiesParser, '''
+            plural =
+        ''')
+
+        self.assertEqual(
+            evaluate(self, self.message).to_json(),
+            ftl_message_to_json('''
+                plural = {""}
             ''')
         )
 

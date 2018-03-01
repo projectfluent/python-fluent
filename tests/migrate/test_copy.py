@@ -10,6 +10,8 @@ from fluent.migrate.transforms import evaluate, COPY
 
 
 class MockContext(unittest.TestCase):
+    maxDiff = None
+
     def get_source(self, path, key):
         # Ignore path (test.properties) and get translations from self.strings
         # defined in setUp.
@@ -20,8 +22,10 @@ class TestCopy(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
             foo = Foo
-            foo.unicode.begin = \\u0020Foo
-            foo.unicode.end = Foo\\u0020
+            empty =
+            unicode.all = \\u0020
+            unicode.begin = \\u0020Foo
+            unicode.end = Foo\\u0020
         ''')
 
     def test_copy(self):
@@ -37,31 +41,57 @@ class TestCopy(MockContext):
             ''')
         )
 
-    @unittest.skip('Parser/Serializer trim whitespace')
-    def test_copy_escape_unicode_begin(self):
+    def test_copy_empty(self):
         msg = FTL.Message(
-            FTL.Identifier('foo-unicode-begin'),
-            value=COPY('test.properties', 'foo.unicode.begin')
+            FTL.Identifier('empty'),
+            value=COPY('test.properties', 'empty')
         )
 
         self.assertEqual(
             evaluate(self, msg).to_json(),
             ftl_message_to_json('''
-                foo-unicode-begin = Foo
+                empty = {""}
+            ''')
+        )
+
+    def test_copy_escape_unicode_all(self):
+        msg = FTL.Message(
+            FTL.Identifier('unicode-all'),
+            value=COPY('test.properties', 'unicode.all')
+        )
+
+        self.assertEqual(
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                unicode-all = {" "}
+            ''')
+        )
+
+    @unittest.skip('Parser/Serializer trim whitespace')
+    def test_copy_escape_unicode_begin(self):
+        msg = FTL.Message(
+            FTL.Identifier('unicode-begin'),
+            value=COPY('test.properties', 'unicode.begin')
+        )
+
+        self.assertEqual(
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                unicode-begin = Foo
             ''')
         )
 
     @unittest.skip('Parser/Serializer trim whitespace')
     def test_copy_escape_unicode_end(self):
         msg = FTL.Message(
-            FTL.Identifier('foo-unicode-end'),
-            value=COPY('test.properties', 'foo.unicode.end')
+            FTL.Identifier('unicode-end'),
+            value=COPY('test.properties', 'unicode.end')
         )
 
         self.assertEqual(
             evaluate(self, msg).to_json(),
             ftl_message_to_json('''
-                foo-unicode-end = Foo
+                unicode-end = Foo
             ''')
         )
 
@@ -71,6 +101,7 @@ class TestCopyAttributes(MockContext):
         self.strings = parse(DTDParser, '''
             <!ENTITY checkForUpdatesButton.label       "Check for updates">
             <!ENTITY checkForUpdatesButton.accesskey   "C">
+            <!ENTITY checkForUpdatesButton.empty   "">
         ''')
 
     def test_copy_accesskey(self):
@@ -87,15 +118,22 @@ class TestCopyAttributes(MockContext):
                         'test.properties', 'checkForUpdatesButton.accesskey'
                     )
                 ),
+                FTL.Attribute(
+                    FTL.Identifier('empty'),
+                    COPY(
+                        'test.properties', 'checkForUpdatesButton.empty'
+                    )
+                ),
             ]
         )
 
         self.assertEqual(
             evaluate(self, msg).to_json(),
             ftl_message_to_json('''
-                check-for-updates
+                check-for-updates =
                   .label = Check for updates
                   .accesskey = C
+                  .empty = {""}
             ''')
         )
 

@@ -1,6 +1,6 @@
 # Changelog
 
-## fluent 0.6.3 (March 1, 2018)
+## fluent 0.6.4 (March 1, 2018)
 
   - use compare-locales for plurals ordering ([bug 1415844](https://bugzilla.mozilla.org/show_bug.cgi?id=1415844))
   - create transforms when all dependencies have been met up to a changeset

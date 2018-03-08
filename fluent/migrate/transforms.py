@@ -285,8 +285,8 @@ class PLURALS(Source):
 
     Build an `FTL.SelectExpression` with the supplied `selector` and variants
     extracted from the source. The original translation should be a
-    semicolon-separated list of variants. Each variant will be converted into
-    a TextElement and run through the `foreach` function, which should
+    semicolon-separated list of plural forms. Each form will be converted
+    into a TextElement and run through the `foreach` function, which should
     return an `FTL.Node` or a `Transform`. By default, the `foreach` function
     creates a valid Pattern from the TextElement passed into it.
     """
@@ -301,15 +301,10 @@ class PLURALS(Source):
         element = super(self.__class__, self).__call__(ctx)
         selector = evaluate(ctx, self.selector)
         keys = ctx.plural_categories
-        variants = [
+        forms = [
             FTL.TextElement(part)
             for part in element.value.split(';')
         ]
-
-        # A special case for languages with one plural category or one legacy
-        # variant. We don't need to insert a SelectExpression at all for them.
-        if len(keys) == 1 or len(variants) == 1:
-            return evaluate(ctx, self.foreach(variants[0]))
 
         # The default CLDR form should be the last we have in DEFAULT_ORDER,
         # usually `other`, but in some cases `many`. If we don't have a variant
@@ -320,17 +315,37 @@ class PLURALS(Source):
             key for key in reversed(self.DEFAULT_ORDER) if key in keys
         ][0]
 
-        keys_and_variants = zip(keys, variants)
-        keys_and_variants.sort(key=lambda (k, v): self.DEFAULT_ORDER.index(k))
-        last_key, last_variant = keys_and_variants[-1]
-        if last_key != default_key:
-            keys_and_variants.append((default_key, last_variant))
+        # Match keys to legacy forms in order they are defined in
+        # Gecko's PluralForm.jsm. Filter out empty forms.
+        pairs = [
+            (key, var)
+            for key, var in zip(keys, forms)
+            if var.value
+        ]
 
-        def createVariant(key, variant):
-            # Run the legacy variant through `foreach` which returns an
+        # A special case for legacy translations which don't define any
+        # plural forms.
+        if len(pairs) == 0:
+            return Transform.pattern_of()
+
+        # A special case for languages with one plural category or one legacy
+        # variant. We don't need to insert a SelectExpression for them.
+        if len(pairs) == 1:
+            _, only_form = pairs[0]
+            return evaluate(ctx, self.foreach(only_form))
+
+        # Make sure the default key is defined. If it's missing, use the last
+        # form (in CLDR order) found in the legacy translation.
+        pairs.sort(key=lambda (k, v): self.DEFAULT_ORDER.index(k))
+        last_key, last_form = pairs[-1]
+        if last_key != default_key:
+            pairs.append((default_key, last_form))
+
+        def createVariant(key, form):
+            # Run the legacy plural form through `foreach` which returns an
             # `FTL.Node` describing the transformation required for each
             # variant. Then evaluate it to a migrated FTL node.
-            value = evaluate(ctx, self.foreach(variant))
+            value = evaluate(ctx, self.foreach(form))
             return FTL.Variant(
                 key=FTL.VariantName(key),
                 value=value,
@@ -340,13 +355,12 @@ class PLURALS(Source):
         select = FTL.SelectExpression(
             expression=selector,
             variants=[
-                createVariant(key, variant)
-                for key, variant in keys_and_variants
+                createVariant(key, form)
+                for key, form in pairs
             ]
         )
 
-        placeable = FTL.Placeable(select)
-        return FTL.Pattern([placeable])
+        return Transform.pattern_of(select)
 
 
 class CONCAT(Transform):

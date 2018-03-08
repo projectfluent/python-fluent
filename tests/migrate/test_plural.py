@@ -230,7 +230,6 @@ class TestEmpty(MockContext):
             ftl_message_to_json('''
                 plural =
                     { $num ->
-                        [one] {""}
                         [few] Few
                        *[many] Many
                     }
@@ -249,7 +248,7 @@ class TestEmpty(MockContext):
                     { $num ->
                         [one] One
                         [few] Few
-                       *[many] {""}
+                       *[many] Few
                     }
             ''')
         )
@@ -262,12 +261,7 @@ class TestEmpty(MockContext):
         self.assertEqual(
             evaluate(self, self.message).to_json(),
             ftl_message_to_json('''
-                plural =
-                    { $num ->
-                        [one] {""}
-                        [few] {""}
-                       *[many] {""}
-                    }
+                plural = {""}
             ''')
         )
 

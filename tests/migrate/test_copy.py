@@ -24,8 +24,10 @@ class TestCopy(MockContext):
             foo = Foo
             empty =
             unicode.all = \\u0020
-            unicode.begin = \\u0020Foo
-            unicode.end = Foo\\u0020
+            unicode.begin1 = \\u0020Foo
+            unicode.begin2 = \\u0020\\u0020Foo
+            unicode.end1 = Foo\\u0020
+            unicode.end2 = Foo\\u0020\\u0020
         ''')
 
     def test_copy(self):
@@ -67,31 +69,55 @@ class TestCopy(MockContext):
             ''')
         )
 
-    @unittest.skip('Parser/Serializer trim whitespace')
     def test_copy_escape_unicode_begin(self):
         msg = FTL.Message(
             FTL.Identifier('unicode-begin'),
-            value=COPY('test.properties', 'unicode.begin')
+            value=COPY('test.properties', 'unicode.begin1')
         )
 
         self.assertEqual(
             evaluate(self, msg).to_json(),
             ftl_message_to_json('''
-                unicode-begin = Foo
+                unicode-begin = {" "}Foo
             ''')
         )
 
-    @unittest.skip('Parser/Serializer trim whitespace')
-    def test_copy_escape_unicode_end(self):
+    def test_copy_escape_unicode_begin_many(self):
         msg = FTL.Message(
-            FTL.Identifier('unicode-end'),
-            value=COPY('test.properties', 'unicode.end')
+            FTL.Identifier('unicode-begin'),
+            value=COPY('test.properties', 'unicode.begin2')
         )
 
         self.assertEqual(
             evaluate(self, msg).to_json(),
             ftl_message_to_json('''
-                unicode-end = Foo
+                unicode-begin = {"  "}Foo
+            ''')
+        )
+
+    def test_copy_escape_unicode_end(self):
+        msg = FTL.Message(
+            FTL.Identifier('unicode-end'),
+            value=COPY('test.properties', 'unicode.end1')
+        )
+
+        self.assertEqual(
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                unicode-end = Foo{" "}
+            ''')
+        )
+
+    def test_copy_escape_unicode_end_many(self):
+        msg = FTL.Message(
+            FTL.Identifier('unicode-end'),
+            value=COPY('test.properties', 'unicode.end2')
+        )
+
+        self.assertEqual(
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                unicode-end = Foo{"  "}
             ''')
         )
 

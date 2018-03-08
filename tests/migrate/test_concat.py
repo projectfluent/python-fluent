@@ -5,8 +5,6 @@ import unittest
 from compare_locales.parser import PropertiesParser, DTDParser
 
 import fluent.syntax.ast as FTL
-from fluent.util import ftl
-from fluent.syntax.serializer import FluentSerializer
 from fluent.migrate.util import parse, ftl_message_to_json
 from fluent.migrate.helpers import EXTERNAL_ARGUMENT, MESSAGE_REFERENCE
 from fluent.migrate.transforms import evaluate, CONCAT, COPY, REPLACE
@@ -19,10 +17,6 @@ class MockContext(unittest.TestCase):
         # Ignore path (test.properties) and get translations from self.strings
         # defined in setUp.
         return self.strings.get(key, None).val
-
-    def serialize_entry(self, entry):
-        serializer = FluentSerializer()
-        return serializer.serialize_entry(entry)
 
 
 class TestConcatCopy(MockContext):
@@ -118,9 +112,6 @@ class TestConcatCopy(MockContext):
             ''')
         )
 
-    # XXX Encode leading whitespace as {""}
-    # See https://bugzilla.mozilla.org/show_bug.cgi?id=1374246
-    # See https://bugzilla.mozilla.org/show_bug.cgi?id=1397233
     def test_concat_whitespace_begin(self):
         msg = FTL.Message(
             FTL.Identifier('hello'),
@@ -130,34 +121,13 @@ class TestConcatCopy(MockContext):
             )
         )
 
-        message = evaluate(self, msg)
-
         self.assertEqual(
-            len(message.value.elements), 1,
-            'The constructed value should have only one element'
-        )
-
-        text, = message.value.elements
-
-        self.assertIsInstance(
-            text, FTL.TextElement,
-            'The constructed element should be a TextElement.'
-        )
-        self.assertEqual(
-            text.value, ' Hello, world!',
-            'The TextElement should be a concatenation of the sources.'
-        )
-
-        self.assertEqual(
-            self.serialize_entry(message),
-            ftl('''
-                hello =  Hello, world!
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                hello = {" "}Hello, world!
             ''')
         )
 
-    # XXX Encode trailing whitespace as {""}
-    # See https://bugzilla.mozilla.org/show_bug.cgi?id=1374246
-    # See https://bugzilla.mozilla.org/show_bug.cgi?id=1397233
     def test_concat_whitespace_end(self):
         msg = FTL.Message(
             FTL.Identifier('hello'),
@@ -167,28 +137,10 @@ class TestConcatCopy(MockContext):
             )
         )
 
-        message = evaluate(self, msg)
-
         self.assertEqual(
-            len(message.value.elements), 1,
-            'The constructed value should have only one element'
-        )
-
-        text, = message.value.elements
-
-        self.assertIsInstance(
-            text, FTL.TextElement,
-            'The constructed element should be a TextElement.'
-        )
-        self.assertEqual(
-            text.value, 'Hello, world! ',
-            'The TextElement should be a concatenation of the sources.'
-        )
-
-        self.assertEqual(
-            self.serialize_entry(message),
-            ftl('''
-                hello = Hello, world! 
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                hello = Hello, world!{" "}
             ''')
         )
 

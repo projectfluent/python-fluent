@@ -133,24 +133,43 @@ class Transform(FTL.BaseNode):
     def preserve_whitespace(elements):
         # Handle empty values
         if len(elements) == 0:
-            return [
-                FTL.Placeable(
-                    FTL.StringExpression('')
-                )
-            ]
+            return [FTL.Placeable(FTL.StringExpression(''))]
 
-        # Handle whitespace-only values
-        if len(elements) == 1:
-            element, = elements
-            if isinstance(element, FTL.TextElement) \
-                    and re.match(r'^\s*$', element.value):
-                return [
-                    FTL.Placeable(
-                        FTL.StringExpression(element.value)
-                    )
-                ]
+        re_leading = re.compile(r'^(?P<whitespace>\s+)(?P<text>.*?)$')
+        re_trailing = re.compile(r'^(?P<text>.*?)(?P<whitespace>\s+)$')
 
-        return elements
+        def extract_whitespace(regex, element):
+            '''Extract leading or trailing whitespace from a TextElement.
+
+            Return a tuple of (Placeable, TextElement) in which the Placeable
+            encodes the extracted whitespace as a StringExpression and the
+            TextElement has the same amount of whitespace removed. The
+            Placeable with the extracted whitespace is always returned first.
+            '''
+            match = re.search(regex, element.value)
+            if match:
+                whitespace = match.group('whitespace')
+                empty_expr = FTL.Placeable(FTL.StringExpression(whitespace))
+                if whitespace == element.value:
+                    return empty_expr, None
+                else:
+                    return empty_expr, FTL.TextElement(match.group('text'))
+            else:
+                return None, element
+
+        if isinstance(elements[0], FTL.TextElement):
+            ws, text = extract_whitespace(re_leading, elements[0])
+            elements[:1] = [ws, text]
+
+        if isinstance(elements[-1], FTL.TextElement):
+            ws, text = extract_whitespace(re_trailing, elements[-1])
+            elements[-1:] = [text, ws]
+
+        return [
+            element
+            for element in elements
+            if element is not None
+        ]
 
     @staticmethod
     def pattern_of(*elements):

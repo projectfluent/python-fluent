@@ -79,104 +79,105 @@ def evaluate(ctx, node):
     return node.traverse(eval_node)
 
 
+def get_text(element):
+    '''Get text content of a PatternElement.'''
+    if isinstance(element, FTL.TextElement):
+        return element.value
+    if isinstance(element, FTL.Placeable):
+        if isinstance(element.expression, FTL.StringExpression):
+            return element.expression.value
+        else:
+            return None
+    raise RuntimeError('Expected PatternElement')
+
+
+def chain_elements(elements):
+    '''Flatten a list of FTL nodes into an iterator over PatternElements.'''
+    for element in elements:
+        if isinstance(element, FTL.Pattern):
+            # PY3 yield from element.elements
+            for child in element.elements:
+                yield child
+        elif isinstance(element, FTL.PatternElement):
+            yield element
+        elif isinstance(element, FTL.Expression):
+            yield FTL.Placeable(element)
+        else:
+            raise RuntimeError(
+                'Expected Pattern, PatternElement or Expression')
+
+
+re_leading_ws = re.compile(r'^(?P<whitespace>\s+)(?P<text>.*?)$')
+re_trailing_ws = re.compile(r'^(?P<text>.*?)(?P<whitespace>\s+)$')
+
+
+def extract_whitespace(regex, element):
+    '''Extract leading or trailing whitespace from a TextElement.
+
+    Return a tuple of (Placeable, TextElement) in which the Placeable
+    encodes the extracted whitespace as a StringExpression and the
+    TextElement has the same amount of whitespace removed. The
+    Placeable with the extracted whitespace is always returned first.
+    '''
+    match = re.search(regex, element.value)
+    if match:
+        whitespace = match.group('whitespace')
+        placeable = FTL.Placeable(FTL.StringExpression(whitespace))
+        if whitespace == element.value:
+            return placeable, None
+        else:
+            return placeable, FTL.TextElement(match.group('text'))
+    else:
+        return None, element
+
+
 class Transform(FTL.BaseNode):
     def __call__(self, ctx):
         raise NotImplementedError
 
     @staticmethod
-    def flatten_elements(elements):
-        '''Flatten a list of FTL nodes into an iterator over PatternElements.'''
-        for element in elements:
-            if isinstance(element, FTL.Pattern):
-                # PY3 yield from element.elements
-                for child in element.elements:
-                    yield child
-            elif isinstance(element, FTL.PatternElement):
-                yield element
-            elif isinstance(element, FTL.Expression):
-                yield FTL.Placeable(element)
-            else:
-                raise RuntimeError(
-                    'Expected Pattern, PatternElement or Expression')
+    def pattern_of(*elements):
+        normalized = []
 
-    @staticmethod
-    def normalize_text_content(elements):
-        '''Normalize PatternElements with text content.
-
-        Convert TextElements and StringExpressions into TextElements and join
-        adjacent ones.
-        '''
-
-        def get_text(element):
-            if isinstance(element, FTL.TextElement):
-                return element.value
-            elif isinstance(element, FTL.Placeable):
-                if isinstance(element.expression, FTL.StringExpression):
-                    return element.expression.value
-
-        joined = []
-        for current in elements:
+        # Normalize text content: convert all text to TextElements, join
+        # adjacent text and prune empty.
+        for current in chain_elements(elements):
             current_text = get_text(current)
             if current_text is None:
-                joined.append(current)
+                normalized.append(current)
                 continue
 
-            previous = joined[-1] if len(joined) else None
+            previous = normalized[-1] if len(normalized) else None
             if isinstance(previous, FTL.TextElement):
+                # Join adjacent TextElements
                 previous.value += current_text
             elif len(current_text) > 0:
-                # Normalize to a TextElement
-                joined.append(FTL.TextElement(current_text))
-        return joined
-
-    @staticmethod
-    def preserve_whitespace(elements):
-        # Handle empty values
-        if len(elements) == 0:
-            return [FTL.Placeable(FTL.StringExpression(''))]
-
-        re_leading = re.compile(r'^(?P<whitespace>\s+)(?P<text>.*?)$')
-        re_trailing = re.compile(r'^(?P<text>.*?)(?P<whitespace>\s+)$')
-
-        def extract_whitespace(regex, element):
-            '''Extract leading or trailing whitespace from a TextElement.
-
-            Return a tuple of (Placeable, TextElement) in which the Placeable
-            encodes the extracted whitespace as a StringExpression and the
-            TextElement has the same amount of whitespace removed. The
-            Placeable with the extracted whitespace is always returned first.
-            '''
-            match = re.search(regex, element.value)
-            if match:
-                whitespace = match.group('whitespace')
-                empty_expr = FTL.Placeable(FTL.StringExpression(whitespace))
-                if whitespace == element.value:
-                    return empty_expr, None
-                else:
-                    return empty_expr, FTL.TextElement(match.group('text'))
+                # Normalize non-empty text to a TextElement
+                normalized.append(FTL.TextElement(current_text))
             else:
-                return None, element
+                # Prune empty text
+                pass
 
-        if isinstance(elements[0], FTL.TextElement):
-            ws, text = extract_whitespace(re_leading, elements[0])
-            elements[:1] = [ws, text]
+        # Handle empty values
+        if len(normalized) == 0:
+            empty = FTL.Placeable(FTL.StringExpression(''))
+            return FTL.Pattern([empty])
 
-        if isinstance(elements[-1], FTL.TextElement):
-            ws, text = extract_whitespace(re_trailing, elements[-1])
-            elements[-1:] = [text, ws]
+        # Handle explicit leading whitespace
+        if isinstance(normalized[0], FTL.TextElement):
+            ws, text = extract_whitespace(re_leading_ws, normalized[0])
+            normalized[:1] = [ws, text]
 
-        return [
+        # Handle explicit trailing whitespace
+        if isinstance(normalized[-1], FTL.TextElement):
+            ws, text = extract_whitespace(re_trailing_ws, normalized[-1])
+            normalized[-1:] = [text, ws]
+
+        return FTL.Pattern([
             element
-            for element in elements
+            for element in normalized
             if element is not None
-        ]
-
-    @staticmethod
-    def pattern_of(*elements):
-        elements = Transform.flatten_elements(elements)
-        elements = Transform.normalize_text_content(elements)
-        elements = Transform.preserve_whitespace(elements)
-        return FTL.Pattern(elements)
+        ])
 
 
 class Source(Transform):
@@ -315,8 +316,8 @@ class PLURALS(Source):
             key for key in reversed(self.DEFAULT_ORDER) if key in keys
         ][0]
 
-        # Match keys to legacy forms in order they are defined in
-        # Gecko's PluralForm.jsm. Filter out empty forms.
+        # Match keys to legacy forms in the order they are defined in Gecko's
+        # PluralForm.jsm. Filter out empty forms.
         pairs = [
             (key, var)
             for key, var in zip(keys, forms)
@@ -332,11 +333,12 @@ class PLURALS(Source):
         # variant. We don't need to insert a SelectExpression for them.
         if len(pairs) == 1:
             _, only_form = pairs[0]
-            return evaluate(ctx, self.foreach(only_form))
+            only_variant = evaluate(ctx, self.foreach(only_form))
+            return Transform.pattern_of(only_variant)
 
         # Make sure the default key is defined. If it's missing, use the last
         # form (in CLDR order) found in the legacy translation.
-        pairs.sort(key=lambda (k, v): self.DEFAULT_ORDER.index(k))
+        pairs.sort(key=lambda pair: self.DEFAULT_ORDER.index(pair[0]))
         last_key, last_form = pairs[-1]
         if last_key != default_key:
             pairs.append((default_key, last_form))

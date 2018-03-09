@@ -22,11 +22,31 @@ class MockContext(unittest.TestCase):
 class TestReplace(MockContext):
     def setUp(self):
         self.strings = parse(PropertiesParser, '''
+            empty =
             hello = Hello, #1!
             welcome = Welcome, #1, to #2!
             first = #1 Bar
             last = Foo #1
         ''')
+
+    def test_replace_empty(self):
+        msg = FTL.Message(
+            FTL.Identifier(u'empty'),
+            value=REPLACE(
+                'test.properties',
+                'empty',
+                {
+                    '#1': EXTERNAL_ARGUMENT('arg')
+                }
+            )
+        )
+
+        self.assertEqual(
+            evaluate(self, msg).to_json(),
+            ftl_message_to_json('''
+                empty = {""}
+            ''')
+        )
 
     def test_replace_one(self):
         msg = FTL.Message(

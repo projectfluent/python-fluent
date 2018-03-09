@@ -321,7 +321,7 @@ class TestMergeAboutDialog(unittest.TestCase):
                         'aboutDialog.dtd',
                         'community.mozillaLink',
                         {
-                            '&vendorBrandShortName;': MESSAGE_REFERENCE(
+                            '&vendorShortName;': MESSAGE_REFERENCE(
                                 'vendor-short-name'
                             )
                         }
@@ -336,7 +336,6 @@ class TestMergeAboutDialog(unittest.TestCase):
             ),
         ])
 
-    @unittest.skip('Parser/Serializer trim whitespace')
     def test_merge_context_all_messages(self):
         expected = {
             'aboutDialog.ftl': ftl_resource_to_json('''
@@ -345,8 +344,8 @@ class TestMergeAboutDialog(unittest.TestCase):
         # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         update-failed = Aktualizacja się nie powiodła. <a>Pobierz</a>.
-        channel-desc = Obecnie korzystasz z kanału { $channelname }.
-        community = Program { $brand-short-name } został opracowany przez <a>organizację { $vendor-short-name }</a>, która jest <a>globalną społecznością</a>, starającą się zapewnić, by…
+        channel-desc = Obecnie korzystasz z kanału { $channelname }.{" "}
+        community = Program { brand-short-name } został opracowany przez <a>organizację { vendor-short-name }</a>, która jest <a>globalną społecznością</a>, starającą się zapewnić, by…
             ''')
         }
 

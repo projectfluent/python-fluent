@@ -530,10 +530,11 @@ class FluentParser(object):
             if not re.match('^[A-Z][A-Z_?-]*$', literal.id.name):
                 raise ParseError('E0008')
 
-            return ast.CallExpression(
-                ast.Function(literal.id.name),
-                args
-            )
+            func = ast.Function(literal.id.name)
+            if (self.with_spans):
+                func.add_span(literal.span.start, literal.span.end)
+
+            return ast.CallExpression(func, args)
 
         return literal
 

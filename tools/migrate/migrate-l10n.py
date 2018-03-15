@@ -82,11 +82,14 @@ def main(lang, reference_dir, localization_dir, migrations, dry_run):
                 author=author
             )
 
-            print('    Committing changeset: {}'.format(message))
+            print('  Committing changeset: {}'.format(message))
             if not dry_run:
-                client.commit(
-                    b(message), user=b(author), addremove=True
-                )
+                try:
+                    client.commit(
+                        b(message), user=b(author), addremove=True
+                    )
+                except hglib.error.CommandError as err:
+                    print('    WARNING: hg commit failed ({})'.format(err))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

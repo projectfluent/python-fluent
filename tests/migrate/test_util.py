@@ -5,7 +5,7 @@ import unittest
 
 import fluent.syntax.ast as FTL
 from fluent.util import fold
-from fluent.migrate.transforms import CONCAT, COPY, Source
+from fluent.migrate.transforms import CONCAT, COPY, REPLACE, Source
 
 
 def get_source(acc, cur):
@@ -80,4 +80,21 @@ class TestReduce(unittest.TestCase):
         self.assertEqual(
             fold(get_source, node, ()),
             (('path1', 'key1'), ('path2', 'key2'))
+        )
+
+    def test_copy_in_replace(self):
+        node = FTL.Message(
+            FTL.Identifier('hello'),
+            value=REPLACE(
+                'path1',
+                'key1',
+                {
+                    "foo": COPY('path2', 'key2')
+                }
+            )
+        )
+
+        self.assertEqual(
+            fold(get_source, node, ()),
+            (('path2', 'key2'), ('path1', 'key1'))
         )

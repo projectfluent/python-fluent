@@ -36,6 +36,8 @@ def fold(fun, node, init):
             acc = fold(fun, head, acc)
         if isinstance(head, list):
             acc = fold_(head, acc)
+        if isinstance(head, dict):
+            acc = fold_(head.values(), acc)
 
         return fold_(tail, fun(acc, head))
 

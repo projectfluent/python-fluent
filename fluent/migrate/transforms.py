@@ -215,7 +215,7 @@ class COPY(Source):
     """Create a Pattern with the translation value from the given source."""
 
     def __call__(self, ctx):
-        element = super(self.__class__, self).__call__(ctx)
+        element = super(COPY, self).__call__(ctx)
         return Transform.pattern_of(element)
 
 
@@ -273,11 +273,11 @@ class REPLACE(Source):
     """
 
     def __init__(self, path, key, replacements):
-        super(self.__class__, self).__init__(path, key)
+        super(REPLACE, self).__init__(path, key)
         self.replacements = replacements
 
     def __call__(self, ctx):
-        element = super(self.__class__, self).__call__(ctx)
+        element = super(REPLACE, self).__call__(ctx)
         return REPLACE_IN_TEXT(element, self.replacements)(ctx)
 
 
@@ -294,12 +294,12 @@ class PLURALS(Source):
     DEFAULT_ORDER = ('zero', 'one', 'two', 'few', 'many', 'other')
 
     def __init__(self, path, key, selector, foreach=Transform.pattern_of):
-        super(self.__class__, self).__init__(path, key)
+        super(PLURALS, self).__init__(path, key)
         self.selector = selector
         self.foreach = foreach
 
     def __call__(self, ctx):
-        element = super(self.__class__, self).__call__(ctx)
+        element = super(PLURALS, self).__call__(ctx)
         selector = evaluate(ctx, self.selector)
         keys = ctx.plural_categories
         forms = [

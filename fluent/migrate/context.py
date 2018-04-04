@@ -314,7 +314,9 @@ class MergeContext(object):
         for path, reference in self.reference_resources.iteritems():
             current = self.localization_resources[path]
             transforms = self.transforms.get(path, [])
-            in_changeset = partial(self.in_changeset, changeset, known_translations, path)
+            in_changeset = partial(
+                self.in_changeset, changeset, known_translations, path
+            )
 
             # Merge legacy translations with the existing ones using the
             # reference as a template.

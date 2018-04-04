@@ -44,6 +44,7 @@ def to_json(merged_iter):
 
 LOCALIZABLE_ENTRIES = (FTL.Message, FTL.Term)
 
+
 def get_message(body, ident):
     """Get message called `ident` from the `body` iterable."""
     for entity in body:

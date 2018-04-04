@@ -168,6 +168,7 @@ class Message(Entry):
         self.attributes = attributes or []
         self.comment = comment
 
+
 class Term(Entry):
     def __init__(self, id, value, attributes=None,
                  comment=None, **kwargs):
@@ -177,47 +178,57 @@ class Term(Entry):
         self.attributes = attributes or []
         self.comment = comment
 
+
 class Pattern(SyntaxNode):
     def __init__(self, elements, **kwargs):
         super(Pattern, self).__init__(**kwargs)
         self.elements = elements
 
+
 class PatternElement(SyntaxNode):
     pass
+
 
 class TextElement(PatternElement):
     def __init__(self, value, **kwargs):
         super(TextElement, self).__init__(**kwargs)
         self.value = value
 
+
 class Placeable(PatternElement):
     def __init__(self, expression, **kwargs):
         super(Placeable, self).__init__(**kwargs)
         self.expression = expression
 
+
 class Expression(SyntaxNode):
     def __init__(self, **kwargs):
         super(Expression, self).__init__(**kwargs)
+
 
 class StringExpression(Expression):
     def __init__(self, value, **kwargs):
         super(StringExpression, self).__init__(**kwargs)
         self.value = value
 
+
 class NumberExpression(Expression):
     def __init__(self, value, **kwargs):
         super(NumberExpression, self).__init__(**kwargs)
         self.value = value
+
 
 class MessageReference(Expression):
     def __init__(self, id, **kwargs):
         super(MessageReference, self).__init__(**kwargs)
         self.id = id
 
+
 class ExternalArgument(Expression):
     def __init__(self, id, **kwargs):
         super(ExternalArgument, self).__init__(**kwargs)
         self.id = id
+
 
 class SelectExpression(Expression):
     def __init__(self, expression, variants, **kwargs):
@@ -225,11 +236,13 @@ class SelectExpression(Expression):
         self.expression = expression
         self.variants = variants
 
+
 class AttributeExpression(Expression):
     def __init__(self, id, name, **kwargs):
         super(AttributeExpression, self).__init__(**kwargs)
         self.id = id
         self.name = name
+
 
 class VariantExpression(Expression):
     def __init__(self, id, key, **kwargs):
@@ -237,11 +250,13 @@ class VariantExpression(Expression):
         self.id = id
         self.key = key
 
+
 class CallExpression(Expression):
     def __init__(self, callee, args=None, **kwargs):
         super(CallExpression, self).__init__(**kwargs)
         self.callee = callee
         self.args = args or []
+
 
 class Attribute(SyntaxNode):
     def __init__(self, id, value, **kwargs):
@@ -252,6 +267,7 @@ class Attribute(SyntaxNode):
     @property
     def sorting_key(self):
         return self.id.name
+
 
 class Variant(SyntaxNode):
     def __init__(self, key, value, default=False, **kwargs):
@@ -273,10 +289,12 @@ class NamedArgument(SyntaxNode):
         self.name = name
         self.val = val
 
+
 class Identifier(SyntaxNode):
     def __init__(self, name, **kwargs):
         super(Identifier, self).__init__(**kwargs)
         self.name = name
+
 
 class VariantName(Identifier):
     def __init__(self, name, **kwargs):
@@ -307,6 +325,7 @@ class ResourceComment(BaseComment):
 class Function(Identifier):
     def __init__(self, name, **kwargs):
         super(Function, self).__init__(name, **kwargs)
+
 
 class Junk(Entry):
     def __init__(self, content=None, **kwargs):

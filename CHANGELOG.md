@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+  - Remove `fluent.migrate`.
+
+    The migration code has been moved into its own repository:
+    [fluent-migration](https://hg.mozilla.org/l10n/fluent-migration). See
+    [bug 1445881](https://bugzilla.mozilla.org/show_bug.cgi?id=1445881) for
+    more information about the move.
+
 ## fluent 0.6.4 (March 1, 2018)
 
   - use compare-locales for plurals ordering ([bug 1415844](https://bugzilla.mozilla.org/show_bug.cgi?id=1415844))

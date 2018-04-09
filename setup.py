@@ -17,7 +17,7 @@ setup(name='fluent',
           'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3.5',
       ],
-      packages=['fluent', 'fluent.syntax', 'fluent.migrate'],
+      packages=['fluent', 'fluent.syntax'],
       tests_require=['six'],
       test_suite='tests.syntax'
 )

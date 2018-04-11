@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## fluent 0.7.0 (April 11, 2018)
 
   - Remove `fluent.migrate`.
 
@@ -8,6 +8,15 @@
     [fluent-migration](https://hg.mozilla.org/l10n/fluent-migration). See
     [bug 1445881](https://bugzilla.mozilla.org/show_bug.cgi?id=1445881) for
     more information about the move.
+
+
+  - Add the `ref` field to `VariantExpression`. (#62)
+
+    The `Identifier`-typed `id` field has been removed. The new `ref` field
+    contains the `MessageReference` node rigt now. The range of valid
+    expressions for `ref` may be extended in the future.
+
+  - Fix missing `Spans` on `Function` nodes.
 
 ## fluent 0.6.4 (March 1, 2018)
 

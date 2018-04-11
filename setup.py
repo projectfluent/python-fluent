@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='fluent',
-      version='0.6.4',
+      version='0.7.0',
       description='Localization library for expressive translations.',
       author='Mozilla',
       author_email='l10n-drivers@mozilla.org',

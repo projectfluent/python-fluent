@@ -518,7 +518,7 @@ class FluentParser(object):
             ps.next()
             key = self.get_variant_key(ps)
             ps.expect_char(']')
-            return ast.VariantExpression(literal.id, key)
+            return ast.VariantExpression(literal, key)
 
         if (ch == '('):
             ps.next()

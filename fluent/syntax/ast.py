@@ -245,9 +245,9 @@ class AttributeExpression(Expression):
 
 
 class VariantExpression(Expression):
-    def __init__(self, id, key, **kwargs):
+    def __init__(self, ref, key, **kwargs):
         super(VariantExpression, self).__init__(**kwargs)
-        self.id = id
+        self.ref = ref
         self.key = key
 
 

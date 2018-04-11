@@ -189,7 +189,7 @@
             "type": "Placeable",
             "expression": {
               "type": "VariantExpression",
-              "of": {
+              "ref": {
                 "type": "MessageReference",
                 "id": {
                   "type": "Identifier",

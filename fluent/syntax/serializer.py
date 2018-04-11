@@ -235,7 +235,7 @@ def serialize_attribute_expression(expr):
 
 def serialize_variant_expression(expr):
     return "{}[{}]".format(
-        serialize_expression(expr.of),
+        serialize_expression(expr.ref),
         serialize_variant_key(expr.key),
     )
 

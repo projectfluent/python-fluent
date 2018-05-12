@@ -31,3 +31,16 @@ class TestSimpleStringValue(unittest.TestCase):
         val, errs = self.ctx.format('foo', {})
         self.assertEqual(val, 'Foo')
         self.assertEqual(len(errs), 0)
+
+    def test_can_be_used_in_a_placeable(self):
+        val, errs = self.ctx.format('placeable-literal', {})
+        self.assertEqual(val, 'Foo Bar')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_a_value_of_a_message_referenced_in_a_placeable(self):
+        val, errs = self.ctx.format('placeable-message', {})
+        self.assertEqual(val, 'Foo Bar')
+        self.assertEqual(len(errs), 0)
+
+    # TODO - the rest of tests from
+    # https://github.com/projectfluent/fluent.js/blob/master/fluent/test/primitives_test.js

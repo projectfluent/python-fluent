@@ -4,7 +4,7 @@ import unittest
 
 from fluent.context import MessageContext
 
-from tests.syntax import dedent_ftl
+from .syntax import dedent_ftl
 
 
 class TestMessageContext(unittest.TestCase):
@@ -38,3 +38,11 @@ class TestMessageContext(unittest.TestCase):
 
         self.assertTrue(self.ctx.has_message('foo'))
         self.assertFalse(self.ctx.has_message('bar'))
+
+    def test_get_message(self):
+        self.ctx.add_messages(dedent_ftl("""
+            foo = Foo
+        """))
+
+        self.assertIsNotNone(self.ctx.get_message('foo'))
+        self.assertRaises(LookupError, lambda: self.ctx.get_message('bar'))

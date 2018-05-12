@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import six
 
+from .resolver import resolve
 from .syntax import FluentParser
 from .syntax.ast import Message, Term
 
@@ -39,8 +40,20 @@ class MessageContext(object):
     def has_message(self, message_id):
         return message_id in self._messages
 
+    def get_message(self, message_id):
+        return self._messages[message_id]
+
     def messages(self):
         """
         Returns iterable of (id, message) for the messages in this context
         """
         return six.iteritems(self._messages)
+
+    def format(self, message_or_id, args):
+        if isinstance(message_or_id, six.string_types):
+            message = self.get_message(message_or_id)
+        else:
+            message = message_or_id
+        errors = []
+        resolved = resolve(self, args, message, errors=errors)
+        return resolved, errors

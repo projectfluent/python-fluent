@@ -1,6 +1,13 @@
 #!/usr/bin/env python
+import sys
 
 from setuptools import setup
+
+if sys.version_info < (3, 4):
+    # functools.singledispatch is in stdlib from Python 3.4 onwards.
+    extra_requires = ['singledispatch>=3.4']
+else:
+    extra_requires = []
 
 setup(name='fluent',
       version='0.7.0',
@@ -18,6 +25,10 @@ setup(name='fluent',
           'Programming Language :: Python :: 3.5',
       ],
       packages=['fluent', 'fluent.syntax'],
+      install_requires=[
+          'six>=1.10.0',
+          'attrs>=18',
+      ] + extra_requires,
       tests_require=['six'],
       test_suite='tests.syntax'
 )

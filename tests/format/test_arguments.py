@@ -25,6 +25,11 @@ class TestNumbersInValues(unittest.TestCase):
         self.assertEqual(val, 'Foo 3')
         self.assertEqual(len(errs), 0)
 
+    def test_can_be_used_in_the_message_value_which_is_referenced(self):
+        val, errs = self.ctx.format('bar', {'num': 3})
+        self.assertEqual(val, 'Foo 3')
+        self.assertEqual(len(errs), 0)
+
     # TODO - the rest from
     # https://github.com/projectfluent/fluent.js/blob/master/fluent/test/arguments_test.js
 

@@ -40,20 +40,14 @@ class MessageContext(object):
     def has_message(self, message_id):
         return message_id in self._messages
 
-    def get_message(self, message_id):
-        return self._messages[message_id]
-
-    def messages(self):
+    def message_ids(self):
         """
-        Returns iterable of (id, message) for the messages in this context
+        Returns iterable of the message ids of the messages in this context
         """
-        return six.iteritems(self._messages)
+        return six.iterkeys(self._messages)
 
-    def format(self, message_or_id, args):
-        if isinstance(message_or_id, six.string_types):
-            message = self.get_message(message_or_id)
-        else:
-            message = message_or_id
+    def format(self, message_id, args):
+        message = self._messages[message_id]
         errors = []
         resolved = resolve(self, args, message, errors=errors)
         return resolved, errors

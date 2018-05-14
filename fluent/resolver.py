@@ -5,7 +5,8 @@ import six
 
 from .syntax.ast import (AttributeExpression, ExternalArgument, Message,
                          MessageReference, Pattern, Placeable,
-                         StringExpression, TextElement)
+                         SelectExpression, StringExpression, TextElement,
+                         VariantExpression)
 
 try:
     from functools import singledispatch
@@ -152,6 +153,56 @@ def handle_attribute_expression(attribute, env):
         FluentReferenceError("Unknown attribute: {0}.{1}"
                              .format(parent_id.name, attr_name)))
     return handle(message, env)
+
+
+@handle.register(SelectExpression)
+def handle_select_expression(expression, env):
+    if expression.expression is None:
+        key = None
+    else:
+        key = handle(expression.expression, env)
+    return select_from_select_expression(expression, env,
+                                         key=key)
+
+
+def select_from_select_expression(expression, env, key=None):
+    default = None
+    found = None
+    for variant in expression.variants:
+        if variant.default:
+            default = variant
+            if key is None:
+                # We only want the default
+                break
+        if variant.key.name == key:
+            found = variant
+            break
+
+    if found is None:
+        found = default
+    if found is None:
+        return FluentNone()
+    else:
+        return handle(found.value, env)
+
+
+@handle.register(VariantExpression)
+def handle_variant_expression(expression, env):
+    message = handle(MessageReference(expression.ref.id), env)
+    if isinstance(message, FluentNone):
+        return message
+
+    # TODO How exactly should we handle the case where 'message'
+    # is not simply a SelectExpression but has other stuff?
+    assert len(message.value.elements) == 1
+    select_expression = message.value.elements[0].expression
+    assert isinstance(select_expression, SelectExpression)
+    assert select_expression.expression is None
+
+    variant_name = expression.key.name
+    return select_from_select_expression(select_expression,
+                                         env,
+                                         key=variant_name)
 
 
 @singledispatch

@@ -101,9 +101,6 @@ class TestResolving(unittest.TestCase):
         self.assertEqual(len(errs), 0)
         self.assertEqual(self.args_passed, [1])
 
-    # TODO - think about how number literals should be handled,
-    # could be tricky with int/floats etc.
-    @unittest.expectedFailure
     def test_literals_passed_as_numbers(self):
         val, errs = self.ctx.format('pass-number', {})
         self.assertEqual(val, "1")

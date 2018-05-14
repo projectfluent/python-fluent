@@ -77,6 +77,11 @@ class TestSelectExpressionWithNumbers(unittest.TestCase):
                *[0] A
                 [1] B
              }
+
+            qux = { 1.0 ->
+               *[0] A
+                [1] B
+             }
         """))
 
     def test_selects_the_right_variant(self):
@@ -95,6 +100,71 @@ class TestSelectExpressionWithNumbers(unittest.TestCase):
         self.assertEqual(errs,
                          [FluentReferenceError("Unknown external: num")])
 
-    def test_with_argument_expression(self):
+    def test_with_argument_int(self):
         val, errs = self.ctx.format('baz', {'num': 1})
         self.assertEqual(val, "B")
+
+    def test_with_argument_float(self):
+        val, errs = self.ctx.format('baz', {'num': 1.0})
+        self.assertEqual(val, "B")
+
+    def test_with_float(self):
+        val, errs = self.ctx.format('qux', {})
+        self.assertEqual(val, "B")
+
+
+class TestSelectExpressionWithPluralCategories(unittest.TestCase):
+
+    def setUp(self):
+        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx.add_messages(dedent_ftl("""
+            foo = { 1 ->
+                [one] A
+               *[other] B
+             }
+
+            bar = { 1 ->
+                [1] A
+               *[other] B
+             }
+
+            baz = { "not a number" ->
+                [one] A
+               *[other] B
+             }
+
+            qux = { $num ->
+                [one] A
+               *[other] B
+             }
+        """))
+
+    def test_selects_the_right_category(self):
+        val, errs = self.ctx.format('foo', {})
+        self.assertEqual(val, "A")
+        self.assertEqual(len(errs), 0)
+
+    def test_selects_exact_match(self):
+        val, errs = self.ctx.format('bar', {})
+        self.assertEqual(val, "A")
+        self.assertEqual(len(errs), 0)
+
+    def test_selects_default_with_invalid_selector(self):
+        val, errs = self.ctx.format('baz', {})
+        self.assertEqual(val, "B")
+        self.assertEqual(len(errs), 0)
+
+    def test_with_a_missing_selector(self):
+        val, errs = self.ctx.format('qux', {})
+        self.assertEqual(val, "B")
+        self.assertEqual(errs,
+                         [FluentReferenceError("Unknown external: num")])
+
+    def test_with_argument(self):
+        val, errs = self.ctx.format('qux', {'num': 1})
+        self.assertEqual(val, "A")
+        self.assertEqual(len(errs), 0)
+
+        val, errs = self.ctx.format('qux', {'num': 2})
+        self.assertEqual(val, "B")
+        self.assertEqual(len(errs), 0)

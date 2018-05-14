@@ -48,3 +48,34 @@ class TestMessageContext(unittest.TestCase):
         self.assertTrue(self.ctx.has_message('foo'))
         self.assertTrue(self.ctx.has_message('foo.attr'))
         self.assertFalse(self.ctx.has_message('foo.other-attribute'))
+
+    def test_plural_form_english_ints(self):
+        ctx = MessageContext(['en-US'])
+        self.assertEqual(ctx.plural_form_for_number(0),
+                         'other')
+        self.assertEqual(ctx.plural_form_for_number(1),
+                         'one')
+        self.assertEqual(ctx.plural_form_for_number(2),
+                         'other')
+
+    def test_plural_form_english_floats(self):
+        ctx = MessageContext(['en-US'])
+        self.assertEqual(ctx.plural_form_for_number(0.0),
+                         'other')
+        self.assertEqual(ctx.plural_form_for_number(1.0),
+                         'one')
+        self.assertEqual(ctx.plural_form_for_number(2.0),
+                         'other')
+        self.assertEqual(ctx.plural_form_for_number(0.5),
+                         'other')
+
+    def test_plural_form_french(self):
+        # Just spot check one other, to ensure that we
+        # are not getting the EN locale by accident or
+        ctx = MessageContext(['fr'])
+        self.assertEqual(ctx.plural_form_for_number(0),
+                         'one')
+        self.assertEqual(ctx.plural_form_for_number(1),
+                         'one')
+        self.assertEqual(ctx.plural_form_for_number(2),
+                         'other')

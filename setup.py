@@ -28,6 +28,7 @@ setup(name='fluent',
       install_requires=[
           'six>=1.10.0',
           'attrs>=18',
+          'Babel>=2.5.3',
       ] + extra_requires,
       tests_require=['six'],
       test_suite='tests.syntax'

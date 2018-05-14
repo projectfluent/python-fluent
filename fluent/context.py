@@ -1,10 +1,13 @@
 from __future__ import absolute_import, unicode_literals
 
+import babel
+import babel.plural
 import six
 
 from .resolver import resolve
 from .syntax import FluentParser
 from .syntax.ast import Message, Term
+from .utils import cachedproperty
 
 
 class MessageContext(object):
@@ -66,3 +69,31 @@ class MessageContext(object):
             raise LookupError(message_id)
         else:
             return self._messages[message_id]
+
+    @cachedproperty
+    def plural_form_for_number(self):
+        """
+        Get the CLDR category for a given number.
+
+        >>> ctx = MessageContext(['en-US'])
+        >>> ctx.plural_form_for_number(1)
+        'one'
+        """
+        locale = self._get_babel_locale()
+        if locale is None:
+            # TODO log error
+            return dummy_plural_rule_func
+        return babel.plural.to_python(locale.plural_form)
+
+    def _get_babel_locale(self):
+        for l in self.locales:
+            try:
+                return babel.Locale(l.replace('-', '_'))
+            except babel.UnknownLocaleError:
+                continue
+        return None
+
+
+def dummy_plural_rule_func(val):
+    # We don't know anything, return a default
+    return 'other'

@@ -96,7 +96,7 @@ def handle_string_expression(string_expression, env):
 
 @handle.register(NumberExpression)
 def handle_number_expression(number_expression, env):
-    return number_expression.value
+    return numeric_to_native(number_expression.value)
 
 
 @handle.register(MessageReference)
@@ -179,15 +179,9 @@ def select_from_select_expression(expression, env, key=None):
             if key is None:
                 # We only want the default
                 break
-        if isinstance(variant.key, VariantName):
-            compare_value = variant.key.name
-        elif isinstance(variant.key, NumberExpression):
-            compare_value = variant.key.value
-        else:
-            raise AssertionError("Unexpected expression type {0}"
-                                 .format(type(variant.key)))
 
-        if compare_value == key:
+        compare_value = handle(variant.key, env)
+        if match(key, compare_value, env):
             found = variant
             break
 
@@ -197,6 +191,31 @@ def select_from_select_expression(expression, env, key=None):
         return FluentNone()
     else:
         return handle(found.value, env)
+
+
+def is_number(val):
+    return isinstance(val, (int, float))
+
+
+def match(val1, val2, env):
+    if val1 is None or isinstance(val1, FluentNone):
+        return False
+    if val2 is None or isinstance(val2, FluentNone):
+        return False
+    if is_number(val1):
+        if not is_number(val2):
+            # Could be plural rule match
+            return env.context.plural_form_for_number(val1) == val2
+    else:
+        if is_number(val2):
+            return match(val2, val1, env)
+
+    return val1 == val2
+
+
+@handle.register(VariantName)
+def handle_variant_name(name, env):
+    return name.name
 
 
 @handle.register(VariantExpression)
@@ -228,6 +247,7 @@ def handle_call_expression(expression, env):
                                                .format(function_name)))
         return FluentNone(function_name + "()")
     args = [handle(arg, env) for arg in expression.args]
+    # TODO - keyword args
     try:
         return function(*args)
     except Exception as e:
@@ -250,12 +270,27 @@ def handle_argument(arg, name, env):
 
 @handle_argument.register(int)
 def handle_argument_int(arg, name, env):
-    # TODO - wrap in something?
     return arg
 
-# TODO - floats?
+
+@handle_argument.register(float)
+def handle_argument_float(arg, name, env):
+    return arg
 
 
 @handle_argument.register(text_type)
 def handle_argument_text(arg, name, env):
     return arg
+
+
+def numeric_to_native(val):
+    """
+    Given a numeric string (as defined by fluent spec),
+    return an int or float
+    """
+    # val matches this EBNF:
+    #  '-'? [0-9]+ ('.' [0-9]+)?
+    if '.' in val:
+        return float(val)
+    else:
+        return int(val)

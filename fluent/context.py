@@ -56,7 +56,7 @@ class MessageContext(object):
     def format(self, message_id, args):
         message = self._get_message(message_id)
         errors = []
-        resolved = resolve(self, args, message, errors=errors)
+        resolved = resolve(self, message, args, errors=errors)
         return resolved, errors
 
     def _get_message(self, message_id):

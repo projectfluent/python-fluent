@@ -38,7 +38,13 @@ class FluentReferenceError(ValueError):
                 other.args == self.args)
 
 
-def resolve(context, args, message, errors=None):
+def resolve(context, message, args, errors=None):
+    """
+    Given a MessageContext, a Message instance and some arguments,
+    resolve the message to a string.
+
+    This is the normal entry point for this module.
+    """
     if errors is None:
         errors = []
     env = ResolverEnvironment(context=context,

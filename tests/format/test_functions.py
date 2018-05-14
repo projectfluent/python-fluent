@@ -75,3 +75,37 @@ class TestMissing(unittest.TestCase):
         self.assertEqual(val, "MISSING()")
         self.assertEqual(errs,
                          [FluentReferenceError("Unknown function: MISSING")])
+
+
+class TestResolving(unittest.TestCase):
+
+    def setUp(self):
+        self.args_passed = []
+
+        def number_processor(number):
+            self.args_passed.append(number)
+            return number
+
+        self.ctx = MessageContext(['en-US'], use_isolating=False,
+                                  functions={'NUMBER_PROCESSOR':
+                                             number_processor})
+
+        self.ctx.add_messages(dedent_ftl("""
+            pass-number = { NUMBER_PROCESSOR(1) }
+            pass-arg = { NUMBER_PROCESSOR($arg) }
+        """))
+
+    def test_args_passed_as_numbers(self):
+        val, errs = self.ctx.format('pass-arg', {'arg': 1})
+        self.assertEqual(val, "1")
+        self.assertEqual(len(errs), 0)
+        self.assertEqual(self.args_passed, [1])
+
+    # TODO - think about how number literals should be handled,
+    # could be tricky with int/floats etc.
+    @unittest.expectedFailure
+    def test_literals_passed_as_numbers(self):
+        val, errs = self.ctx.format('pass-number', {})
+        self.assertEqual(val, "1")
+        self.assertEqual(len(errs), 0)
+        self.assertEqual(self.args_passed, [1])

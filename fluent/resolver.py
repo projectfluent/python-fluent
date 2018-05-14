@@ -235,6 +235,12 @@ def handle_call_expression(expression, env):
         return FluentNone(function_name + "()")
 
 
+@handle.register(int)
+def handle_int(integer, env):
+    # TODO - use 'NUMBER' or something?
+    return str(integer)
+
+
 @singledispatch
 def handle_argument(arg, name, env):
     env.errors.append(TypeError("Unsupported external type: {0}, {1}"
@@ -244,8 +250,10 @@ def handle_argument(arg, name, env):
 
 @handle_argument.register(int)
 def handle_argument_int(arg, name, env):
-    # TODO FluentNumber or something
-    return text_type(arg)
+    # TODO - wrap in something?
+    return arg
+
+# TODO - floats?
 
 
 @handle_argument.register(text_type)

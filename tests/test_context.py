@@ -38,3 +38,13 @@ class TestMessageContext(unittest.TestCase):
 
         self.assertTrue(self.ctx.has_message('foo'))
         self.assertFalse(self.ctx.has_message('bar'))
+
+    def test_has_message_with_attribute(self):
+        self.ctx.add_messages(dedent_ftl("""
+            foo = Foo
+                .attr = Foo Attribute
+        """))
+
+        self.assertTrue(self.ctx.has_message('foo'))
+        self.assertTrue(self.ctx.has_message('foo.attr'))
+        self.assertFalse(self.ctx.has_message('foo.other-attribute'))

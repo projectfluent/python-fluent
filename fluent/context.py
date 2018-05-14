@@ -38,7 +38,11 @@ class MessageContext(object):
                 self._terms[item.id.name] = item
 
     def has_message(self, message_id):
-        return message_id in self._messages
+        try:
+            self._get_message(message_id)
+            return True
+        except LookupError:
+            return False
 
     def message_ids(self):
         """
@@ -47,7 +51,18 @@ class MessageContext(object):
         return six.iterkeys(self._messages)
 
     def format(self, message_id, args):
-        message = self._messages[message_id]
+        message = self._get_message(message_id)
         errors = []
         resolved = resolve(self, args, message, errors=errors)
         return resolved, errors
+
+    def _get_message(self, message_id):
+        if '.' in message_id:
+            name, attr_name = message_id.split('.', 1)
+            msg = self._messages[name]
+            for attribute in msg.attributes:
+                if attribute.id.name == attr_name:
+                    return attribute.value
+            raise LookupError(message_id)
+        else:
+            return self._messages[message_id]

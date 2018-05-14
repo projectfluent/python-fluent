@@ -31,8 +31,15 @@ class TestAttributesWithStringValues(unittest.TestCase):
         self.assertEqual(val, 'Bar Attribute')
         self.assertEqual(len(errs), 0)
 
-    # TODO - "can be formatted directly" tests,
-    # some kind of API for getting message attributes.
+    def test_can_be_formatted_directly_for_entities_with_string_values(self):
+        val, errs = self.ctx.format('foo.attr', {})
+        self.assertEqual(val, 'Foo Attribute')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_formatted_directly_for_entities_with_pattern_values(self):
+        val, errs = self.ctx.format('bar.attr', {})
+        self.assertEqual(val, 'Bar Attribute')
+        self.assertEqual(len(errs), 0)
 
 
 class TestAttributesWithSimplePatternValues(unittest.TestCase):
@@ -57,8 +64,18 @@ class TestAttributesWithSimplePatternValues(unittest.TestCase):
         self.assertEqual(val, 'Foo Attribute')
         self.assertEqual(len(errs), 0)
 
+    def test_can_be_formatted_directly_for_entities_with_string_values(self):
+        val, errs = self.ctx.format('bar.attr', {})
+        self.assertEqual(val, 'Foo Attribute')
+        self.assertEqual(len(errs), 0)
+
     def test_can_be_referenced_for_entities_with_pattern_values(self):
         val, errs = self.ctx.format('ref-baz', {})
+        self.assertEqual(val, 'Foo Attribute')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_formatted_directly_for_entities_with_pattern_values(self):
+        val, errs = self.ctx.format('baz.attr', {})
         self.assertEqual(val, 'Foo Attribute')
         self.assertEqual(len(errs), 0)
 
@@ -66,8 +83,6 @@ class TestAttributesWithSimplePatternValues(unittest.TestCase):
         val, errs = self.ctx.format('ref-qux', {})
         self.assertEqual(val, 'Qux Attribute')
         self.assertEqual(len(errs), 0)
-
-    # TODO - "can be formatted directly" tests
 
 
 class TestMissing(unittest.TestCase):

@@ -32,7 +32,9 @@ class FluentNone(object):
 
 
 class FluentReferenceError(ValueError):
-    pass
+    def __eq__(self, other):
+        return (isinstance(other, FluentReferenceError) and
+                other.args == self.args)
 
 
 def resolve(context, args, message, errors=None):
@@ -147,7 +149,7 @@ def handle_attribute_expression(attribute, env):
             return handle(message_attr.value, env)
 
     env.errors.append(
-        FluentReferenceError("Unknown attribute: {0}.{0}"
+        FluentReferenceError("Unknown attribute: {0}.{1}"
                              .format(parent_id.name, attr_name)))
     return handle(message, env)
 

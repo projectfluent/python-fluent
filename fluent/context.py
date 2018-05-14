@@ -22,7 +22,7 @@ class MessageContext(object):
 
     def __init__(self, locales, functions=None, use_isolating=True):
         self.locales = locales
-        self._functions = functions or {}
+        self.functions = functions or {}
         self._use_isolating = use_isolating
         self._messages = {}
         self._terms = {}

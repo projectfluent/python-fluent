@@ -3,8 +3,8 @@ from __future__ import absolute_import, unicode_literals
 import attr
 import six
 
-from .syntax.ast import (AttributeExpression, ExternalArgument, Message,
-                         MessageReference, NumberExpression, Pattern,
+from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument,
+                         Message, MessageReference, NumberExpression, Pattern,
                          Placeable, SelectExpression, StringExpression,
                          TextElement, VariantExpression, VariantName)
 
@@ -216,6 +216,23 @@ def handle_variant_expression(expression, env):
     return select_from_select_expression(select_expression,
                                          env,
                                          key=variant_name)
+
+
+@handle.register(CallExpression)
+def handle_call_expression(expression, env):
+    function_name = expression.callee.name
+    try:
+        function = env.context.functions[function_name]
+    except LookupError:
+        env.errors.append(FluentReferenceError("Unknown function: {0}"
+                                               .format(function_name)))
+        return FluentNone(function_name + "()")
+    args = [handle(arg, env) for arg in expression.args]
+    try:
+        return function(*args)
+    except Exception as e:
+        env.errors.append(e)
+        return FluentNone(function_name + "()")
 
 
 @singledispatch

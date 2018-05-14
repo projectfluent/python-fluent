@@ -4,9 +4,9 @@ import attr
 import six
 
 from .syntax.ast import (AttributeExpression, ExternalArgument, Message,
-                         MessageReference, Pattern, Placeable,
-                         SelectExpression, StringExpression, TextElement,
-                         VariantExpression)
+                         MessageReference, NumberExpression, Pattern,
+                         Placeable, SelectExpression, StringExpression,
+                         TextElement, VariantExpression, VariantName)
 
 try:
     from functools import singledispatch
@@ -94,6 +94,11 @@ def handle_string_expression(string_expression, env):
     return string_expression.value
 
 
+@handle.register(NumberExpression)
+def handle_number_expression(number_expression, env):
+    return number_expression.value
+
+
 @handle.register(MessageReference)
 def handle_message_reference(message_reference, env):
     name = message_reference.id.name
@@ -174,7 +179,15 @@ def select_from_select_expression(expression, env, key=None):
             if key is None:
                 # We only want the default
                 break
-        if variant.key.name == key:
+        if isinstance(variant.key, VariantName):
+            compare_value = variant.key.name
+        elif isinstance(variant.key, NumberExpression):
+            compare_value = variant.key.value
+        else:
+            raise AssertionError("Unexpected expression type {0}"
+                                 .format(type(variant.key)))
+
+        if compare_value == key:
             found = variant
             break
 

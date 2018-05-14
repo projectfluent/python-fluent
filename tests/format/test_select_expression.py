@@ -56,3 +56,45 @@ class TestSelectExpressionWithStrings(unittest.TestCase):
         """))
         val, errs = self.ctx.format('foo', {'arg': 'a'})
         self.assertEqual(val, "A")
+
+
+class TestSelectExpressionWithNumbers(unittest.TestCase):
+
+    def setUp(self):
+        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx.add_messages(dedent_ftl("""
+            foo = { 1 ->
+               *[0] A
+                [1] B
+             }
+
+            bar = { 2 ->
+               *[0] A
+                [1] B
+             }
+
+            baz = { $num ->
+               *[0] A
+                [1] B
+             }
+        """))
+
+    def test_selects_the_right_variant(self):
+        val, errs = self.ctx.format('foo', {})
+        self.assertEqual(val, "B")
+        self.assertEqual(len(errs), 0)
+
+    def test_with_a_non_matching_selector(self):
+        val, errs = self.ctx.format('bar', {})
+        self.assertEqual(val, "A")
+        self.assertEqual(len(errs), 0)
+
+    def test_with_a_missing_selector(self):
+        val, errs = self.ctx.format('baz', {})
+        self.assertEqual(val, "A")
+        self.assertEqual(errs,
+                         [FluentReferenceError("Unknown external: num")])
+
+    def test_with_argument_expression(self):
+        val, errs = self.ctx.format('baz', {'num': 1})
+        self.assertEqual(val, "B")

@@ -31,7 +31,7 @@ class FluentNone(object):
     name = attr.ib()
 
 
-class ReferenceError(ValueError):
+class FluentReferenceError(ValueError):
     pass
 
 
@@ -99,14 +99,16 @@ def handle_message_reference(message_reference, env):
         try:
             message = env.context._terms[name]
         except LookupError:
-            env.context.errors.append(ReferenceError("Unknown term: {0}"
-                                                     .format(name)))
+            env.context.errors.append(
+                FluentReferenceError("Unknown term: {0}"
+                                     .format(name)))
     else:
         try:
             message = env.context._messages[name]
         except LookupError:
-            env.context.errors.append(ReferenceError("Unknown message: {0}"
-                                                     .format(name)))
+            env.context.errors.append(
+                FluentReferenceError("Unknown message: {0}"
+                                     .format(name)))
     if message is None:
         message = FluentNone(name)
 
@@ -125,7 +127,8 @@ def handle_external_argument(argument, env):
     try:
         arg_val = env.args[name]
     except LookupError:
-        env.errors.append(ReferenceError("Unknown external: {0}".format(name)))
+        env.errors.append(
+            FluentReferenceError("Unknown external: {0}".format(name)))
         return FluentNone(name)
 
     return handle_argument(arg_val, name, env)
@@ -143,8 +146,9 @@ def handle_attribute_expression(attribute, env):
         if message_attr.id.name == attr_name:
             return handle(message_attr.value, env)
 
-    env.errors.append(ReferenceError("Unknown attribute: {0}.{0}"
-                                     .format(parent_id.name, attr_name)))
+    env.errors.append(
+        FluentReferenceError("Unknown attribute: {0}.{0}"
+                             .format(parent_id.name, attr_name)))
     return handle(message, env)
 
 

@@ -86,7 +86,7 @@ errors)`, as below.
     >>> translated
     "Hello, Jane!"
 
-    >>> translated, errs = context.format('greet-by-name', {'name', 'Jane'})
+    >>> translated, errs = context.format('greet-by-name', {})
     >>> translated
     "Hello, name!"
     >>> errs
@@ -126,15 +126,15 @@ a `functions` dictionary to the `MessageContext` constructor:
 
 
     >>> def happy(message, very=False):
-    ...     message = "😄 "+ message
+    ...     message = "😄 " + message
     ...     if very:
     ...         message = message + " 😄"
     ...     return message
 
     >>> context = MessageContext(['en-US'], functions={'HAPPY': happy})
     >>> context.add_messages("""
-    greet-by-name = Hello { HAPPY($name, very: 1) }
-    """)
+    ... greet-by-name = Hello { HAPPY($name, very: 1) }
+    ... """)
     >>> print(context.format('greet-by-name', {'name': 'Jane'})[0])
     Hello 😄 Jane 😄
 

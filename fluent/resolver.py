@@ -6,7 +6,7 @@ import six
 from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument,
                          Message, MessageReference, NamedArgument,
                          NumberExpression, Pattern, Placeable,
-                         SelectExpression, StringExpression, TextElement,
+                         SelectExpression, StringExpression, Term, TextElement,
                          VariantExpression, VariantName)
 from .utils import partition
 
@@ -79,6 +79,11 @@ def handle(expr, env):
 @handle.register(Message)
 def handle_message(message, env):
     return handle(message.value, env)
+
+
+@handle.register(Term)
+def handle_term(term, env):
+    return handle(term.value, env)
 
 
 @handle.register(Pattern)

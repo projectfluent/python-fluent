@@ -70,8 +70,10 @@ class MessageContext(object):
         """
         return six.iterkeys(self._messages)
 
-    def format(self, message_id, args):
+    def format(self, message_id, args=None):
         message = self._get_message(message_id)
+        if args is None:
+            args = {}
         errors = []
         resolved = resolve(self, message, args, errors=errors)
         return resolved, errors

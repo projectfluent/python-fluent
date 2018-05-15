@@ -92,3 +92,11 @@ class TestMessageContext(unittest.TestCase):
         val, errs = ctx.format('update-successful', {})
         self.assertEqual(val, "Firefox został pomyślnie zaktualizowany.")
         self.assertEqual(len(errs), 0)
+
+    def test_format_args(self):
+        self.ctx.add_messages('foo = Foo')
+        val, errs = self.ctx.format('foo')
+        self.assertEqual(val, 'Foo')
+
+        val, errs = self.ctx.format('foo', {})
+        self.assertEqual(val, 'Foo')

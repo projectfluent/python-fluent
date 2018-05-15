@@ -106,3 +106,46 @@ class TestResolving(unittest.TestCase):
         self.assertEqual(val, "1")
         self.assertEqual(len(errs), 0)
         self.assertEqual(self.args_passed, [1])
+
+
+class TestKeywordArgs(unittest.TestCase):
+
+    def setUp(self):
+        self.args_passed = []
+
+        def my_function(arg, kwarg1=None, kwarg2="default"):
+            self.args_passed.append((arg, kwarg1, kwarg2))
+            return arg
+
+        self.ctx = MessageContext(['en-US'], use_isolating=False,
+                                  functions={'MYFUNC': my_function})
+        self.ctx.add_messages(dedent_ftl("""
+            pass-arg        = { MYFUNC("a") }
+            pass-kwarg1     = { MYFUNC("a", kwarg1: 1) }
+            pass-kwarg2     = { MYFUNC("a", kwarg2: "other") }
+            pass-kwargs     = { MYFUNC("a", kwarg1: 1, kwarg2: "other") }
+        """))
+
+    def test_defaults(self):
+        val, errs = self.ctx.format('pass-arg', {})
+        self.assertEqual(self.args_passed,
+                         [("a", None, "default")])
+        self.assertEqual(len(errs), 0)
+
+    def test_pass_kwarg1(self):
+        val, errs = self.ctx.format('pass-kwarg1', {})
+        self.assertEqual(self.args_passed,
+                         [("a", 1, "default")])
+        self.assertEqual(len(errs), 0)
+
+    def test_pass_kwarg2(self):
+        val, errs = self.ctx.format('pass-kwarg2', {})
+        self.assertEqual(self.args_passed,
+                         [("a", None, "other")])
+        self.assertEqual(len(errs), 0)
+
+    def test_pass_kwargs(self):
+        val, errs = self.ctx.format('pass-kwargs', {})
+        self.assertEqual(self.args_passed,
+                         [("a", 1, "other")])
+        self.assertEqual(len(errs), 0)

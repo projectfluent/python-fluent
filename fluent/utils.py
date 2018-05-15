@@ -28,3 +28,19 @@ class cachedproperty(object):
         retval = self.method(instance)
         instance.__dict__[self.method.__name__] = retval
         return retval
+
+
+def partition(iterable, predicate):
+    """
+    Partition a list into two lists, the first with items that match the
+    predicate, the second with the rest.
+    """
+    matching = []
+    other = []
+    for i in iterable:
+        if predicate(i):
+            matching.append(i)
+        else:
+            other.append(i)
+
+    return matching, other

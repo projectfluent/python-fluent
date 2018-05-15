@@ -4,9 +4,11 @@ import attr
 import six
 
 from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument,
-                         Message, MessageReference, NumberExpression, Pattern,
-                         Placeable, SelectExpression, StringExpression,
-                         TextElement, VariantExpression, VariantName)
+                         Message, MessageReference, NamedArgument,
+                         NumberExpression, Pattern, Placeable,
+                         SelectExpression, StringExpression, TextElement,
+                         VariantExpression, VariantName)
+from .utils import partition
 
 try:
     from functools import singledispatch
@@ -252,10 +254,13 @@ def handle_call_expression(expression, env):
         env.errors.append(FluentReferenceError("Unknown function: {0}"
                                                .format(function_name)))
         return FluentNone(function_name + "()")
-    args = [handle(arg, env) for arg in expression.args]
-    # TODO - keyword args
+
+    kwargs, args = partition(expression.args,
+                             lambda i: isinstance(i, NamedArgument))
+    args = [handle(arg, env) for arg in args]
+    kwargs = {kwarg.name.name: handle(kwarg.val, env) for kwarg in kwargs}
     try:
-        return function(*args)
+        return function(*args, **kwargs)
     except Exception as e:
         env.errors.append(e)
         return FluentNone(function_name + "()")

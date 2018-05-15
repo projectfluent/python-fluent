@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import os.path
 import unittest
 
 from fluent.context import MessageContext
@@ -79,3 +81,14 @@ class TestMessageContext(unittest.TestCase):
                          'one')
         self.assertEqual(ctx.plural_form_for_number(2),
                          'other')
+
+    def test_add_messages_from_file(self):
+        ctx = MessageContext(['pl'])
+        ftl_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'syntax', 'fixtures_structure', 'term.ftl')
+        ctx.add_messages_from_file(ftl_file)
+
+        # End to end test to check we actually loaded it.
+        val, errs = ctx.format('update-successful', {})
+        self.assertEqual(val, "Firefox został pomyślnie zaktualizowany.")
+        self.assertEqual(len(errs), 0)

@@ -45,6 +45,18 @@ class MessageContext(object):
             elif isinstance(item, Term):
                 self._terms[item.id.name] = item
 
+    def add_messages_from_file(self, filename):
+        """
+        Add messages from a file, passing either a filename
+        or an open file object.
+        """
+        if isinstance(filename, six.string_types):
+            with open(filename, "rb") as f:
+                self.add_messages(f.read().decode('utf-8'))
+        else:
+            f = filename
+            self.add_messages(f.read().decode('utf-8'))
+
     def has_message(self, message_id):
         try:
             self._get_message(message_id)

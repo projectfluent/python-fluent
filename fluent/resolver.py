@@ -120,14 +120,14 @@ def handle_message_reference(message_reference, env):
         try:
             message = env.context._terms[name]
         except LookupError:
-            env.context.errors.append(
+            env.errors.append(
                 FluentReferenceError("Unknown term: {0}"
                                      .format(name)))
     else:
         try:
             message = env.context._messages[name]
         except LookupError:
-            env.context.errors.append(
+            env.errors.append(
                 FluentReferenceError("Unknown message: {0}"
                                      .format(name)))
     if message is None:

@@ -12,9 +12,11 @@ class TestFluentNumber(unittest.TestCase):
 
     def test_int(self):
         self.assertTrue(isinstance(fluent_number(1), int))
+        self.assertTrue(isinstance(fluent_number(1), FluentNumber))
 
     def test_float(self):
         self.assertTrue(isinstance(fluent_number(1.1), float))
+        self.assertTrue(isinstance(fluent_number(1.1), FluentNumber))
 
     def test_use_grouping(self):
         f1 = fluent_number(123456.78, useGrouping=True)

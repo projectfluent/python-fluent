@@ -19,7 +19,6 @@ except ImportError:
 
 
 text_type = six.text_type
-string_types = six.string_types
 
 
 @attr.s
@@ -65,7 +64,7 @@ def fully_resolve(expr, env):
     # handling of that object e.g. attributes of messages. fully_resolve is
     # only used when we must have a string.
     retval = handle(expr, env)
-    if isinstance(retval, string_types):
+    if isinstance(retval, text_type):
         return retval
     else:
         return fully_resolve(retval, env)

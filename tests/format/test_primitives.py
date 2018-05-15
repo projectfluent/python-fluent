@@ -115,6 +115,7 @@ class TestNumbers(unittest.TestCase):
         self.ctx = MessageContext(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             one           =  { 1 }
+            one_point_two =  { 1.2 }
             select        =  { 1 ->
                *[0] Zero
                 [1] One
@@ -124,6 +125,11 @@ class TestNumbers(unittest.TestCase):
     def test_int_number_used_in_placeable(self):
         val, errs = self.ctx.format('one', {})
         self.assertEqual(val, '1')
+        self.assertEqual(len(errs), 0)
+
+    def test_float_number_used_in_placeable(self):
+        val, errs = self.ctx.format('one_point_two', {})
+        self.assertEqual(val, '1.2')
         self.assertEqual(len(errs), 0)
 
     def test_can_be_used_as_a_selector(self):

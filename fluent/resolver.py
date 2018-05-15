@@ -277,6 +277,12 @@ def handle_int(integer, env):
     return str(integer)
 
 
+@handle.register(float)
+def handle_float(integer, env):
+    # TODO - use 'NUMBER' or something?
+    return str(integer)
+
+
 @singledispatch
 def handle_argument(arg, name, env):
     env.errors.append(TypeError("Unsupported external type: {0}, {1}"

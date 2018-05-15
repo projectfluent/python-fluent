@@ -16,7 +16,7 @@ class TestSimpleStringValue(unittest.TestCase):
             placeable-message = { foo } Bar
             selector-literal = { "Foo" ->
                *[Foo] Member 1
-            }
+             }
             bar
                 .attr = Bar Attribute
             placeable-attr   = { bar.attr }
@@ -24,7 +24,7 @@ class TestSimpleStringValue(unittest.TestCase):
                 .attr = Baz Attribute
             selector-attr    = { -baz.attr ->
                *[Baz Attribute] Member 3
-            }
+             }
         """))
 
     def test_can_be_used_as_a_value(self):
@@ -42,5 +42,69 @@ class TestSimpleStringValue(unittest.TestCase):
         self.assertEqual(val, 'Foo Bar')
         self.assertEqual(len(errs), 0)
 
-    # TODO - the rest of tests from
-    # https://github.com/projectfluent/fluent.js/blob/master/fluent/test/primitives_test.js
+    def test_can_be_a_selector(self):
+        val, errs = self.ctx.format('selector-literal', {})
+        self.assertEqual(val, 'Member 1')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_used_as_an_attribute_value(self):
+        val, errs = self.ctx.format('bar.attr', {})
+        self.assertEqual(val, 'Bar Attribute')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_a_value_of_an_attribute_used_in_a_placeable(self):
+        val, errs = self.ctx.format('placeable-attr', {})
+        self.assertEqual(val, 'Bar Attribute')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_a_value_of_an_attribute_used_as_a_selector(self):
+        val, errs = self.ctx.format('selector-attr', {})
+        self.assertEqual(val, 'Member 3')
+        self.assertEqual(len(errs), 0)
+
+
+class TestComplexStringValue(unittest.TestCase):
+    def setUp(self):
+        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx.add_messages(dedent_ftl("""
+            foo               = Foo
+            bar               = { foo } Bar
+
+            placeable-message = { bar } Baz
+
+            baz
+                .attr = { bar } Baz Attribute
+
+            placeable-attr = { baz.attr }
+
+            selector-attr = { baz.attr ->
+                [Foo Bar Baz Attribute] Variant
+               *[ok] Valid
+             }
+        """))
+
+    def test_can_be_used_as_a_value(self):
+        val, errs = self.ctx.format('bar', {})
+        self.assertEqual(val, 'Foo Bar')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_value_of_a_message_referenced_in_a_placeable(self):
+        val, errs = self.ctx.format('placeable-message', {})
+        self.assertEqual(val, 'Foo Bar Baz')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_used_as_an_attribute_value(self):
+        val, errs = self.ctx.format('baz.attr', {})
+        self.assertEqual(val, 'Foo Bar Baz Attribute')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_a_value_of_an_attribute_used_in_a_placeable(self):
+        val, errs = self.ctx.format('placeable-attr', {})
+        self.assertEqual(val, 'Foo Bar Baz Attribute')
+        self.assertEqual(len(errs), 0)
+
+    @unittest.skip("For future FTL spec")
+    def test_can_be_a_value_of_an_attribute_used_as_a_selector(self):
+        val, errs = self.ctx.format('selector-attr', {})
+        self.assertEqual(val, 'Variant 2')
+        self.assertEqual(len(errs), 0)

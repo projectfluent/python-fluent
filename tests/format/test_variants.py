@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import unittest
 
 from fluent.context import MessageContext
+from fluent.resolver import FluentReferenceError
 
 from ..syntax import dedent_ftl
 
@@ -45,4 +46,7 @@ class TestVariants(unittest.TestCase):
     def test_choose_missing_variant(self):
         val, errs = self.ctx.format('qux', {})
         self.assertEqual(val, 'B')
-        self.assertEqual(len(errs), 0)
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(
+            errs,
+            [FluentReferenceError("Unknown variant: c")])

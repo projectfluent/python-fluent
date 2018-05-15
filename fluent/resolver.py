@@ -199,6 +199,11 @@ def select_from_select_expression(expression, env, key=None):
             break
 
     if found is None:
+        if (expression.expression is None and key is not None and
+                not isinstance(key, FluentNone)):
+            # Variants, not full select expressions
+            env.errors.append(FluentReferenceError("Unknown variant: {0}"
+                                                   .format(key)))
         found = default
     if found is None:
         return FluentNone()

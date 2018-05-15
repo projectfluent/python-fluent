@@ -108,3 +108,25 @@ class TestComplexStringValue(unittest.TestCase):
         val, errs = self.ctx.format('selector-attr', {})
         self.assertEqual(val, 'Variant 2')
         self.assertEqual(len(errs), 0)
+
+
+class TestNumbers(unittest.TestCase):
+    def setUp(self):
+        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx.add_messages(dedent_ftl("""
+            one           =  { 1 }
+            select        =  { 1 ->
+               *[0] Zero
+                [1] One
+             }
+        """))
+
+    def test_int_number_used_in_placeable(self):
+        val, errs = self.ctx.format('one', {})
+        self.assertEqual(val, '1')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_used_as_a_selector(self):
+        val, errs = self.ctx.format('select', {})
+        self.assertEqual(val, 'One')
+        self.assertEqual(len(errs), 0)

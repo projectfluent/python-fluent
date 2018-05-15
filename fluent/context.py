@@ -1,9 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import babel
+import babel.numbers
 import babel.plural
 import six
 
+from .builtins import BUILTINS
 from .resolver import resolve
 from .syntax import FluentParser
 from .syntax.ast import Message, Term
@@ -25,7 +27,10 @@ class MessageContext(object):
 
     def __init__(self, locales, functions=None, use_isolating=True):
         self.locales = locales
-        self.functions = functions or {}
+        _functions = BUILTINS.copy()
+        if functions:
+            _functions.update(functions)
+        self.functions = _functions
         self._use_isolating = use_isolating
         self._messages = {}
         self._terms = {}
@@ -79,21 +84,14 @@ class MessageContext(object):
         >>> ctx.plural_form_for_number(1)
         'one'
         """
-        locale = self._get_babel_locale()
-        if locale is None:
-            # TODO log error
-            return dummy_plural_rule_func
-        return babel.plural.to_python(locale.plural_form)
+        return babel.plural.to_python(self._babel_locale.plural_form)
 
-    def _get_babel_locale(self):
+    @cachedproperty
+    def _babel_locale(self):
         for l in self.locales:
             try:
-                return babel.Locale(l.replace('-', '_'))
+                return babel.Locale.parse(l.replace('-', '_'))
             except babel.UnknownLocaleError:
                 continue
-        return None
-
-
-def dummy_plural_rule_func(val):
-    # We don't know anything, return a default
-    return 'other'
+        # TODO - log error
+        return babel.Locale.default()

@@ -8,6 +8,7 @@ from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument,
                          NumberExpression, Pattern, Placeable,
                          SelectExpression, StringExpression, Term, TextElement,
                          VariantExpression, VariantName)
+from .types import fluent_number, FluentNumber
 from .utils import partition
 
 try:
@@ -276,16 +277,19 @@ def handle_call_expression(expression, env):
         return FluentNone(function_name + "()")
 
 
+@handle.register(FluentNumber)
+def handle_fluent_number(number, env):
+    return number.format(env.context._babel_locale)
+
+
 @handle.register(int)
 def handle_int(integer, env):
-    # TODO - use 'NUMBER' or something?
-    return str(integer)
+    return fluent_number(integer).format(env.context._babel_locale)
 
 
 @handle.register(float)
-def handle_float(integer, env):
-    # TODO - use 'NUMBER' or something?
-    return str(integer)
+def handle_float(f, env):
+    return fluent_number(f).format(env.context._babel_locale)
 
 
 @singledispatch

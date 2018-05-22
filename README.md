@@ -65,10 +65,6 @@ on disk, here we will just add them directly:
     ... greet-by-name = Hello, { $name }!
     ... """)
 
-As a shortcut, you can also use `MessageContext.add_messages_from_file`, passing
-in a full file path, to load messages from a file on disk (stored in UTF8
-encoding).
-
 To generate translations, use the `format` method, passing a message ID and an
 optional dictionary of substitution parameters. If the the message ID is not
 found, a `LookupError` is raised. Otherwise, as per the Fluent philosophy, the

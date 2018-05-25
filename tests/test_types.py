@@ -36,6 +36,34 @@ class TestFluentNumber(unittest.TestCase):
         # NumberPattern:
         self.assertEqual(f1.format(self.locale), "123,456.78")
 
+    def test_minimum_integer_digits(self):
+        f = fluent_number(1.23, minimumIntegerDigits=3)
+        self.assertEqual(f.format(self.locale), "001.23")
+
+    def test_minimum_fraction_digits(self):
+        f = fluent_number(1.2, minimumFractionDigits=3)
+        self.assertEqual(f.format(self.locale), "1.200")
+
+    def test_maximum_fraction_digits(self):
+        f1 = fluent_number(1.23456)
+        self.assertEqual(f1.format(self.locale), "1.235")
+        f2 = fluent_number(1.23456, maximumFractionDigits=5)
+        self.assertEqual(f2.format(self.locale), "1.23456")
+
+    def test_minimum_significant_digits(self):
+        f1 = fluent_number(123, minimumSignificantDigits=5)
+        self.assertEqual(f1.format(self.locale), "123.00")
+        f2 = fluent_number(12.3, minimumSignificantDigits=5)
+        self.assertEqual(f2.format(self.locale), "12.300")
+
+    def test_maximum_significant_digits(self):
+        f1 = fluent_number(123456, maximumSignificantDigits=3)
+        self.assertEqual(f1.format(self.locale), "123,000")
+        f2 = fluent_number(12.3456, maximumSignificantDigits=3)
+        self.assertEqual(f2.format(self.locale), "12.3")
+        f3 = fluent_number(12, maximumSignificantDigits=5)
+        self.assertEqual(f3.format(self.locale), "12")
+
     def test_currency(self):
         # This test the default currencyDisplay value
         self.assertEqual(self.cur_pos.format(self.locale), "$123,456.78")

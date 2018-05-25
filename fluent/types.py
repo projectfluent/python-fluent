@@ -107,13 +107,23 @@ class FluentNumber(object):
     def _apply_options(self, pattern):
         if self.defaults:
             return pattern
-        # It's easiest to start from an existing one.
+        # We are essentially trying to copy the
+        # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NumberFormat
+        # API using Babel number formatting routines, which is slightly awkward
+        # but not too bad as they are both based on Unicode standards.
+
+        # The easiest route is to start from the existing NumberPattern, and
+        # then change its attributes so that Babel's number formatting routines
+        # do the right thing. The NumberPattern.pattern string then becomes
+        # incorrect, but it is not used when formatting, it is only used
+        # initially to set the other attributes.
         pattern = clone_pattern(pattern)
         if not self.useGrouping:
             pattern.grouping = _UNGROUPED_PATTERN.grouping
         if self.style == FORMAT_STYLE_CURRENCY:
             if self.currencyDisplay == CURRENCY_DISPLAY_CODE:
-                # Not sure of the algorithm here, but this seems to work:
+                # Not sure of the correct algorithm here, but this seems to
+                # work:
                 def replacer(s):
                     return s.replace("¤", "¤¤")
                 pattern.suffix = (replacer(pattern.suffix[0]),
@@ -128,8 +138,23 @@ class FluentNumber(object):
                 warnings.warn("Unsupported currencyDisplayValue {0}, falling back to {1}"
                               .format(CURRENCY_DISPLAY_NAME,
                                       CURRENCY_DISPLAY_SYMBOL))
-        # TODO - support all the other formatting options, or issue warnings if
-        # unsupported ones are used
+        if (self.minimumSignificantDigits is not None
+                or self.maximumSignificantDigits is not None):
+            # This triggers babel routines into 'significant digits' mode:
+            pattern.pattern = '@'
+            # We then manually set int_prec, and leave the rest as they are.
+            min_digits = (1 if self.minimumSignificantDigits is None
+                          else self.minimumSignificantDigits)
+            max_digits = (min_digits if self.maximumSignificantDigits is None
+                          else self.maximumSignificantDigits)
+            pattern.int_prec = (min_digits, max_digits)
+        else:
+            if self.minimumIntegerDigits is not None:
+                pattern.int_prec = (self.minimumIntegerDigits, pattern.int_prec[1])
+            if self.minimumFractionDigits is not None:
+                pattern.frac_prec = (self.minimumFractionDigits, pattern.frac_prec[1])
+            if self.maximumFractionDigits is not None:
+                pattern.frac_prec = (pattern.frac_prec[0], self.maximumFractionDigits)
 
         return pattern
 

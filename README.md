@@ -141,7 +141,6 @@ TODO
 
 Unimplemented features:
 
-- [ ] Most of the formatting options for `NUMBER` builtin.
 - [ ] All handling of datetime objects and `DATETIME` builtin function.
 - [ ] Some `MessageContext` options e.g. use_isolating
 - [ ] DOS protection - `MAX_PLACEABLE_LENGTH`
@@ -151,6 +150,16 @@ Unimplemented features:
 
 
 Help with the above would be welcome!
+
+Known limitations and bugs
+--------------------------
+
+These are also 'TODO' items but might be harder to address due to blocks
+elsewhere.
+
+* We do not yet support `NUMBER(..., currencyDisplay="name")` - see
+  https://github.com/python-babel/babel/issues/578
+
 
 Discuss
 -------

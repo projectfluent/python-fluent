@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+import warnings
+
 from babel.numbers import parse_pattern, NumberPattern
 
 
@@ -7,6 +12,15 @@ FORMAT_STYLE_PERCENT = "percent"
 FORMAT_STYLES = set([FORMAT_STYLE_DECIMAL,
                      FORMAT_STYLE_CURRENCY,
                      FORMAT_STYLE_PERCENT])
+
+CURRENCY_DISPLAY_SYMBOL = "symbol"
+CURRENCY_DISPLAY_CODE = "code"
+CURRENCY_DISPLAY_NAME = "name"
+CURRENCY_DISPLAY_OPTIONS = set([
+    CURRENCY_DISPLAY_SYMBOL,
+    CURRENCY_DISPLAY_CODE,
+    CURRENCY_DISPLAY_NAME,
+])
 
 
 class FluentNumber(object):
@@ -18,7 +32,7 @@ class FluentNumber(object):
 
     style = FORMAT_STYLE_DECIMAL
     currency = None
-    currencyDisplay = None
+    currencyDisplay = CURRENCY_DISPLAY_SYMBOL
     useGrouping = True
     minimumIntegerDigits = None
     minimumFractionDigits = None
@@ -69,6 +83,11 @@ class FluentNumber(object):
         if self.style == FORMAT_STYLE_CURRENCY and self.currency is None:
             raise ValueError("currency must be provided")
 
+        if (self.currencyDisplay is not None and
+                self.currencyDisplay not in CURRENCY_DISPLAY_OPTIONS):
+            raise ValueError("currencyDisplay must be one of: {0}"
+                             .format(", ".join(sorted(CURRENCY_DISPLAY_OPTIONS))))
+
         return self
 
     def format(self, locale):
@@ -92,7 +111,23 @@ class FluentNumber(object):
         pattern = clone_pattern(pattern)
         if not self.useGrouping:
             pattern.grouping = _UNGROUPED_PATTERN.grouping
-
+        if self.style == FORMAT_STYLE_CURRENCY:
+            if self.currencyDisplay == CURRENCY_DISPLAY_CODE:
+                # Not sure of the algorithm here, but this seems to work:
+                def replacer(s):
+                    return s.replace("¤", "¤¤")
+                pattern.suffix = (replacer(pattern.suffix[0]),
+                                  replacer(pattern.suffix[1]))
+                pattern.prefix = (replacer(pattern.prefix[0]),
+                                  replacer(pattern.prefix[1]))
+            elif self.currencyDisplay == CURRENCY_DISPLAY_NAME:
+                # No support for this yet - see
+                # https://github.com/python-babel/babel/issues/578 But it's
+                # better to display something than crash or a generic fallback
+                # string, so we just issue a warning and carry on for now.
+                warnings.warn("Unsupported currencyDisplayValue {0}, falling back to {1}"
+                              .format(CURRENCY_DISPLAY_NAME,
+                                      CURRENCY_DISPLAY_SYMBOL))
         # TODO - support all the other formatting options, or issue warnings if
         # unsupported ones are used
 

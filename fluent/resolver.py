@@ -26,18 +26,26 @@ class ResolverEnvironment(object):
     context = attr.ib()
     args = attr.ib()
     errors = attr.ib()
-    dirty = attr.ib(default=set)
+    dirty = attr.ib(factory=set)
 
 
 @attr.s
 class FluentNone(object):
-    name = attr.ib()
+    name = attr.ib(default=None)
 
 
-class FluentReferenceError(ValueError):
+class FluentFormatError(ValueError):
     def __eq__(self, other):
-        return (isinstance(other, FluentReferenceError) and
+        return ((other.__class__ == self.__class__) and
                 other.args == self.args)
+
+
+class FluentReferenceError(FluentFormatError):
+    pass
+
+
+class FluentCyclicReferenceError(FluentFormatError):
+    pass
 
 
 def resolve(context, message, args, errors=None):
@@ -88,8 +96,15 @@ def handle_term(term, env):
 
 @handle.register(Pattern)
 def handle_pattern(pattern, env):
-    # TODO: checking for cycles, max allowed length etc., use_isolating
-    return "".join(fully_resolve(element, env) for element in pattern.elements)
+    # TODO: max allowed length etc., use_isolating
+    if pattern in env.dirty:
+        env.errors.append(FluentCyclicReferenceError("Cyclic reference"))
+        return FluentNone()
+
+    env.dirty.add(pattern)
+    retval = "".join(fully_resolve(element, env) for element in pattern.elements)
+    env.dirty.remove(pattern)
+    return retval
 
 
 @handle.register(TextElement)

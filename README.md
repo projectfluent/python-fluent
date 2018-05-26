@@ -144,7 +144,6 @@ Unimplemented features:
 - [ ] All handling of datetime objects and `DATETIME` builtin function.
 - [ ] Some `MessageContext` options e.g. use_isolating
 - [ ] DOS protection - `MAX_PLACEABLE_LENGTH`
-- [ ] Infinite recursion protection
 - [ ] decimal.Decimal support
 - [ ] Other parts of code that have TODO in them!
 

@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import unittest
 
 from fluent.context import MessageContext
-from fluent.resolver import FluentReferenceError
+from fluent.resolver import FluentCyclicReferenceError, FluentReferenceError
 
 from ..syntax import dedent_ftl
 
@@ -29,6 +29,17 @@ class TestPlaceables(unittest.TestCase):
             bad-message-ref = Text { not-a-message }
             bad-message-attr-ref = Text { message.not-an-attr }
             bad-term-ref = Text { -not-a-term }
+
+            self-referencing-message = Text { self-referencing-message }
+            cyclic-msg1 = Text1 { cyclic-msg2 }
+            cyclic-msg2 = Text2 { cyclic-msg1 }
+            self-cyclic-message = Parent { self-cyclic-message.attr }
+                                .attr = Attribute { self-cyclic-message }
+
+            self-attribute-ref-ok = Parent { self-attribute-ref-ok.attr }
+                                  .attr = Attribute
+            self-parent-ref-ok = Parent
+                               .attr =  Attribute { self-parent-ref-ok }
         """))
 
     def test_placeable_message(self):
@@ -74,3 +85,27 @@ class TestPlaceables(unittest.TestCase):
         self.assertEqual(
             errs,
             [FluentReferenceError("Unknown term: -not-a-term")])
+
+    def test_cycle_detection(self):
+        val, errs = self.ctx.format('self-referencing-message', {})
+        self.assertEqual(val, 'Text ???')
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(
+            errs,
+            [FluentCyclicReferenceError("Cyclic reference")])
+
+    def test_mutual_cycle_detection(self):
+        val, errs = self.ctx.format('cyclic-msg1', {})
+        self.assertEqual(val, 'Text1 Text2 ???')
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(
+            errs,
+            [FluentCyclicReferenceError("Cyclic reference")])
+
+    def test_allowed_self_reference(self):
+        val, errs = self.ctx.format('self-attribute-ref-ok', {})
+        self.assertEqual(val, 'Parent Attribute')
+        self.assertEqual(len(errs), 0)
+        val, errs = self.ctx.format('self-parent-ref-ok.attr', {})
+        self.assertEqual(val, 'Attribute Parent')
+        self.assertEqual(len(errs), 0)

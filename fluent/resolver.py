@@ -20,6 +20,10 @@ except ImportError:
 
 text_type = six.text_type
 
+# Unicode bidi isolation characters.
+FSI = "\u2068"
+PDI = "\u2069"
+
 
 @attr.s
 class ResolverEnvironment(object):
@@ -96,13 +100,29 @@ def handle_term(term, env):
 
 @handle.register(Pattern)
 def handle_pattern(pattern, env):
-    # TODO: max allowed length etc., use_isolating
+    # TODO: max allowed length
     if pattern in env.dirty:
         env.errors.append(FluentCyclicReferenceError("Cyclic reference"))
         return FluentNone()
 
     env.dirty.add(pattern)
-    retval = "".join(fully_resolve(element, env) for element in pattern.elements)
+
+    parts = []
+    use_isolating = env.context._use_isolating and len(pattern.elements) > 1
+
+    for element in pattern.elements:
+        if isinstance(element, TextElement):
+            # shortcut deliberately omits the FSI/PDI chars here.
+            parts.append(element.value)
+            continue
+
+        part = fully_resolve(element, env)
+        if use_isolating:
+            parts.append(FSI)
+        parts.append(part)
+        if use_isolating:
+            parts.append(PDI)
+    retval = "".join(parts)
     env.dirty.remove(pattern)
     return retval
 

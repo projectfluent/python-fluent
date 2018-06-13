@@ -14,6 +14,7 @@ class TestNumberBuiltin(unittest.TestCase):
         self.ctx = MessageContext(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             implicit-call    = { 123456 }
+            implicit-call2   = { $arg }
             defaults         = { NUMBER(123456) }
             percent-style    = { NUMBER(1.234, style: "percent") }
             currency-style   = { NUMBER(123456, style: "currency", currency: "USD") }
@@ -23,6 +24,21 @@ class TestNumberBuiltin(unittest.TestCase):
 
     def test_implicit_call(self):
         val, errs = self.ctx.format('implicit-call', {})
+        self.assertEqual(val, "123,456")
+        self.assertEqual(len(errs), 0)
+
+    def test_implicit_call2_int(self):
+        val, errs = self.ctx.format('implicit-call2', {'arg': 123456})
+        self.assertEqual(val, "123,456")
+        self.assertEqual(len(errs), 0)
+
+    def test_implicit_call2_float(self):
+        val, errs = self.ctx.format('implicit-call2', {'arg': 123456.0})
+        self.assertEqual(val, "123,456")
+        self.assertEqual(len(errs), 0)
+
+    def test_implicit_call2_decimal(self):
+        val, errs = self.ctx.format('implicit-call2', {'arg': Decimal('123456.0')})
         self.assertEqual(val, "123,456")
         self.assertEqual(len(errs), 0)
 
@@ -41,8 +57,18 @@ class TestNumberBuiltin(unittest.TestCase):
         self.assertEqual(val, "$123,456.00")
         self.assertEqual(len(errs), 0)
 
-    def test_from_arg(self):
+    def test_from_arg_int(self):
         val, errs = self.ctx.format('from-arg', {'arg': 123456})
+        self.assertEqual(val, "123,456")
+        self.assertEqual(len(errs), 0)
+
+    def test_from_arg_float(self):
+        val, errs = self.ctx.format('from-arg', {'arg': 123456.0})
+        self.assertEqual(val, "123,456")
+        self.assertEqual(len(errs), 0)
+
+    def test_from_arg_decimal(self):
+        val, errs = self.ctx.format('from-arg', {'arg': Decimal('123456.0')})
         self.assertEqual(val, "123,456")
         self.assertEqual(len(errs), 0)
 

@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import unittest
+from decimal import Decimal
 
 from fluent.types import fluent_number, FluentNumber
 from babel import Locale
@@ -27,6 +28,11 @@ class TestFluentNumber(unittest.TestCase):
         self.assertTrue(isinstance(fluent_number(1.1), float))
         self.assertTrue(isinstance(fluent_number(1.1), FluentNumber))
 
+    def test_decimal(self):
+        d = Decimal('1.1')
+        self.assertTrue(isinstance(fluent_number(d), Decimal))
+        self.assertTrue(isinstance(fluent_number(d), FluentNumber))
+
     def test_use_grouping(self):
         f1 = fluent_number(123456.78, useGrouping=True)
         f2 = fluent_number(123456.78, useGrouping=False)
@@ -36,8 +42,19 @@ class TestFluentNumber(unittest.TestCase):
         # NumberPattern:
         self.assertEqual(f1.format(self.locale), "123,456.78")
 
+    def test_use_grouping_decimal(self):
+        d = Decimal('123456.78')
+        f1 = fluent_number(d, useGrouping=True)
+        f2 = fluent_number(d, useGrouping=False)
+        self.assertEqual(f1.format(self.locale), "123,456.78")
+        self.assertEqual(f2.format(self.locale), "123456.78")
+
     def test_minimum_integer_digits(self):
         f = fluent_number(1.23, minimumIntegerDigits=3)
+        self.assertEqual(f.format(self.locale), "001.23")
+
+    def test_minimum_integer_digits_decimal(self):
+        f = fluent_number(Decimal('1.23'), minimumIntegerDigits=3)
         self.assertEqual(f.format(self.locale), "001.23")
 
     def test_minimum_fraction_digits(self):

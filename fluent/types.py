@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import warnings
+from decimal import Decimal
 
 from babel.numbers import parse_pattern, NumberPattern
 
@@ -159,11 +160,25 @@ class FluentNumber(object):
         return pattern
 
 
+# We want types that inherit from both FluentNumber and a native type,
+# so that:
+#
+# 1) developers can just pass native types if they don't want to specify
+#    options, and fluent should handle these the same internally.
+#
+# 2) if they are using functions in messages, these can be passed FluentNumber
+#    instances in place of a native type and will work just the same without
+#    modification (in most cases).
+
 class FluentInt(FluentNumber, int):
     pass
 
 
 class FluentFloat(FluentNumber, float):
+    pass
+
+
+class FluentDecimal(FluentNumber, Decimal):
     pass
 
 
@@ -174,6 +189,8 @@ def fluent_number(number, **kwargs):
         return FluentInt(number, **kwargs)
     elif isinstance(number, float):
         return FluentFloat(number, **kwargs)
+    elif isinstance(number, Decimal):
+        return FluentDecimal(number, **kwargs)
     else:
         raise TypeError("Can't use fluent_number with object {0} for type {1}"
                         .format(number, type(number)))

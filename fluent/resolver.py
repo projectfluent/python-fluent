@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+from decimal import Decimal
+
 import attr
 import six
 
@@ -8,7 +10,7 @@ from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument,
                          NumberExpression, Pattern, Placeable,
                          SelectExpression, StringExpression, Term, TextElement,
                          VariantExpression, VariantName)
-from .types import fluent_number, FluentNumber
+from .types import FluentNumber, fluent_number
 from .utils import partition
 
 try:
@@ -326,26 +328,19 @@ def handle_float(f, env):
     return fluent_number(f).format(env.context._babel_locale)
 
 
-@singledispatch
+@handle.register(Decimal)
+def handle_decimal(d, env):
+    return fluent_number(d).format(env.context._babel_locale)
+
+
 def handle_argument(arg, name, env):
+    if isinstance(arg,
+                  (int, float, Decimal,
+                   text_type)):
+        return arg
     env.errors.append(TypeError("Unsupported external type: {0}, {1}"
                                 .format(name, type(arg))))
     return FluentNone(name)
-
-
-@handle_argument.register(int)
-def handle_argument_int(arg, name, env):
-    return arg
-
-
-@handle_argument.register(float)
-def handle_argument_float(arg, name, env):
-    return arg
-
-
-@handle_argument.register(text_type)
-def handle_argument_text(arg, name, env):
-    return arg
 
 
 def numeric_to_native(val):

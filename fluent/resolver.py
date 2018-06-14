@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+from datetime import date, datetime
 from decimal import Decimal
 
 import attr
@@ -10,7 +11,7 @@ from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument,
                          NumberExpression, Pattern, Placeable,
                          SelectExpression, StringExpression, Term, TextElement,
                          VariantExpression, VariantName)
-from .types import FluentNumber, fluent_number
+from .types import FluentNumber, fluent_date, fluent_number, FluentDateType
 from .utils import partition
 
 try:
@@ -333,9 +334,25 @@ def handle_decimal(d, env):
     return fluent_number(d).format(env.context._babel_locale)
 
 
+@handle.register(FluentDateType)
+def handle_fluent_date_type(d, env):
+    return d.format(env.context._babel_locale)
+
+
+@handle.register(date)
+def handle_date(d, env):
+    return fluent_date(d).format(env.context._babel_locale)
+
+
+@handle.register(datetime)
+def handle_date(d, env):
+    return fluent_date(d).format(env.context._babel_locale)
+
+
 def handle_argument(arg, name, env):
     if isinstance(arg,
                   (int, float, Decimal,
+                   date, datetime,
                    text_type)):
         return arg
     env.errors.append(TypeError("Unsupported external type: {0}, {1}"

@@ -2,10 +2,15 @@
 from __future__ import absolute_import, unicode_literals
 
 import unittest
+import warnings
+
+from datetime import date, datetime
 from decimal import Decimal
 
-from fluent.types import fluent_number, FluentNumber
+import pytz
 from babel import Locale
+
+from fluent.types import FluentDateType, FluentNumber, fluent_date, fluent_number
 
 
 class TestFluentNumber(unittest.TestCase):
@@ -145,3 +150,149 @@ class TestFluentNumber(unittest.TestCase):
 
         # and didn't mutate anything
         self.assertEqual(f1.style, "decimal")
+
+
+class TestFluentDate(unittest.TestCase):
+
+    locale = Locale.parse('en_US')
+
+    def setUp(self):
+        self.a_date = date(2018, 2, 1)
+        self.a_datetime = datetime(2018, 2, 1, 14, 15, 16, 123456,
+                                   tzinfo=pytz.UTC)
+
+    def test_date(self):
+        fd = fluent_date(self.a_date)
+        self.assertTrue(isinstance(fd, date))
+        self.assertTrue(isinstance(fd, FluentDateType))
+        self.assertEqual(fd.year, self.a_date.year)
+        self.assertEqual(fd.month, self.a_date.month)
+        self.assertEqual(fd.day, self.a_date.day)
+
+    def test_datetime(self):
+        fd = fluent_date(self.a_datetime)
+        self.assertTrue(isinstance(fd, datetime))
+        self.assertTrue(isinstance(fd, FluentDateType))
+        self.assertEqual(fd.year, self.a_datetime.year)
+        self.assertEqual(fd.month, self.a_datetime.month)
+        self.assertEqual(fd.day, self.a_datetime.day)
+        self.assertEqual(fd.hour, self.a_datetime.hour)
+        self.assertEqual(fd.minute, self.a_datetime.minute)
+        self.assertEqual(fd.second, self.a_datetime.second)
+        self.assertEqual(fd.microsecond, self.a_datetime.microsecond)
+        self.assertEqual(fd.tzinfo, self.a_datetime.tzinfo)
+
+    def test_format_defaults(self):
+        fd = fluent_date(self.a_date)
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        self.assertEqual(fd.format(en_GB), '1 Feb 2018')
+        self.assertEqual(fd.format(en_US), 'Feb 1, 2018')
+
+    def test_dateStyle_date(self):
+        fd = fluent_date(self.a_date, dateStyle='long')
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        self.assertEqual(fd.format(en_GB), '1 February 2018')
+        self.assertEqual(fd.format(en_US), 'February 1, 2018')
+
+    def test_dateStyle_datetime(self):
+        fd = fluent_date(self.a_datetime, dateStyle='long')
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        self.assertEqual(fd.format(en_GB), '1 February 2018')
+        self.assertEqual(fd.format(en_US), 'February 1, 2018')
+
+    def test_timeStyle_datetime(self):
+        fd = fluent_date(self.a_datetime, timeStyle='short')
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        self.assertEqual(fd.format(en_US), '2:15 PM')
+        self.assertEqual(fd.format(en_GB), '14:15')
+
+    def test_dateStyle_and_timeStyle_datetime(self):
+        fd = fluent_date(self.a_datetime, timeStyle='short', dateStyle='short')
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        self.assertEqual(fd.format(en_US), '2/1/18, 2:15 PM')
+        self.assertEqual(fd.format(en_GB), '01/02/2018, 14:15')
+
+    def test_timeZone(self):
+        en_GB = Locale.parse('en_GB')
+        LondonTZ = pytz.timezone('Europe/London')
+
+        # 1st July is a date in British Summer Time
+
+        # datetime object with tzinfo set to BST
+        dt1 = datetime(2018, 7, 1, 23, 30, 0, tzinfo=pytz.UTC).astimezone(LondonTZ)
+        fd1 = fluent_date(dt1, dateStyle='short', timeStyle='short')
+        self.assertEqual(fd1.format(en_GB), '02/07/2018, 00:30')
+        fd1b = fluent_date(dt1, dateStyle='full', timeStyle='full')
+        self.assertEqual(fd1b.format(en_GB), 'Monday, 2 July 2018 at 00:30:00 British Summer Time')
+        fd1c = fluent_date(dt1, dateStyle='short')
+        self.assertEqual(fd1c.format(en_GB), '02/07/2018')
+        fd1d = fluent_date(dt1, timeStyle='short')
+        self.assertEqual(fd1d.format(en_GB), '00:30')
+
+        # datetime object with no TZ, TZ passed in to fluent_date
+        dt2 = datetime(2018, 7, 1, 23, 30, 0)  # Assumed UTC
+        fd2 = fluent_date(dt2, dateStyle='short', timeStyle='short',
+                          timeZone='Europe/London')
+        self.assertEqual(fd2.format(en_GB), '02/07/2018, 00:30')
+        fd2b = fluent_date(dt2, dateStyle='full', timeStyle='full',
+                           timeZone='Europe/London')
+        self.assertEqual(fd2b.format(en_GB), 'Monday, 2 July 2018 at 00:30:00 British Summer Time')
+        fd2c = fluent_date(dt2, dateStyle='short',
+                           timeZone='Europe/London')
+        self.assertEqual(fd2c.format(en_GB), '02/07/2018')
+        fd2d = fluent_date(dt1, timeStyle='short',
+                           timeZone='Europe/London')
+        self.assertEqual(fd2d.format(en_GB), '00:30')
+
+    def test_allow_unsupported_options(self):
+        # We are just checking that these don't raise exceptions
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fluent_date(self.a_date,
+                        hour12=True,
+                        weekday="narrow",
+                        era="narrow",
+                        year="numeric",
+                        month="numeric",
+                        day="numeric",
+                        hour="numeric",
+                        minute="numeric",
+                        second="numeric",
+                        timeZoneName="short",
+                        )
+
+    def test_disallow_nonexistant_options(self):
+        self.assertRaises(
+            TypeError,
+            fluent_date,
+            self.a_date,
+            not_a_real_option=True,
+            )
+
+    def test_dont_wrap_unnecessarily(self):
+        f1 = fluent_date(self.a_date)
+        f2 = fluent_date(f1)
+        self.assertIs(f1, f2)
+
+    def test_copy_attributes(self):
+        f1 = fluent_date(self.a_date, dateStyle='long', hour12=False)
+        self.assertEqual(f1.options.dateStyle, 'long')
+
+        f2 = fluent_date(f1, hour12=False)
+
+        # Check we copied other attributes:
+        self.assertEqual(f2.options.dateStyle, "long")
+        self.assertEqual(f2.options.hour12, False)
+
+        # Check we can override
+        f3 = fluent_date(f2, dateStyle="full")
+        self.assertEqual(f3.options.dateStyle, "full")
+
+        # and didn't mutate anything
+        self.assertEqual(f1.options.dateStyle, "long")
+        self.assertEqual(f2.options.dateStyle, "long")

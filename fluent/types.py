@@ -2,10 +2,13 @@
 from __future__ import unicode_literals
 
 import warnings
+from datetime import date, datetime
 from decimal import Decimal
 
-from babel.numbers import parse_pattern, NumberPattern
-
+import attr
+import pytz
+from babel.dates import format_date, format_time, get_datetime_format, get_timezone
+from babel.numbers import NumberPattern, parse_pattern
 
 FORMAT_STYLE_DECIMAL = "decimal"
 FORMAT_STYLE_CURRENCY = "currency"
@@ -214,3 +217,130 @@ def clone_pattern(pattern):
                          pattern.frac_prec,
                          pattern.exp_prec,
                          pattern.exp_plus)
+
+
+@attr.s
+class DateFormatOptions(object):
+    # Parameters.
+    # See https://projectfluent.org/fluent/guide/functions.html#datetime
+
+    # Developer only
+    timeZone = attr.ib(default=None)
+
+    # Other
+    hour12 = attr.ib(default=None)
+    weekday = attr.ib(default=None)
+    era = attr.ib(default=None)
+    year = attr.ib(default=None)
+    month = attr.ib(default=None)
+    day = attr.ib(default=None)
+    hour = attr.ib(default=None)
+    minute = attr.ib(default=None)
+    second = attr.ib(default=None)
+    timeZoneName = attr.ib(default=None)
+
+    # See https://github.com/tc39/proposal-ecma402-datetime-style
+    dateStyle = attr.ib(default=None)
+    timeStyle = attr.ib(default=None)
+
+
+_SUPPORTED_DATETIME_OPTIONS = ['dateStyle', 'timeStyle', 'timeZone']
+
+
+class FluentDateType(object):
+    # We need an explicit options object
+    # to avoid name clashes with attributes on date/datetime
+
+    def _init(self, dt_obj, kwargs):
+        if 'timeStyle' in kwargs and not isinstance(self, datetime):
+            raise TypeError("timeStyle option can only be specified for datetime instances, not date instance")
+
+        options = DateFormatOptions()
+        if isinstance(dt_obj, FluentDateType):
+            copy_instance_attributes(dt_obj.options, options)
+        # Use the DateFormatOptions constructor because it might
+        # have validators defined for the fields.
+        kwarg_options = DateFormatOptions(**kwargs)
+        # Then merge, using only the ones explicitly given as keyword params.
+        for k in kwargs.keys():
+            setattr(options, k, getattr(kwarg_options, k))
+
+            if k not in _SUPPORTED_DATETIME_OPTIONS:
+                warnings.warn("FluentDateType option {0} is not yet supported".format(k))
+
+        self.options = options
+
+    def format(self, locale):
+        if isinstance(self, datetime):
+            selftz = _ensure_datetime_tzinfo(self, tzinfo=self.options.timeZone)
+        else:
+            selftz = self
+
+        if self.options.dateStyle is None and self.options.timeStyle is None:
+            return format_date(selftz, format='medium', locale=locale)
+        elif self.options.dateStyle is None and self.options.timeStyle is not None:
+            return format_time(selftz, format=self.options.timeStyle, locale=locale)
+        elif self.options.dateStyle is not None and self.options.timeStyle is None:
+            return format_date(selftz, format=self.options.dateStyle, locale=locale)
+        else:
+            # Both date and time. Logic copied from babel.dates.format_datetime,
+            # with modifications.
+            # Which datetime format do we pick? We arbitrarily pick dateStyle.
+
+            return (get_datetime_format(self.options.dateStyle, locale=locale)
+                    .replace("'", "")
+                    .replace('{0}', format_time(selftz, self.options.timeStyle, tzinfo=None,
+                                                locale=locale))
+                    .replace('{1}', format_date(selftz, self.options.dateStyle, locale=locale))
+                    )
+
+
+def _ensure_datetime_tzinfo(dt, tzinfo=None):
+    """
+    Ensure the datetime passed has an attached tzinfo.
+    """
+    # Adapted from babel's function.
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=pytz.UTC)
+    if tzinfo is not None:
+        dt = dt.astimezone(get_timezone(tzinfo))
+        if hasattr(tzinfo, 'normalize'):  # pytz
+            dt = tzinfo.normalize(datetime)
+    return dt
+
+
+class FluentDate(FluentDateType, date):
+    def __new__(cls,
+                dt_obj,
+                **kwargs):
+        self = super(FluentDate, cls).__new__(
+            cls,
+            dt_obj.year, dt_obj.month, dt_obj.day)
+        self._init(dt_obj, kwargs)
+        return self
+
+
+class FluentDateTime(FluentDateType, datetime):
+    def __new__(cls,
+                dt_obj,
+                **kwargs):
+        self = super(FluentDateTime, cls).__new__(
+            cls,
+            dt_obj.year, dt_obj.month, dt_obj.day,
+            dt_obj.hour, dt_obj.minute, dt_obj.second,
+            dt_obj.microsecond, tzinfo=dt_obj.tzinfo)
+
+        self._init(dt_obj, kwargs)
+        return self
+
+
+def fluent_date(dt, **kwargs):
+    if isinstance(dt, FluentDateType) and not kwargs:
+        return dt
+    if isinstance(dt, datetime):
+        return FluentDateTime(dt, **kwargs)
+    elif isinstance(dt, date):
+        return FluentDate(dt, **kwargs)
+    else:
+        raise TypeError("Can't use fluent_date with object {0} of type {1}"
+                        .format(dt, type(dt)))

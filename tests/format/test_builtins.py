@@ -1,10 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 import unittest
+from datetime import date, datetime
 from decimal import Decimal
 
 from fluent.context import MessageContext
-from fluent.types import fluent_number
+from fluent.types import fluent_date, fluent_number
 
 from ..syntax import dedent_ftl
 
@@ -84,4 +85,58 @@ class TestNumberBuiltin(unittest.TestCase):
         val, errs = self.ctx.format('merge-params',
                                     {'arg': number})
         self.assertEqual(val, "$123456.78")
+        self.assertEqual(len(errs), 0)
+
+
+class TestDatetimeBuiltin(unittest.TestCase):
+
+    def setUp(self):
+        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx.add_messages(dedent_ftl("""
+            implicit-call    = { $date }
+            explicit-call    = { DATETIME($date) }
+            call-with-arg    = { DATETIME($date, dateStyle: "long") }
+        """))
+
+    def test_implicit_call_date(self):
+        val, errs = self.ctx.format('implicit-call', {'date': date(2018, 2, 1)})
+        self.assertEqual(val, "Feb 1, 2018")
+        self.assertEqual(len(errs), 0)
+
+    def test_implicit_call_datetime(self):
+        val, errs = self.ctx.format('implicit-call', {'date': datetime(2018, 2, 1, 14, 15, 16)})
+        self.assertEqual(val, "Feb 1, 2018")
+        self.assertEqual(len(errs), 0)
+
+    def test_explicit_call_date(self):
+        val, errs = self.ctx.format('explicit-call', {'date': date(2018, 2, 1)})
+        self.assertEqual(val, "Feb 1, 2018")
+        self.assertEqual(len(errs), 0)
+
+    def test_explicit_call_datetime(self):
+        val, errs = self.ctx.format('explicit-call', {'date': datetime(2018, 2, 1, 14, 15, 16)})
+        self.assertEqual(val, "Feb 1, 2018")
+        self.assertEqual(len(errs), 0)
+
+    def test_explicit_call_date_fluent_date(self):
+        val, errs = self.ctx.format('explicit-call', {'date':
+                                                      fluent_date(
+                                                          date(2018, 2, 1),
+                                                          dateStyle='short')
+                                                      })
+        self.assertEqual(val, "2/1/18")
+        self.assertEqual(len(errs), 0)
+
+    def test_arg(self):
+        val, errs = self.ctx.format('call-with-arg', {'date': date(2018, 2, 1)})
+        self.assertEqual(val, "February 1, 2018")
+        self.assertEqual(len(errs), 0)
+
+    def test_arg_overrides_fluent_date(self):
+        val, errs = self.ctx.format('call-with-arg', {'date':
+                                                      fluent_date(
+                                                          date(2018, 2, 1),
+                                                          dateStyle='short')
+                                                      })
+        self.assertEqual(val, "February 1, 2018")
         self.assertEqual(len(errs), 0)

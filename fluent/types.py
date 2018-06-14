@@ -52,23 +52,17 @@ class FluentNumber(object):
                     maximumSignificantDigits=maximumSignificantDigits,
                     )
 
+    _ALLOWED_KWARGS = DEFAULTS.keys()
+
     def __new__(cls,
                 value,
                 **kwargs):
         self = super(FluentNumber, cls).__new__(cls, value)
 
         if isinstance(value, FluentNumber):
-            # Copying existing options if they were specified
-            # on the instance only (hence we check '__dict__')
-            options = {k: getattr(value, k)
-                       for k in FluentNumber.DEFAULTS.keys()
-                       if k in value.__dict__}
-        else:
-            options = {}
-        options.update(kwargs)
+            copy_instance_attributes(value, self)
 
-        for k, v in options.items():
-            setattr(self, k, v)
+        assign_kwargs(self, self._ALLOWED_KWARGS, kwargs)
 
         if all(getattr(self, k) == v
                for k, v in FluentNumber.DEFAULTS.items()
@@ -158,6 +152,18 @@ class FluentNumber(object):
                 pattern.frac_prec = (pattern.frac_prec[0], self.maximumFractionDigits)
 
         return pattern
+
+
+def copy_instance_attributes(from_instance, to_instance):
+    # We only copy values in `__dict__`, to avoid class attributes.
+    to_instance.__dict__.update(from_instance.__dict__)
+
+
+def assign_kwargs(to_instance, allowed_args, kwargs):
+    for k, v in kwargs.items():
+        if k not in allowed_args:
+            raise TypeError("Illegal keyword argument {0}".format(k))
+        setattr(to_instance, k, v)
 
 
 # We want types that inherit from both FluentNumber and a native type,

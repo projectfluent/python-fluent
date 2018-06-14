@@ -33,6 +33,14 @@ class TestFluentNumber(unittest.TestCase):
         self.assertTrue(isinstance(fluent_number(d), Decimal))
         self.assertTrue(isinstance(fluent_number(d), FluentNumber))
 
+    def test_disallow_nonexistant_options(self):
+        self.assertRaises(
+            TypeError,
+            fluent_number,
+            1,
+            not_a_real_option=True,
+            )
+
     def test_use_grouping(self):
         f1 = fluent_number(123456.78, useGrouping=True)
         f2 = fluent_number(123456.78, useGrouping=False)

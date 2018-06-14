@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import unittest
+from decimal import Decimal
 
 from fluent.context import MessageContext
 from fluent.types import fluent_number

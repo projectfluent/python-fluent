@@ -23,6 +23,13 @@ except ImportError:
 
 text_type = six.text_type
 
+# Prevent expansion of too long placeables, for memory DOS protection
+MAX_PART_LENGTH = 2500
+
+# Prevent messages with too many sub parts, for CPI DOS protection
+MAX_PARTS = 1000
+
+
 # Unicode bidi isolation characters.
 FSI = "\u2068"
 PDI = "\u2069"
@@ -34,6 +41,7 @@ class ResolverEnvironment(object):
     args = attr.ib()
     errors = attr.ib()
     dirty = attr.ib(factory=set)
+    part_count = attr.ib(default=0)
 
 
 @attr.s
@@ -103,7 +111,6 @@ def handle_term(term, env):
 
 @handle.register(Pattern)
 def handle_pattern(pattern, env):
-    # TODO: max allowed length
     if pattern in env.dirty:
         env.errors.append(FluentCyclicReferenceError("Cyclic reference"))
         return FluentNone()
@@ -114,6 +121,15 @@ def handle_pattern(pattern, env):
     use_isolating = env.context._use_isolating and len(pattern.elements) > 1
 
     for element in pattern.elements:
+        env.part_count += 1
+        if env.part_count > MAX_PARTS:
+            if env.part_count == MAX_PARTS + 1:
+                # Only append an error once.
+                env.errors.append(ValueError("Too many parts in message (> {0}), "
+                                             "aborting.".format(MAX_PARTS)))
+                parts.append(fully_resolve(FluentNone(), env))
+            break
+
         if isinstance(element, TextElement):
             # shortcut deliberately omits the FSI/PDI chars here.
             parts.append(element.value)
@@ -122,6 +138,12 @@ def handle_pattern(pattern, env):
         part = fully_resolve(element, env)
         if use_isolating:
             parts.append(FSI)
+        if len(part) > MAX_PART_LENGTH:
+            env.errors.append(ValueError(
+                "Too many characters in part, "
+                "({0}, max allowed is {1})".format(len(part),
+                                                   MAX_PART_LENGTH)))
+            part = part[:MAX_PART_LENGTH]
         parts.append(part)
         if use_isolating:
             parts.append(PDI)

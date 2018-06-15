@@ -19,14 +19,14 @@ class TestBillionLaughs(unittest.TestCase):
             lol4 = {lol3}{lol3}{lol3}{lol3}{lol3}{lol3}{lol3}{lol3}{lol3}{lol3}
             lolz = {lol4}
 
-            emptylol0 = { "" }
-            emptylol1 = {emptylol0}{emptylol0}{emptylol0}{emptylol0}{emptylol0}{emptylol0}{emptylol0}{emptylol0}{emptylol0}{emptylol0}
-            emptylol2 = {emptylol1}{emptylol1}{emptylol1}{emptylol1}{emptylol1}{emptylol1}{emptylol1}{emptylol1}{emptylol1}{emptylol1}
-            emptylol3 = {emptylol2}{emptylol2}{emptylol2}{emptylol2}{emptylol2}{emptylol2}{emptylol2}{emptylol2}{emptylol2}{emptylol2}
-            emptylol4 = {emptylol3}{emptylol3}{emptylol3}{emptylol3}{emptylol3}{emptylol3}{emptylol3}{emptylol3}{emptylol3}{emptylol3}
-            emptylol5 = {emptylol4}{emptylol4}{emptylol4}{emptylol4}{emptylol4}{emptylol4}{emptylol4}{emptylol4}{emptylol4}{emptylol4}
-            emptylol6 = {emptylol5}{emptylol5}{emptylol5}{emptylol5}{emptylol5}{emptylol5}{emptylol5}{emptylol5}{emptylol5}{emptylol5}
-            emptylolz = {emptylol6}
+            elol0 = { "" }
+            elol1 = {elol0}{elol0}{elol0}{elol0}{elol0}{elol0}{elol0}{elol0}{elol0}{elol0}
+            elol2 = {elol1}{elol1}{elol1}{elol1}{elol1}{elol1}{elol1}{elol1}{elol1}{elol1}
+            elol3 = {elol2}{elol2}{elol2}{elol2}{elol2}{elol2}{elol2}{elol2}{elol2}{elol2}
+            elol4 = {elol3}{elol3}{elol3}{elol3}{elol3}{elol3}{elol3}{elol3}{elol3}{elol3}
+            elol5 = {elol4}{elol4}{elol4}{elol4}{elol4}{elol4}{elol4}{elol4}{elol4}{elol4}
+            elol6 = {elol5}{elol5}{elol5}{elol5}{elol5}{elol5}{elol5}{elol5}{elol5}{elol5}
+            emptylolz = {elol6}
 
         """))
 

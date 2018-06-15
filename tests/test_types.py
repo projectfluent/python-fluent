@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 import warnings
-
 from datetime import date, datetime
 from decimal import Decimal
 

@@ -6,12 +6,10 @@ from decimal import Decimal
 import attr
 import six
 
-from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument,
-                         Message, MessageReference, NamedArgument,
-                         NumberExpression, Pattern, Placeable,
-                         SelectExpression, StringExpression, Term, TextElement,
-                         VariantExpression, VariantName)
-from .types import FluentNumber, fluent_date, fluent_number, FluentDateType
+from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, Message, MessageReference,
+                         NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
+                         TextElement, VariantExpression, VariantName)
+from .types import FluentDateType, FluentNumber, fluent_date, fluent_number
 from .utils import partition
 
 try:
@@ -366,7 +364,7 @@ def handle_date(d, env):
 
 
 @handle.register(datetime)
-def handle_date(d, env):
+def handle_datetime(d, env):
     return fluent_date(d).format(env.context._babel_locale)
 
 

@@ -17,7 +17,7 @@ class TestNumbersInValues(unittest.TestCase):
                 .attr = Baz Attribute { $num }
             qux = { "a" ->
                *[a]     Baz Variant A { $num }
-            }
+             }
         """))
 
     def test_can_be_used_in_the_message_value(self):
@@ -30,8 +30,15 @@ class TestNumbersInValues(unittest.TestCase):
         self.assertEqual(val, 'Foo 3')
         self.assertEqual(len(errs), 0)
 
-    # TODO - the rest from
-    # https://github.com/projectfluent/fluent.js/blob/master/fluent/test/arguments_test.js
+    def test_can_be_used_in_an_attribute(self):
+        val, errs = self.ctx.format('baz.attr', {'num': 3})
+        self.assertEqual(val, 'Baz Attribute 3')
+        self.assertEqual(len(errs), 0)
+
+    def test_can_be_used_in_a_variant(self):
+        val, errs = self.ctx.format('qux', {'num': 3})
+        self.assertEqual(val, 'Baz Variant A 3')
+        self.assertEqual(len(errs), 0)
 
 
 class TestStrings(unittest.TestCase):

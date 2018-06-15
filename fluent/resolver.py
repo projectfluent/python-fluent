@@ -176,7 +176,6 @@ def handle_message_reference(message_reference, env):
 
 @handle.register(FluentNone)
 def handle_fluent_none(none, env):
-    # TODO - tests.
     return none.name or "???"
 
 

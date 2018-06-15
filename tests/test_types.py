@@ -26,17 +26,22 @@ class TestFluentNumber(unittest.TestCase):
                                      style='currency')
 
     def test_int(self):
-        self.assertTrue(isinstance(fluent_number(1), int))
-        self.assertTrue(isinstance(fluent_number(1), FluentNumber))
+        i = fluent_number(1)
+        self.assertTrue(isinstance(i, int))
+        self.assertTrue(isinstance(i, FluentNumber))
+        self.assertEqual(i + 1, 2)
 
     def test_float(self):
-        self.assertTrue(isinstance(fluent_number(1.1), float))
-        self.assertTrue(isinstance(fluent_number(1.1), FluentNumber))
+        f = fluent_number(1.1)
+        self.assertTrue(isinstance(f, float))
+        self.assertTrue(isinstance(f, FluentNumber))
+        self.assertEqual(f + 1, 2.1)
 
     def test_decimal(self):
         d = Decimal('1.1')
         self.assertTrue(isinstance(fluent_number(d), Decimal))
         self.assertTrue(isinstance(fluent_number(d), FluentNumber))
+        self.assertEqual(d + 1, Decimal('2.1'))
 
     def test_disallow_nonexistant_options(self):
         self.assertRaises(

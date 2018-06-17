@@ -164,18 +164,6 @@ def merge_options(options_class, base, kwargs):
     return retval
 
 
-def copy_instance_attributes(from_instance, to_instance):
-    # We only copy values in `__dict__`, to avoid class attributes.
-    to_instance.__dict__.update(from_instance.__dict__)
-
-
-def assign_kwargs(to_instance, allowed_args, kwargs):
-    for k, v in kwargs.items():
-        if k not in allowed_args:
-            raise TypeError("Illegal keyword argument {0}".format(k))
-        setattr(to_instance, k, v)
-
-
 # We want types that inherit from both FluentNumber and a native type,
 # so that:
 #
@@ -257,9 +245,6 @@ _SUPPORTED_DATETIME_OPTIONS = ['dateStyle', 'timeStyle', 'timeZone']
 
 
 class FluentDateType(object):
-    # We need an explicit options object
-    # to avoid name clashes with attributes on date/datetime
-
     def _init(self, dt_obj, kwargs):
         if 'timeStyle' in kwargs and not isinstance(self, datetime):
             raise TypeError("timeStyle option can only be specified for datetime instances, not date instance")

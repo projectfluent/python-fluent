@@ -27,84 +27,61 @@ CURRENCY_DISPLAY_OPTIONS = set([
 ])
 
 
-class FluentNumber(object):
+@attr.s
+class NumberFormatOptions(object):
     # We follow the Intl.NumberFormat parameter names here,
     # rather than using underscores as per PEP8, so that
     # we can stick to Fluent spec more easily.
 
     # See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NumberFormat
+    style = attr.ib(default=FORMAT_STYLE_DECIMAL,
+                    validator=attr.validators.in_(FORMAT_STYLES))
+    currency = attr.ib(default=None)
+    currencyDisplay = attr.ib(default=CURRENCY_DISPLAY_SYMBOL,
+                              validator=attr.validators.in_(CURRENCY_DISPLAY_OPTIONS))
+    useGrouping = attr.ib(default=True)
+    minimumIntegerDigits = attr.ib(default=None)
+    minimumFractionDigits = attr.ib(default=None)
+    maximumFractionDigits = attr.ib(default=None)
+    minimumSignificantDigits = attr.ib(default=None)
+    maximumSignificantDigits = attr.ib(default=None)
 
-    style = FORMAT_STYLE_DECIMAL
-    currency = None
-    currencyDisplay = CURRENCY_DISPLAY_SYMBOL
-    useGrouping = True
-    minimumIntegerDigits = None
-    minimumFractionDigits = None
-    maximumFractionDigits = None
-    minimumSignificantDigits = None
-    maximumSignificantDigits = None
 
-    DEFAULTS = dict(style=style,
-                    currency=currency,
-                    currencyDisplay=currencyDisplay,
-                    useGrouping=useGrouping,
-                    minimumIntegerDigits=minimumIntegerDigits,
-                    minimumFractionDigits=minimumFractionDigits,
-                    maximumFractionDigits=maximumFractionDigits,
-                    minimumSignificantDigits=minimumSignificantDigits,
-                    maximumSignificantDigits=maximumSignificantDigits,
-                    )
+class FluentNumber(object):
 
-    _ALLOWED_KWARGS = DEFAULTS.keys()
+    default_number_format_options = NumberFormatOptions()
 
     def __new__(cls,
                 value,
                 **kwargs):
         self = super(FluentNumber, cls).__new__(cls, value)
+        return self._init(value, kwargs)
 
-        if isinstance(value, FluentNumber):
-            copy_instance_attributes(value, self)
+    def _init(self, value, kwargs):
+        self.options = merge_options(NumberFormatOptions,
+                                     getattr(value, 'options', self.default_number_format_options),
+                                     kwargs)
 
-        assign_kwargs(self, self._ALLOWED_KWARGS, kwargs)
-
-        if all(getattr(self, k) == v
-               for k, v in FluentNumber.DEFAULTS.items()
-               if k not in ['style', 'currency']):
-            # Shortcut to avoid needing to create NumberPattern later on
-            self.defaults = True
-        else:
-            self.defaults = False
-
-        if self.style not in FORMAT_STYLES:
-            raise ValueError("style must be one of: {0}"
-                             .format(", ".join(sorted(FORMAT_STYLES))))
-        if self.style == FORMAT_STYLE_CURRENCY and self.currency is None:
+        if self.options.style == FORMAT_STYLE_CURRENCY and self.options.currency is None:
             raise ValueError("currency must be provided")
-
-        if (self.currencyDisplay is not None and
-                self.currencyDisplay not in CURRENCY_DISPLAY_OPTIONS):
-            raise ValueError("currencyDisplay must be one of: {0}"
-                             .format(", ".join(sorted(CURRENCY_DISPLAY_OPTIONS))))
 
         return self
 
     def format(self, locale):
-        if self.style == FORMAT_STYLE_DECIMAL:
+        if self.options.style == FORMAT_STYLE_DECIMAL:
             base_pattern = locale.decimal_formats.get(None)
             pattern = self._apply_options(base_pattern)
             return pattern.apply(self, locale)
-        elif self.style == FORMAT_STYLE_PERCENT:
+        elif self.options.style == FORMAT_STYLE_PERCENT:
             base_pattern = locale.percent_formats.get(None)
             pattern = self._apply_options(base_pattern)
             return pattern.apply(self, locale)
-        elif self.style == FORMAT_STYLE_CURRENCY:
+        elif self.options.style == FORMAT_STYLE_CURRENCY:
             base_pattern = locale.currency_formats['standard']
             pattern = self._apply_options(base_pattern)
-            return pattern.apply(self, locale, currency=self.currency)
+            return pattern.apply(self, locale, currency=self.options.currency)
 
     def _apply_options(self, pattern):
-        if self.defaults:
-            return pattern
         # We are essentially trying to copy the
         # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NumberFormat
         # API using Babel number formatting routines, which is slightly awkward
@@ -116,10 +93,10 @@ class FluentNumber(object):
         # incorrect, but it is not used when formatting, it is only used
         # initially to set the other attributes.
         pattern = clone_pattern(pattern)
-        if not self.useGrouping:
+        if not self.options.useGrouping:
             pattern.grouping = _UNGROUPED_PATTERN.grouping
-        if self.style == FORMAT_STYLE_CURRENCY:
-            if self.currencyDisplay == CURRENCY_DISPLAY_CODE:
+        if self.options.style == FORMAT_STYLE_CURRENCY:
+            if self.options.currencyDisplay == CURRENCY_DISPLAY_CODE:
                 # Not sure of the correct algorithm here, but this seems to
                 # work:
                 def replacer(s):
@@ -128,7 +105,7 @@ class FluentNumber(object):
                                   replacer(pattern.suffix[1]))
                 pattern.prefix = (replacer(pattern.prefix[0]),
                                   replacer(pattern.prefix[1]))
-            elif self.currencyDisplay == CURRENCY_DISPLAY_NAME:
+            elif self.options.currencyDisplay == CURRENCY_DISPLAY_NAME:
                 # No support for this yet - see
                 # https://github.com/python-babel/babel/issues/578 But it's
                 # better to display something than crash or a generic fallback
@@ -136,25 +113,51 @@ class FluentNumber(object):
                 warnings.warn("Unsupported currencyDisplayValue {0}, falling back to {1}"
                               .format(CURRENCY_DISPLAY_NAME,
                                       CURRENCY_DISPLAY_SYMBOL))
-        if (self.minimumSignificantDigits is not None
-                or self.maximumSignificantDigits is not None):
+        if (self.options.minimumSignificantDigits is not None
+                or self.options.maximumSignificantDigits is not None):
             # This triggers babel routines into 'significant digits' mode:
             pattern.pattern = '@'
             # We then manually set int_prec, and leave the rest as they are.
-            min_digits = (1 if self.minimumSignificantDigits is None
-                          else self.minimumSignificantDigits)
-            max_digits = (min_digits if self.maximumSignificantDigits is None
-                          else self.maximumSignificantDigits)
+            min_digits = (1 if self.options.minimumSignificantDigits is None
+                          else self.options.minimumSignificantDigits)
+            max_digits = (min_digits if self.options.maximumSignificantDigits is None
+                          else self.options.maximumSignificantDigits)
             pattern.int_prec = (min_digits, max_digits)
         else:
-            if self.minimumIntegerDigits is not None:
-                pattern.int_prec = (self.minimumIntegerDigits, pattern.int_prec[1])
-            if self.minimumFractionDigits is not None:
-                pattern.frac_prec = (self.minimumFractionDigits, pattern.frac_prec[1])
-            if self.maximumFractionDigits is not None:
-                pattern.frac_prec = (pattern.frac_prec[0], self.maximumFractionDigits)
+            if self.options.minimumIntegerDigits is not None:
+                pattern.int_prec = (self.options.minimumIntegerDigits, pattern.int_prec[1])
+            if self.options.minimumFractionDigits is not None:
+                pattern.frac_prec = (self.options.minimumFractionDigits, pattern.frac_prec[1])
+            if self.options.maximumFractionDigits is not None:
+                pattern.frac_prec = (pattern.frac_prec[0], self.options.maximumFractionDigits)
 
         return pattern
+
+
+def merge_options(options_class, base, kwargs):
+    """
+    Given an 'options_class', an optional 'base' object to copy from,
+    and some keyword arguments, create a new options instance
+    """
+    if base is not None and not kwargs:
+        # We can safely re-use base, because we don't
+        # mutate options objects outside this function.
+        return base
+
+    retval = options_class()
+
+    if base is not None:
+        # We only copy values in `__dict__` to avoid class attributes.
+        retval.__dict__.update(base.__dict__)
+
+    # Use the options_class constructor because it might
+    # have validators defined for the fields.
+    kwarg_options = options_class(**kwargs)
+    # Then merge, using only the ones explicitly given as keyword params.
+    for k in kwargs.keys():
+        setattr(retval, k, getattr(kwarg_options, k))
+
+    return retval
 
 
 def copy_instance_attributes(from_instance, to_instance):
@@ -255,20 +258,12 @@ class FluentDateType(object):
         if 'timeStyle' in kwargs and not isinstance(self, datetime):
             raise TypeError("timeStyle option can only be specified for datetime instances, not date instance")
 
-        options = DateFormatOptions()
-        if isinstance(dt_obj, FluentDateType):
-            copy_instance_attributes(dt_obj.options, options)
-        # Use the DateFormatOptions constructor because it might
-        # have validators defined for the fields.
-        kwarg_options = DateFormatOptions(**kwargs)
-        # Then merge, using only the ones explicitly given as keyword params.
-        for k in kwargs.keys():
-            setattr(options, k, getattr(kwarg_options, k))
-
+        self.options = merge_options(DateFormatOptions,
+                                     getattr(dt_obj, 'options', None),
+                                     kwargs)
+        for k in kwargs:
             if k not in _SUPPORTED_DATETIME_OPTIONS:
                 warnings.warn("FluentDateType option {0} is not yet supported".format(k))
-
-        self.options = options
 
     def format(self, locale):
         if isinstance(self, datetime):

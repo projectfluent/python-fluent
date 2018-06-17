@@ -50,6 +50,12 @@ class TestFluentNumber(unittest.TestCase):
             not_a_real_option=True,
             )
 
+    def test_style_validation(self):
+        self.assertRaises(ValueError,
+                          fluent_number,
+                          1,
+                          style='xyz')
+
     def test_use_grouping(self):
         f1 = fluent_number(123456.78, useGrouping=True)
         f2 = fluent_number(123456.78, useGrouping=False)
@@ -139,21 +145,20 @@ class TestFluentNumber(unittest.TestCase):
 
     def test_copy_attributes(self):
         f1 = fluent_number(123456.78, useGrouping=False)
-        self.assertEqual(f1.__dict__['useGrouping'], False)
-        self.assertEqual(f1.useGrouping, False)
+        self.assertEqual(f1.options.useGrouping, False)
 
         # Check we didn't mutate anything
-        self.assertIs(FluentNumber.useGrouping, True)
-        self.assertIs(FluentNumber.DEFAULTS['useGrouping'], True)
+        self.assertIs(FluentNumber.default_number_format_options.useGrouping, True)
 
         f2 = fluent_number(f1, style="percent")
-        self.assertEqual(f2.style, "percent")
+        self.assertEqual(f2.options.style, "percent")
 
         # Check we copied
-        self.assertEqual(f2.useGrouping, False)
+        self.assertEqual(f2.options.useGrouping, False)
 
         # and didn't mutate anything
-        self.assertEqual(f1.style, "decimal")
+        self.assertEqual(f1.options.style, "decimal")
+        self.assertEqual(FluentNumber.default_number_format_options.style, "decimal")
 
 
 class TestFluentDate(unittest.TestCase):

@@ -146,7 +146,7 @@ currently the only supported options to `DATETIME` are:
 
 * `timeZone`
 * `dateStyle` and `timeStyle` which are [proposed
-  additions](https://github.com/tc39/ecma402/issues/108) to the ECMA i18n spec.
+  additions](https://github.com/tc39/proposal-ecma402-datetime-style) to the ECMA i18n spec.
 
 To specify options from Python code, use `fluent.types.fluent_date`:
 
@@ -206,28 +206,21 @@ a `functions` dictionary to the `MessageContext` constructor:
     Hello 😄 Jane 😄
 
 
-
-TODO
-----
-
-Unimplemented features:
-
-- [ ] All handling of datetime objects and `DATETIME` builtin function.
-- [ ] Some `MessageContext` options e.g. use_isolating
-- [ ] DOS protection - `MAX_PLACEABLE_LENGTH`
-- [ ] Other parts of code that have TODO in them!
-
-
-Help with the above would be welcome!
-
 Known limitations and bugs
 --------------------------
 
-These are also 'TODO' items but might be harder to address due to blocks
-elsewhere.
+* We do not yet support `NUMBER(..., currencyDisplay="name")` - see [this python-babel
+  pull request](https://github.com/python-babel/babel/pull/585) which needs to
+  be merged and released.
 
-* We do not yet support `NUMBER(..., currencyDisplay="name")` - see
-  https://github.com/python-babel/babel/issues/578
+* Most options to `DATETIME` are not yet supported. See the [MDN docs for
+  Intl.DateTimeFormat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DateTimeFormat),
+  the [ECMA spec for
+  BasicFormatMatcher](http://www.ecma-international.org/ecma-402/1.0/#BasicFormatMatcher)
+  and the [Intl.js
+  polyfill](https://github.com/andyearnshaw/Intl.js/blob/master/src/12.datetimeformat.js).
+
+Help with the above would be welcome!
 
 
 Discuss

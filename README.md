@@ -94,6 +94,9 @@ errors)`, as below.
     [FluentReferenceError('Unknown external: name')]
 
 
+Numbers
+-------
+
 When rendering translations, Fluent passes any numeric arguments (int or float)
 through locale-aware formatting functions:
 
@@ -103,7 +106,7 @@ through locale-aware formatting functions:
     'You have 1,234,567 points.'
 
 
-You can specify you own formatting options on the arguments passed in by
+You can specify your own formatting options on the arguments passed in by
 wrapping your numeric arguments with `fluent.types.fluent_number`:
 
     >>> from fluent.types import fluent_number
@@ -121,6 +124,69 @@ Thee options available are defined in the Fluent spec for
 these options can also be defined in the FTL files, as described in the Fluent
 spec, and the options will be merged.
 
+Date and time
+-------------
+
+Python `dateime.datetime` and `datetime.date` objects are also passed through
+locale aware functions:
+
+    >>> from datetime import date
+    >>> context.add_messages("today-is = Today is { $today }")
+    >>> val, errs = context.format("today-is", {"today": date.today() })
+    >>> val
+    'Today is Jun 16, 2018'
+
+You can explicitly call the `DATETIME` builtin to specify options:
+
+    >>> context.add_messages('today-is = Today is { DATETIME($today, dateStyle: "short") }')
+
+See the [DATETIME
+docs](https://projectfluent.org/fluent/guide/functions.html#datetime). However,
+currently the only supported options to `DATETIME` are:
+
+* `timeZone`
+* `dateStyle` and `timeStyle` which are [proposed
+  additions](https://github.com/tc39/ecma402/issues/108) to the ECMA i18n spec.
+
+To specify options from Python code, use `fluent.types.fluent_date`:
+
+    >>> from fluent.types import fluent_date
+    >>> today = date.today()
+    >>> short_today = fluent_date(today, dateStyle='short')
+    >>> val, errs = context.format("today-is", {"today": short_today })
+    >>> val
+    'Today is 6/17/18'
+
+You can also specify timezone for displaying `datetime` objects in two ways:
+
+* Create timezone aware `datetime` objects, and pass these to the `format` call
+  e.g.:
+
+        >>> import pytz
+        >>> from datetime import datetime
+        >>> utcnow = datime.utcnow().replace(tzinfo=pytz.utc)
+        >>> moscow_timezone = pytz.timezone('Europe/Moscow')
+        >>> now_in_moscow = utcnow.astimezone(moscow_timezone)
+
+* Or, use timezone naive `datetime` objects, or ones with a UTC timezone, and
+  pass the `timeZone` argument to `fluent_date` as a string:
+
+        >>> utcnow = datetime.utcnow()
+        >>> utcnow
+        datetime.datetime(2018, 6, 17, 12, 15, 5, 677597)
+
+        >>> context.add_messages("now-is = Now is { $now }")
+        >>> val, errs = context.format("now-is",
+        ...    {"now": fluent_date(utcnow,
+        ...                        timeZone="Europe/Moscow",
+        ...                        dateStyle="medium",
+        ...                        timeStyle="medium")})
+        >>> val
+        'Now is Jun 17, 2018, 3:15:05 PM'
+
+
+Custom functions
+----------------
 
 You can add functions to the ones available to FTL authors by passing
 a `functions` dictionary to the `MessageContext` constructor:

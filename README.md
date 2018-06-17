@@ -55,7 +55,12 @@ To generate translations from this Python libary, you start with the
 You pass a list of locales to the constructor - the first being the desired
 locale, with fallbacks after that:
 
-    >>> context = MessageContext(["en-US"])
+    >>> context = MessageContext(["en-US"], use_isolating=False)
+
+Here we have passed `use_isolating=False` which disables the use of Unicode bidi
+isolation characters, to make the example output easier to read. If you might
+have mixed right-to-left and left-to-right output from your messages then you
+should omit this parameter to get the default `True` value.
 
 You must then add messages. These would normally come from a `.ftl` file stored
 on disk, here we will just add them directly:

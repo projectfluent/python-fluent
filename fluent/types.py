@@ -27,6 +27,10 @@ CURRENCY_DISPLAY_OPTIONS = set([
 ])
 
 
+DATE_STYLE_OPTIONS = ["full", "long", "medium", "short", None]
+TIME_STYLE_OPTIONS = ["full", "long", "medium", "short", None]
+
+
 @attr.s
 class NumberFormatOptions(object):
     # We follow the Intl.NumberFormat parameter names here,
@@ -243,8 +247,10 @@ class DateFormatOptions(object):
     timeZoneName = attr.ib(default=None)
 
     # See https://github.com/tc39/proposal-ecma402-datetime-style
-    dateStyle = attr.ib(default=None)
-    timeStyle = attr.ib(default=None)
+    dateStyle = attr.ib(default=None,
+                        validator=attr.validators.in_(DATE_STYLE_OPTIONS))
+    timeStyle = attr.ib(default=None,
+                        validator=attr.validators.in_(TIME_STYLE_OPTIONS))
 
 
 _SUPPORTED_DATETIME_OPTIONS = ['dateStyle', 'timeStyle', 'timeZone']

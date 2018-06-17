@@ -226,6 +226,18 @@ class TestFluentDate(unittest.TestCase):
         self.assertEqual(fd.format(en_US), '2/1/18, 2:15 PM')
         self.assertEqual(fd.format(en_GB), '01/02/2018, 14:15')
 
+    def test_validate_dateStyle(self):
+        self.assertRaises(ValueError,
+                          fluent_date,
+                          self.a_date,
+                          dateStyle="nothing")
+
+    def test_validate_timeStyle(self):
+        self.assertRaises(ValueError,
+                          fluent_date,
+                          self.a_datetime,
+                          timeStyle="nothing")
+
     def test_timeZone(self):
         en_GB = Locale.parse('en_GB')
         LondonTZ = pytz.timezone('Europe/London')

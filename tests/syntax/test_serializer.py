@@ -1,8 +1,5 @@
 from __future__ import unicode_literals
 import unittest
-import sys
-
-sys.path.append('.')
 
 from tests.syntax import dedent_ftl
 from fluent.syntax import FluentParser, FluentSerializer

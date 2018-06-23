@@ -3,11 +3,8 @@ from six import with_metaclass
 
 import os
 import re
-import sys
 import codecs
 import unittest
-
-sys.path.append('.')
 
 from fluent.syntax import parse
 

@@ -1,9 +1,7 @@
 import unittest
-import sys
-
-sys.path.append('.')
 
 from fluent.syntax.stream import ParserStream
+
 
 class TestParserStream(unittest.TestCase):
 

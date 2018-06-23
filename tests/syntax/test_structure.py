@@ -2,12 +2,9 @@ from __future__ import unicode_literals
 from six import with_metaclass
 
 import os
-import sys
 import json
 import codecs
 import unittest
-
-sys.path.append('.')
 
 from fluent.syntax import parse
 

@@ -12,7 +12,7 @@ from .syntax.ast import Message, Term
 from .utils import cachedproperty
 
 
-class MessageContext(object):
+class MessageContextBase(object):
     """
     Message contexts are single-language stores of translations.  They are
     responsible for parsing translation resources in the Fluent syntax and can
@@ -58,14 +58,6 @@ class MessageContext(object):
         """
         return six.iterkeys(self._messages)
 
-    def format(self, message_id, args=None):
-        message = self._get_message(message_id)
-        if args is None:
-            args = {}
-        errors = []
-        resolved = resolve(self, message, args, errors=errors)
-        return resolved, errors
-
     def _get_message(self, message_id):
         if '.' in message_id:
             name, attr_name = message_id.split('.', 1)
@@ -97,3 +89,20 @@ class MessageContext(object):
                 continue
         # TODO - log error
         return babel.Locale.default()
+
+
+class InterpretingMessageContext(MessageContextBase):
+    def format(self, message_id, args=None):
+        message = self._get_message(message_id)
+        if args is None:
+            args = {}
+        errors = []
+        resolved = resolve(self, message, args, errors=errors)
+        return resolved, errors
+
+
+class CompilingMessageContext(MessageContextBase):
+    pass
+
+
+MessageContext = InterpretingMessageContext

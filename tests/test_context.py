@@ -88,3 +88,8 @@ class TestMessageContext(unittest.TestCase):
 
         val, errs = self.ctx.format('foo', {})
         self.assertEqual(val, 'Foo')
+
+    def test_format_missing(self):
+        self.assertRaises(LookupError,
+                          self.ctx.format,
+                          'a-missing-message')

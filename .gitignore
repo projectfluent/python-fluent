@@ -2,3 +2,7 @@
 *.pyc
 .eggs/
 fluent.egg-info/
+*.pot
+*.mo
+*.po
+.pytest_cache

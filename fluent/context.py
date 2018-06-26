@@ -6,6 +6,7 @@ import babel.plural
 import six
 
 from .builtins import BUILTINS
+from .compiler import compile_messages
 from .resolver import resolve
 from .syntax import FluentParser
 from .syntax.ast import Message, Term
@@ -102,7 +103,29 @@ class InterpretingMessageContext(MessageContextBase):
 
 
 class CompilingMessageContext(MessageContextBase):
-    pass
+    def add_messages(self, source):
+        super(CompilingMessageContext, self).add_messages(source)
+        self._is_dirty = True
+
+    def _ensure_compiled(self):
+        if getattr(self, '_is_dirty', True):
+            self._compile()
+
+    def _compile(self):
+        all_messages = {}
+        all_messages.update(self._messages)
+        all_messages.update(self._terms)
+        # TODO errors occurring at this point should be collected/reported
+        # somehow.
+        self._compiled_messages = compile_messages(all_messages,
+                                                   self._babel_locale,
+                                                   use_isolating=self._use_isolating)
+        self._is_dirty = False
+
+    def format(self, message_id, args=None):
+        self._ensure_compiled()
+        errors = []
+        return self._compiled_messages[message_id](args, errors)
 
 
 MessageContext = InterpretingMessageContext

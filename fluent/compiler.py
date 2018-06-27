@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+import six
+
 from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, Message, MessageReference,
                          NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
                          TextElement, VariantExpression, VariantName)
@@ -30,19 +32,19 @@ def compile_messages(messages, locale, use_isolating=True):
     exec(module.as_source_code(), module_globals)
     retval = {}
     for key, val in message_mapping.items():
-        retval[key] = module_globals[val]
+        retval[six.text_type(key)] = module_globals[val]
 
     return retval
 
 
 def messages_to_module(messages, locale, use_isolating=True, strict=False):
     message_mapping = {}
-    module = codegen.Module()
     compile_env = CompilerEnvironment(
         locale=locale,
         errors=[],
         use_isolating=use_isolating
     )
+    module = codegen.Module()
     for msg_id, msg in messages.items():
         function_name = module.reserve_name(msg_id)
         try:

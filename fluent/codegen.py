@@ -87,8 +87,10 @@ class String(Expression):
 
     def as_source_code(self):
         retval = repr(self.string_value)
-        # We use 'unicode_literals' at module level, so avoid unicode markers
-        # on strings for the sake of Python2/3 consistency.
+        # We eventually call 'exec' in a module that has 'from __future__ import
+        # unicode_literals' at module level, which means that without a 'u' prefix we
+        # still get unicode objects in Python 2. So for consistency with Python 3
+        # and easier testing we remove these unnecessary prefixes.
         if retval.startswith('u'):
             return retval[1:]
         else:

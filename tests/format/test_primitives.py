@@ -2,6 +2,8 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
+import six
+
 from .. import all_message_context_implementations
 from ..syntax import dedent_ftl
 
@@ -30,6 +32,7 @@ class TestSimpleStringValue(unittest.TestCase):
     def test_can_be_used_as_a_value(self):
         val, errs = self.ctx.format('foo', {})
         self.assertEqual(val, 'Foo')
+        self.assertEqual(type(val), six.text_type)
         self.assertEqual(len(errs), 0)
 
     def test_can_be_used_in_a_placeable(self):

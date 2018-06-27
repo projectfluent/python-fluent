@@ -103,13 +103,13 @@ class InterpretingMessageContext(MessageContextBase):
 
 
 class CompilingMessageContext(MessageContextBase):
+    def __init__(self, *args, **kwargs):
+        super(CompilingMessageContext, self).__init__(*args, **kwargs)
+        self._is_dirty = True
+
     def add_messages(self, source):
         super(CompilingMessageContext, self).add_messages(source)
         self._is_dirty = True
-
-    def _ensure_compiled(self):
-        if getattr(self, '_is_dirty', True):
-            self._compile()
 
     def _compile(self):
         all_messages = {}
@@ -123,9 +123,9 @@ class CompilingMessageContext(MessageContextBase):
         self._is_dirty = False
 
     def format(self, message_id, args=None):
-        self._ensure_compiled()
-        errors = []
-        return self._compiled_messages[message_id](args, errors)
+        if self._is_dirty:
+            self._compile()
+        return self._compiled_messages[message_id](args, [])
 
 
 MessageContext = InterpretingMessageContext

@@ -39,6 +39,8 @@ def compile_messages_to_python(source, locale, use_isolating=True, strict=True):
 class TestCompiler(unittest.TestCase):
     locale = babel.Locale.parse('en_US')
 
+    maxDiff = None
+
     def assertCodeEqual(self, code1, code2):
         self.assertEqual(normalize_python(code1),
                          normalize_python(code2))
@@ -133,6 +135,8 @@ class TestCompiler(unittest.TestCase):
         """)
 
     def test_message_mapping_used(self):
+        # Checking that we actually use message_mapping when looking up the name
+        # of the message function to call.
         code = compile_messages_to_python(dedent_ftl("""
             zip = Foo
             str = { zip }
@@ -143,4 +147,21 @@ class TestCompiler(unittest.TestCase):
 
             def str2(message_args, errors):
                 return zip2(message_args, errors)
+        """)
+
+    def test_external_argument(self):
+        code = compile_messages_to_python(dedent_ftl("""
+            with-arg = { $arg }
+        """), self.locale)
+        self.assertCodeEqual(code, """
+            def with_arg(message_args, errors):
+                try:
+                    _tmp = message_args['arg']
+                except LookupError:
+                    errors.append(FluentReferenceError('Unknown external: arg'))
+                    _tmp = '???'
+                else:
+                    _tmp = handle_argument(_tmp, 'arg', errors)
+
+                return (_tmp, errors)
         """)

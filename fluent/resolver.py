@@ -356,6 +356,7 @@ def handle_datetime(d, env):
     return fluent_date(d).format(env.context._babel_locale)
 
 
+# This function should be synced with fluent.runtime.handle_argument
 def handle_argument(arg, name, env):
     if isinstance(arg,
                   (int, float, Decimal,

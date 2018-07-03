@@ -4,6 +4,7 @@ import attr
 import six
 
 from . import codegen
+from . import runtime
 from .exceptions import FluentCyclicReferenceError, FluentReferenceError
 from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, Message, MessageReference,
                          NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
@@ -59,6 +60,7 @@ def messages_to_module(messages, locale, use_isolating=True, strict=False):
     # Setup globals, and reserve names for them
     module_globals = {
         'FluentReferenceError': FluentReferenceError,
+        'handle_argument': runtime.handle_argument,
     }
     module_globals.update(six.moves.builtins.__dict__)
     module = codegen.Module()
@@ -178,6 +180,34 @@ def compile_expr_message_reference(reference, local_scope, compile_env):
             error = FluentReferenceError("Unknown message: {0}".format(name))
         add_msg_error(local_scope, error)
         return codegen.String(name)
+
+
+@compile_expr.register(ExternalArgument)
+def compile_expr_external_argument(argument, local_scope, compile_env):
+    name = argument.id.name
+    tmp_name = local_scope.reserve_name('_tmp')
+    try_catch = codegen.TryCatch(codegen.VariableReference("LookupError", local_scope), local_scope)
+    # Try block
+    try_catch.try_block.add_assignment(
+        tmp_name,
+        codegen.DictLookup(codegen.VariableReference(MESSAGE_ARGS_NAME, local_scope),
+                           codegen.String(name)))
+    # Except block
+    add_msg_error(try_catch.except_block, FluentReferenceError("Unknown external: {0}".format(name)))
+    try_catch.except_block.add_assignment(
+        tmp_name,
+        codegen.String("???"))
+    # Else block
+    try_catch.else_block.add_assignment(
+        tmp_name,
+        codegen.FunctionCall("handle_argument",
+                             [codegen.VariableReference(tmp_name, local_scope),
+                              codegen.String(name),
+                              codegen.VariableReference(ERRORS_NAME, local_scope)],
+                             local_scope))
+
+    local_scope.statements.append(try_catch)
+    return codegen.VariableReference(tmp_name, local_scope)
 
 
 def add_msg_error(local_scope, exception):

@@ -187,3 +187,26 @@ class TestCodeGen(unittest.TestCase):
         scope.reserve_name('a_function')
         func_call = codegen.FunctionCall('a_function', [], scope)
         self.assertCodeEqual(func_call.as_source_code(), "a_function()")
+
+    def test_try_catch(self):
+        scope = codegen.Scope()
+        scope.reserve_name('MyError')
+        t = codegen.TryCatch(codegen.VariableReference('MyError', scope), scope)
+        self.assertCodeEqual(t.as_source_code(), """
+            try:
+                pass
+            except MyError:
+                pass
+        """)
+        scope.reserve_name('x')
+        t.try_block.add_assignment('x', codegen.String("x"))
+        t.except_block.add_assignment('x', codegen.String("y"))
+        t.else_block.add_assignment('x', codegen.String("z"))
+        self.assertCodeEqual(t.as_source_code(), """
+            try:
+                x = 'x'
+            except MyError:
+                x = 'y'
+            else:
+                x = 'z'
+        """)

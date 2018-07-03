@@ -96,6 +96,9 @@ class Scope(object):
                                  .format(name))
         self._function_arg_reserved_names.add(name)
 
+    # self.statements can be manipulated explicitly, appending statement
+    # objects. But in some cases for a better and safe API we have explicit
+    # 'add_X' methods and sometimes make the statement objects private
     def add_assignment(self, names, value):
         """
         Adds an assigment of the form:
@@ -115,14 +118,14 @@ class Scope(object):
             if name not in self.names_in_use():
                 raise AssertionError("Cannot assign to unreserved name '{0}'".format(name))
 
-        self.statements.append(Assignment(names, value))
+        self.statements.append(_Assignment(names, value))
 
     def add_function(self, func_name, func):
         assert func.func_name == func_name
         self.statements.append(func)
 
     def as_source_code(self):
-        return "\n".join(s.as_source_code() for s in self.statements)
+        return "".join(s.as_source_code() + "\n" for s in self.statements)
 
 
 def cleanup_name(name):
@@ -138,7 +141,7 @@ class Statement(object):
     pass
 
 
-class Assignment(Statement):
+class _Assignment(Statement):
     def __init__(self, names, value):
         self.names = names
         self.value = value
@@ -151,7 +154,15 @@ class Assignment(Statement):
                                   self.value.as_source_code())
 
 
-class Function(Scope, Statement):
+class Block(Scope):
+    def as_source_code(self):
+        if not self.statements:
+            return 'pass\n'
+        else:
+            return super(Block, self).as_source_code()
+
+
+class Function(Block, Statement):
     def __init__(self, name, args, parent_scope, **kwargs):
         super(Function, self).__init__(parent_scope=parent_scope)
         self.func_name = name
@@ -166,11 +177,8 @@ class Function(Scope, Statement):
         self.simplify()
         line1 = 'def {0}({1}):\n'.format(self.func_name,
                                          ', '.join(self.args))
-        if not self.statements:
-            body = 'pass\n'
-        else:
-            body = super(Function, self).as_source_code()
-        return line1 + indent(body) + '\n'
+        body = super(Function, self).as_source_code()
+        return line1 + indent(body)
 
     def add_return(self, value):
         self.statements.append(Return(value))
@@ -180,7 +188,7 @@ class Function(Scope, Statement):
             return
         # Remove needless unpacking and repacking of final return tuple
         if (isinstance(self.statements[-1], Return) and
-                isinstance(self.statements[-2], Assignment)):
+                isinstance(self.statements[-2], _Assignment)):
             return_s = self.statements[-1]
             assign_s = self.statements[-2]
             return_source = return_s.value.as_source_code()
@@ -199,6 +207,24 @@ class Return(Statement):
 
     def as_source_code(self):
         return 'return {0}'.format(self.value.as_source_code())
+
+
+class TryCatch(Statement):
+    def __init__(self, catch_exception, parent_scope):
+        self.catch_exception = catch_exception
+        self.try_block = Block(parent_scope=parent_scope)
+        self.except_block = Block(parent_scope=parent_scope)
+        self.else_block = Block(parent_scope=parent_scope)
+
+    def as_source_code(self):
+        retval = ("try:\n" +
+                  indent(self.try_block.as_source_code()) +
+                  "except {0}:\n".format(self.catch_exception.as_source_code()) +
+                  indent(self.except_block.as_source_code()))
+        if self.else_block.statements:
+            retval += ("else:\n" +
+                       indent(self.else_block.as_source_code()))
+        return retval
 
 
 class Expression(object):
@@ -260,6 +286,16 @@ class FunctionCall(Expression):
                                  ", ".join(arg.as_source_code() for arg in self.args))
 
 
+class DictLookup(Expression):
+    def __init__(self, lookup_obj, lookup_arg):
+        self.lookup_obj = lookup_obj
+        self.lookup_arg = lookup_arg
+
+    def as_source_code(self):
+        return "{0}[{1}]".format(self.lookup_obj.as_source_code(),
+                                 self.lookup_arg.as_source_code())
+
+
 ObjectCreation = FunctionCall
 
 
@@ -272,4 +308,4 @@ class Verbatim(Expression):
 
 
 def indent(text):
-    return "\n".join("    " + l for l in text.split("\n"))
+    return ''.join('    ' + l + '\n' for l in text.rstrip('\n').split('\n'))

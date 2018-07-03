@@ -1,4 +1,33 @@
+"""
+Utilities for doing Python code generation
+"""
 from __future__ import absolute_import, unicode_literals
+
+# This module provides simple utilities for building up Python source code. It
+# implements only what is really needed by compiler.py, with a number of aims
+# and constraints:
+#
+# 1. Performance.
+#
+#    The resulting Python code should do as little as possible, especially for
+#    simple cases (which are by far the most common for .ftl files)
+#
+# 2. Correctness (obviously)
+#
+#    In particular, we should try to make it hard to generate incorrect code,
+#    esepcially incorrect code that is syntactically correct and therefore
+#    compiles but doesn't work. In particular, we try to make it hard to
+#    generate accidental name clashes, or use variables that are not defined.
+#
+# 3. Simplicity
+#
+#    The resulting Python code should be easy to read and understand.
+#
+# 4. Predictability
+#
+#    Since we want to test the resulting source code, we have made some design
+#    decisions that aim to ensure things like function argument names are
+#    consistent and so can predicted easily.
 
 
 class Scope(object):

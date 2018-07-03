@@ -9,6 +9,12 @@ from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, 
                          NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
                          TextElement, VariantExpression, VariantName)
 
+try:
+    from functools import singledispatch
+except ImportError:
+    # Python < 3.4
+    from singledispatch import singledispatch
+
 
 @attr.s
 class CompilerEnvironment(object):
@@ -65,7 +71,7 @@ def messages_to_module(messages, locale, use_isolating=True, strict=False):
         module.reserve_function_arg_name(arg)
 
     # Pass one, find all the names, so that we can populate message_mapping,
-    # which is need for compilation.
+    # which is needed for compilation.
     for msg_id, msg in messages.items():
         # TODO - handle duplicate names correctly
         function_name = module.reserve_name(msg_id)
@@ -107,6 +113,7 @@ def compile_message(msg, function_name, module, compile_env):
     return msg_func
 
 
+@singledispatch
 def compile_expr(element, local_scope, compile_env):
     """
     Compiles a Fluent expression into a Python one, return
@@ -116,56 +123,61 @@ def compile_expr(element, local_scope, compile_env):
     to be a function that returns a message, or a branch of that
     function.
     """
-
-    # TODO cyclic reference errors. For this to be detected at compile time,
-    # we've got to fully resolve everything referenced, and then get
-    # the generated function to insert an error message at the appropriate
-    # point.
-
-    if isinstance(element, Pattern):
-        parts = []
-        subelements = element.elements
-
-        if len(subelements) == 1:
-            if isinstance(subelements[0], TextElement):
-                # Optimization for the very common case of a simple static string
-                return compile_expr(subelements[0], local_scope, compile_env)
-            elif isinstance(subelements[0], Placeable):
-                # or a single placeable
-                return compile_expr(subelements[0], local_scope, compile_env)
-
-        for element in element.elements:
-            parts.append(compile_expr(element, local_scope, compile_env))
-
-        return codegen.StringJoin(parts)
-    elif isinstance(element, TextElement):
-        return codegen.String(element.value)
-    elif isinstance(element, StringExpression):
-        return codegen.String(element.value)
-    elif isinstance(element, Placeable):
-        return compile_expr(element.expression, local_scope, compile_env)
-    elif isinstance(element, MessageReference):
-        name = element.id.name
-        if name in compile_env.message_mapping:
-            tmp_name = local_scope.reserve_name('_tmp')
-            local_scope.add_assignment(
-                (tmp_name, ERRORS_NAME),
-                codegen.FunctionCall(compile_env.message_mapping[name],
-                                     [codegen.VariableReference(a, local_scope) for a in MESSAGE_FUNCTION_ARGS],
-                                     local_scope))
-
-            return codegen.VariableReference(tmp_name, local_scope)
-
-        else:
-            if name.startswith('-'):
-                error = FluentReferenceError("Unknown term: {0}".format(name))
-            else:
-                error = FluentReferenceError("Unknown message: {0}".format(name))
-            add_msg_error(local_scope, error)
-            return codegen.String(name)
-
     raise NotImplementedError("Cannot handle object of type {0}"
                               .format(type(element).__name__))
+
+
+@compile_expr.register(Pattern)
+def compile_expr_pattern(pattern, local_scope, compile_env):
+    parts = []
+    subelements = pattern.elements
+
+    if len(subelements) == 1:
+        if isinstance(subelements[0], (TextElement, Placeable)):
+            # Optimization for the very common cases of single component
+            return compile_expr(subelements[0], local_scope, compile_env)
+
+    for element in pattern.elements:
+        parts.append(compile_expr(element, local_scope, compile_env))
+
+    return codegen.StringJoin(parts)
+
+
+@compile_expr.register(TextElement)
+def compile_expr_text(text, local_scope, compile_env):
+    return codegen.String(text.value)
+
+
+@compile_expr.register(StringExpression)
+def compile_expr_string_expression(expr, local_scope, compile_env):
+        return codegen.String(expr.value)
+
+
+@compile_expr.register(Placeable)
+def compile_expr_placeable(placeable, local_scope, compile_env):
+    return compile_expr(placeable.expression, local_scope, compile_env)
+
+
+@compile_expr.register(MessageReference)
+def compile_expr_message_reference(reference, local_scope, compile_env):
+    name = reference.id.name
+    if name in compile_env.message_mapping:
+        tmp_name = local_scope.reserve_name('_tmp')
+        local_scope.add_assignment(
+            (tmp_name, ERRORS_NAME),
+            codegen.FunctionCall(compile_env.message_mapping[name],
+                                 [codegen.VariableReference(a, local_scope) for a in MESSAGE_FUNCTION_ARGS],
+                                 local_scope))
+
+        return codegen.VariableReference(tmp_name, local_scope)
+
+    else:
+        if name.startswith('-'):
+            error = FluentReferenceError("Unknown term: {0}".format(name))
+        else:
+            error = FluentReferenceError("Unknown message: {0}".format(name))
+        add_msg_error(local_scope, error)
+        return codegen.String(name)
 
 
 def add_msg_error(local_scope, exception):

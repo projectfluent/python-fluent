@@ -52,6 +52,15 @@ class TestCompiler(unittest.TestCase):
             return ('Foo', errors)
         """)
 
+    def test_string_literal_in_placeable(self):
+        code = compile_messages_to_python(dedent_ftl("""
+            foo = { "Foo" }
+        """), self.locale)
+        self.assertCodeEqual(code, """
+        def foo(message_args, errors):
+            return ('Foo', errors)
+        """)
+
     def test_message_reference_plus_string_literal(self):
         code = compile_messages_to_python(dedent_ftl("""
             foo = Foo

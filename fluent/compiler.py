@@ -140,6 +140,8 @@ def compile_expr(element, local_scope, compile_env):
         return codegen.StringJoin(parts)
     elif isinstance(element, TextElement):
         return codegen.String(element.value)
+    elif isinstance(element, StringExpression):
+        return codegen.String(element.value)
     elif isinstance(element, Placeable):
         return compile_expr(element.expression, local_scope, compile_env)
     elif isinstance(element, MessageReference):

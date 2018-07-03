@@ -48,8 +48,8 @@ class TestCompiler(unittest.TestCase):
             foo = Foo
         """), self.locale)
         self.assertCodeEqual(code, """
-        def foo(message_args, errors):
-            return ('Foo', errors)
+            def foo(message_args, errors):
+                return ('Foo', errors)
         """)
 
     def test_string_literal_in_placeable(self):
@@ -67,12 +67,12 @@ class TestCompiler(unittest.TestCase):
             bar = X { foo }
         """), self.locale)
         self.assertCodeEqual(code, """
-        def foo(message_args, errors):
-            return ('Foo', errors)
+            def foo(message_args, errors):
+                return ('Foo', errors)
 
-        def bar(message_args, errors):
-            _tmp, errors = foo(message_args, errors)
-            return (''.join(['X ', _tmp]), errors)
+            def bar(message_args, errors):
+                _tmp, errors = foo(message_args, errors)
+                return (''.join(['X ', _tmp]), errors)
         """)
 
     def test_single_message_reference(self):
@@ -81,11 +81,11 @@ class TestCompiler(unittest.TestCase):
             bar = { foo }
         """), self.locale)
         self.assertCodeEqual(code, """
-        def foo(message_args, errors):
-            return ('Foo', errors)
+            def foo(message_args, errors):
+                return ('Foo', errors)
 
-        def bar(message_args, errors):
-            return foo(message_args, errors)
+            def bar(message_args, errors):
+                return foo(message_args, errors)
         """)
 
     def test_single_message_reference_reversed_order(self):
@@ -95,11 +95,11 @@ class TestCompiler(unittest.TestCase):
             foo = Foo
         """), self.locale)
         self.assertCodeEqual(code, """
-        def bar(message_args, errors):
-            return foo(message_args, errors)
+            def bar(message_args, errors):
+                return foo(message_args, errors)
 
-        def foo(message_args, errors):
-            return ('Foo', errors)
+            def foo(message_args, errors):
+                return ('Foo', errors)
         """)
 
     def test_single_message_bad_reference(self):
@@ -109,9 +109,9 @@ class TestCompiler(unittest.TestCase):
         # We already know that foo does not exist, so we can hard code the error
         # into the function.
         self.assertCodeEqual(code, """
-        def bar(message_args, errors):
-            errors.append(FluentReferenceError('Unknown message: foo'))
-            return ('foo', errors)
+            def bar(message_args, errors):
+                errors.append(FluentReferenceError('Unknown message: foo'))
+                return ('foo', errors)
         """)
 
     def test_name_collision_function_args(self):
@@ -119,8 +119,8 @@ class TestCompiler(unittest.TestCase):
             errors = Errors
         """), self.locale)
         self.assertCodeEqual(code, """
-        def errors2(message_args, errors):
-            return ('Errors', errors)
+            def errors2(message_args, errors):
+                return ('Errors', errors)
         """)
 
     def test_name_collision_builtins(self):
@@ -128,8 +128,8 @@ class TestCompiler(unittest.TestCase):
             zip = Zip
         """), self.locale)
         self.assertCodeEqual(code, """
-        def zip2(message_args, errors):
-            return ('Zip', errors)
+            def zip2(message_args, errors):
+                return ('Zip', errors)
         """)
 
     def test_message_mapping_used(self):
@@ -138,9 +138,9 @@ class TestCompiler(unittest.TestCase):
             str = { zip }
         """), self.locale)
         self.assertCodeEqual(code, """
-        def zip2(message_args, errors):
-            return ('Foo', errors)
+            def zip2(message_args, errors):
+                return ('Foo', errors)
 
-        def str2(message_args, errors):
-            return zip2(message_args, errors)
+            def str2(message_args, errors):
+                return zip2(message_args, errors)
         """)

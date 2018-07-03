@@ -76,22 +76,20 @@ class TestCodeGen(unittest.TestCase):
         module = codegen.Module()
         func = codegen.Function('myfunc', ['myarg1', 'myarg2'],
                                 parent_scope=module)
-        self.assertCodeEqual(func.as_source_code(),
-                             """
-                             def myfunc(myarg1, myarg2):
-                                 pass
-                             """)
+        self.assertCodeEqual(func.as_source_code(), """
+            def myfunc(myarg1, myarg2):
+                pass
+        """)
 
     def test_function_return(self):
         module = codegen.Module()
         func = codegen.Function('myfunc', [],
                                 parent_scope=module)
         func.add_return(codegen.String("Hello"))
-        self.assertCodeEqual(func.as_source_code(),
-                             """
-                             def myfunc():
-                                 return 'Hello'
-                             """)
+        self.assertCodeEqual(func.as_source_code(), """
+            def myfunc():
+                return 'Hello'
+        """)
 
     def test_add_function(self):
         module = codegen.Module()
@@ -99,18 +97,16 @@ class TestCodeGen(unittest.TestCase):
         func = codegen.Function(func_name, [],
                                 parent_scope=module)
         module.add_function(func_name, func)
-        self.assertCodeEqual(module.as_source_code(),
-                             """
-                             def myfunc():
-                                 pass
-                             """)
+        self.assertCodeEqual(module.as_source_code(), """
+            def myfunc():
+                pass
+        """)
 
     def test_variable_reference(self):
         module = codegen.Module()
         name = module.reserve_name('name')
         ref = codegen.VariableReference(name, module)
-        self.assertEqual(ref.as_source_code(),
-                         'name')
+        self.assertEqual(ref.as_source_code(), 'name')
 
     def test_variable_reference_check(self):
         module = codegen.Module()
@@ -149,11 +145,10 @@ class TestCodeGen(unittest.TestCase):
         func = codegen.Function(func_name, ['my_arg'],
                                 module)
         func.add_return(codegen.VariableReference('my_arg', func))
-        self.assertCodeEqual(func.as_source_code(),
-                             """
-                             def myfunc(my_arg):
-                                 return my_arg
-                             """)
+        self.assertCodeEqual(func.as_source_code(), """
+            def myfunc(my_arg):
+                return my_arg
+        """)
 
     def test_add_assignment_unreserved(self):
         scope = codegen.Scope()
@@ -166,20 +161,18 @@ class TestCodeGen(unittest.TestCase):
         scope = codegen.Scope()
         name = scope.reserve_name('x')
         scope.add_assignment(name, codegen.String('a string'))
-        self.assertCodeEqual(scope.as_source_code(),
-                             """
-                             x = 'a string'
-                             """)
+        self.assertCodeEqual(scope.as_source_code(), """
+            x = 'a string'
+        """)
 
     def test_add_assignment_multi(self):
         scope = codegen.Scope()
         name1 = scope.reserve_name('x')
         name2 = scope.reserve_name('y')
         scope.add_assignment((name1, name2), codegen.Tuple(codegen.String('a string'), codegen.String('another')))
-        self.assertCodeEqual(scope.as_source_code(),
-                             """
-                             x, y = ('a string', 'another')
-                             """)
+        self.assertCodeEqual(scope.as_source_code(), """
+            x, y = ('a string', 'another')
+        """)
 
     def test_function_call_unknown(self):
         scope = codegen.Scope()
@@ -193,7 +186,4 @@ class TestCodeGen(unittest.TestCase):
         scope = codegen.Scope()
         scope.reserve_name('a_function')
         func_call = codegen.FunctionCall('a_function', [], scope)
-        self.assertCodeEqual(func_call.as_source_code(),
-                             """
-                             a_function()
-                             """)
+        self.assertCodeEqual(func_call.as_source_code(), "a_function()")

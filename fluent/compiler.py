@@ -3,12 +3,12 @@ from __future__ import absolute_import, unicode_literals
 import attr
 import six
 
-from . import codegen
-from . import runtime
+from . import codegen, runtime
 from .exceptions import FluentCyclicReferenceError, FluentReferenceError
 from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, Message, MessageReference,
                          NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
                          TextElement, VariantExpression, VariantName)
+from .types import FluentNumber, FluentType, FluentDateType
 from .utils import numeric_to_native, partition
 
 try:
@@ -17,13 +17,21 @@ except ImportError:
     # Python < 3.4
     from singledispatch import singledispatch
 
+text_type = six.text_type
+
+BUILTIN_NUMBER = 'NUMBER'
+BUILTIN_DATETIME = 'DATETIME'
+
+BUILTIN_RETURN_TYPES = {
+    BUILTIN_NUMBER: FluentNumber,
+    BUILTIN_DATETIME: FluentDateType,
+}
+
+
 MESSAGE_ARGS_NAME = "message_args"
 LOCALE_NAME = "locale"
 ERRORS_NAME = "errors"
 MESSAGE_FUNCTION_ARGS = [MESSAGE_ARGS_NAME, LOCALE_NAME, ERRORS_NAME]
-
-# Property constants
-PROPERTY_MESSAGE_RETURN_VAL = 'PROPERTY_MESSAGE_RETURN_VAL'
 
 
 @attr.s
@@ -80,6 +88,10 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
     }
     module_globals.update(six.moves.builtins.__dict__)
 
+    known_return_types = {}
+    known_return_types.update(BUILTIN_RETURN_TYPES)
+    known_return_types.update(runtime.RETURN_TYPES)
+
     for name, func in functions.items():
         # TODO handle clash properly
         assert name not in module_globals
@@ -87,7 +99,10 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
 
     module = codegen.Module()
     for k in module_globals:
-        name = module.reserve_name(k)
+        properties = {}
+        if k in known_return_types:
+            properties[codegen.PROPERTY_RETURN_TYPE] = known_return_types[k]
+        name = module.reserve_name(k, properties=properties)
         assert name == k
 
     # Reserve names for function arguments
@@ -98,7 +113,9 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
     # which is needed for compilation.
     for msg_id, msg in messages.items():
         # TODO - handle duplicate names correctly
-        function_name = module.reserve_name(msg_id)
+        function_name = module.reserve_name(
+            msg_id,
+            properties={codegen.PROPERTY_RETURN_TYPE: text_type})
         compiler_env.message_mapping[msg_id] = function_name
 
     # Pass 2, actual compilation
@@ -172,12 +189,12 @@ def compile_expr_string_expression(expr, local_scope, parent_expr, compiler_env)
 
 @compile_expr.register(NumberExpression)
 def compile_expr_number_expression(expr, local_scope, parent_expr, compiler_env):
-    number = codegen.Number(numeric_to_native(expr.value))
+    number_expr = codegen.Number(numeric_to_native(expr.value))
     if is_NUMBER_call_expr(parent_expr):
         # Don't need two calls to NUMBER
-        return number
-    return codegen.FunctionCall('NUMBER',
-                                [number],
+        return number_expr
+    return codegen.FunctionCall(BUILTIN_NUMBER,
+                                [number_expr],
                                 {},
                                 local_scope)
 
@@ -191,7 +208,8 @@ def compile_expr_placeable(placeable, local_scope, parent_expr, compiler_env):
 def compile_expr_message_reference(reference, local_scope, parent_expr, compiler_env):
     name = reference.id.name
     if name in compiler_env.message_mapping:
-        tmp_name = local_scope.reserve_name('_tmp', properties={PROPERTY_MESSAGE_RETURN_VAL: True})
+        # Message functions always return strings, so we can type this variable:
+        tmp_name = local_scope.reserve_name('_tmp', properties={codegen.PROPERTY_TYPE: text_type})
         local_scope.add_assignment(
             (tmp_name, ERRORS_NAME),
             codegen.FunctionCall(compiler_env.message_mapping[name],
@@ -263,32 +281,21 @@ def finalize_expr_as_string(python_expr, scope, compiler_env):
     Wrap an outputted Python expression with code to ensure that it will return
     a string.
     """
-    if isinstance(python_expr, codegen.String):
+    if issubclass(python_expr.type, text_type):
         return python_expr
-    elif (isinstance(python_expr, codegen.VariableReference) and
-          python_expr.scope.get_name_properties(python_expr.name).get(PROPERTY_MESSAGE_RETURN_VAL, False)):
-        # Each message function will have its own 'handle_output' calls,
-        # therefore we don't need to add another one.
-        return python_expr
-    elif is_NUMBER_call(python_expr):
+    elif issubclass(python_expr.type, FluentType):
         return codegen.MethodCall(python_expr,
                                   'format',
-                                  [codegen.VariableReference(LOCALE_NAME, scope)])
+                                  [codegen.VariableReference(LOCALE_NAME, scope)],
+                                  expr_type=text_type)
     else:
         return codegen.FunctionCall('handle_output',
                                     [python_expr,
                                      codegen.VariableReference(LOCALE_NAME, scope),
                                      codegen.VariableReference(ERRORS_NAME, scope)],
                                     {},
-                                    scope)
-
-
-def is_NUMBER_call(python_expr):
-    """
-    Returns True if the object is a codegen.Expression representing a call to NUMBER
-    """
-    return (isinstance(python_expr, codegen.FunctionCall) and
-            python_expr.function_name == 'NUMBER')
+                                    scope,
+                                    expr_type=text_type)
 
 
 def is_NUMBER_call_expr(expr):

@@ -3,6 +3,8 @@ Utilities for doing Python code generation
 """
 from __future__ import absolute_import, unicode_literals
 
+from six import text_type
+
 # This module provides simple utilities for building up Python source code. It
 # implements only what is really needed by compiler.py, with a number of aims
 # and constraints:
@@ -28,6 +30,11 @@ from __future__ import absolute_import, unicode_literals
 #    Since we want to test the resulting source code, we have made some design
 #    decisions that aim to ensure things like function argument names are
 #    consistent and so can predicted easily.
+
+
+PROPERTY_TYPE = 'PROPERTY_TYPE'
+PROPERTY_RETURN_TYPE = 'PROPERTY_RETURN_TYPE'
+UNKNOWN_TYPE = object
 
 
 class Scope(object):
@@ -59,6 +66,8 @@ class Scope(object):
         Reserve a name as being in use in a scope.
 
         Pass function_arg=True if this is a function argument.
+        'properties' is an optional dict of additional properties
+        (e.g. the type associated with a name)
         """
         def _add(final):
             self.names.add(final)
@@ -101,7 +110,10 @@ class Scope(object):
         self._function_arg_reserved_names.add(name)
 
     def get_name_properties(self, name):
-        return self._properties[name]
+        if name in self._properties:
+            return self._properties[name]
+        else:
+            return self.parent_scope.get_name_properties(name)
 
     # self.statements can be manipulated explicitly, appending statement
     # objects. But in some cases for a better and safe API we have explicit
@@ -235,10 +247,14 @@ class TryCatch(Statement):
 
 
 class Expression(object):
-    pass
+    # type represents the Python type this expression will produce,
+    # if we know it (UNKNOWN_TYPE otherwise).
+    type = UNKNOWN_TYPE
 
 
 class String(Expression):
+    type = text_type
+
     def __init__(self, string_value):
         self.string_value = string_value
 
@@ -257,6 +273,7 @@ class String(Expression):
 class Number(Expression):
     def __init__(self, number):
         self.number = number
+        self.type = type(number)
 
     def as_source_code(self):
         return repr(self.number)
@@ -265,12 +282,15 @@ class Number(Expression):
 class List(Expression):
     def __init__(self, items):
         self.items = items
+        self.type = list
 
     def as_source_code(self):
         return '[' + ', '.join(i.as_source_code() for i in self.items) + ']'
 
 
 class StringJoin(Expression):
+    type = text_type
+
     def __init__(self, parts):
         self.parts = parts
 
@@ -279,6 +299,8 @@ class StringJoin(Expression):
 
 
 class Tuple(Expression):
+    type = tuple
+
     def __init__(self, *items):
         assert len(items) > 1
         self.items = items
@@ -292,19 +314,23 @@ class VariableReference(Expression):
         if name not in scope.names_in_use():
             raise AssertionError("Cannot refer to undefined variable '{0}'".format(name))
         self.name = name
-        self.scope = scope
+        self.type = scope.get_name_properties(name).get(PROPERTY_TYPE, UNKNOWN_TYPE)
 
     def as_source_code(self):
         return self.name
 
 
 class FunctionCall(Expression):
-    def __init__(self, function_name, args, kwargs, scope):
+    def __init__(self, function_name, args, kwargs, scope, expr_type=UNKNOWN_TYPE):
         if function_name not in scope.names_in_use():
             raise AssertionError("Cannot call unknown function '{0}'".format(function_name))
         self.function_name = function_name
         self.args = args
         self.kwargs = kwargs
+        if expr_type is UNKNOWN_TYPE:
+            # Try to find out automatically
+            expr_type = scope.get_name_properties(function_name).get(PROPERTY_RETURN_TYPE, expr_type)
+        self.type = expr_type
 
     def as_source_code(self):
         return "{0}({1}{2})".format(self.function_name,
@@ -316,11 +342,12 @@ class FunctionCall(Expression):
 
 
 class MethodCall(Expression):
-    def __init__(self, obj, method_name, args):
+    def __init__(self, obj, method_name, args, expr_type=UNKNOWN_TYPE):
         # We can't check method_name because we don't know the type of obj yet.
         self.obj = obj
         self.method_name = method_name
         self.args = args
+        self.type = expr_type
 
     def as_source_code(self):
         return "{0}.{1}({2})".format(
@@ -330,9 +357,10 @@ class MethodCall(Expression):
 
 
 class DictLookup(Expression):
-    def __init__(self, lookup_obj, lookup_arg):
+    def __init__(self, lookup_obj, lookup_arg, expr_type=UNKNOWN_TYPE):
         self.lookup_obj = lookup_obj
         self.lookup_arg = lookup_arg
+        self.type = expr_type
 
     def as_source_code(self):
         return "{0}[{1}]".format(self.lookup_obj.as_source_code(),

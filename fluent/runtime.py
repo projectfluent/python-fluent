@@ -13,6 +13,12 @@ __all__ = ['handle_argument', 'handle_output', 'FluentReferenceError']
 
 text_type = six.text_type
 
+RETURN_TYPES = {
+    'handle_argument': object,
+    'handle_output': text_type,
+    'FluentReferenceError': FluentReferenceError,
+}
+
 
 def handle_argument(arg, name, locale, errors):
     if isinstance(arg, text_type):

@@ -247,12 +247,20 @@ class String(Expression):
             return retval
 
 
+class List(Expression):
+    def __init__(self, items):
+        self.items = items
+
+    def as_source_code(self):
+        return '[' + ', '.join(i.as_source_code() for i in self.items) + ']'
+
+
 class StringJoin(Expression):
     def __init__(self, parts):
         self.parts = parts
 
     def as_source_code(self):
-        return "''.join([" + ', '.join(p.as_source_code() for p in self.parts) + '])'
+        return "''.join(" + List(self.parts).as_source_code() + ')'
 
 
 class Tuple(Expression):

@@ -59,8 +59,7 @@ def messages_to_module(messages, locale, use_isolating=True, strict=False):
     )
     # Setup globals, and reserve names for them
     module_globals = {
-        'FluentReferenceError': FluentReferenceError,
-        'handle_argument': runtime.handle_argument,
+        k: getattr(runtime, k) for k in runtime.__all__
     }
     module_globals.update(six.moves.builtins.__dict__)
     module = codegen.Module()

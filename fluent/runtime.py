@@ -1,9 +1,13 @@
 # Runtime functions for compiled messages
 
-import six
-
 from datetime import date, datetime
 from decimal import Decimal
+
+import six
+
+from fluent.exceptions import FluentReferenceError
+
+__all__ = ['handle_argument', 'FluentReferenceError']
 
 
 text_type = six.text_type

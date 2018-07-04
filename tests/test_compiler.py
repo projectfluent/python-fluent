@@ -50,7 +50,7 @@ class TestCompiler(unittest.TestCase):
             foo = Foo
         """), self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, errors):
+            def foo(message_args, locale, errors):
                 return ('Foo', errors)
         """)
 
@@ -59,7 +59,7 @@ class TestCompiler(unittest.TestCase):
             foo = { "Foo" }
         """), self.locale)
         self.assertCodeEqual(code, """
-        def foo(message_args, errors):
+        def foo(message_args, locale, errors):
             return ('Foo', errors)
         """)
 
@@ -69,11 +69,11 @@ class TestCompiler(unittest.TestCase):
             bar = X { foo }
         """), self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, errors):
+            def foo(message_args, locale, errors):
                 return ('Foo', errors)
 
-            def bar(message_args, errors):
-                _tmp, errors = foo(message_args, errors)
+            def bar(message_args, locale, errors):
+                _tmp, errors = foo(message_args, locale, errors)
                 return (''.join(['X ', _tmp]), errors)
         """)
 
@@ -83,11 +83,11 @@ class TestCompiler(unittest.TestCase):
             bar = { foo }
         """), self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, errors):
+            def foo(message_args, locale, errors):
                 return ('Foo', errors)
 
-            def bar(message_args, errors):
-                return foo(message_args, errors)
+            def bar(message_args, locale, errors):
+                return foo(message_args, locale, errors)
         """)
 
     def test_single_message_reference_reversed_order(self):
@@ -97,10 +97,10 @@ class TestCompiler(unittest.TestCase):
             foo = Foo
         """), self.locale)
         self.assertCodeEqual(code, """
-            def bar(message_args, errors):
-                return foo(message_args, errors)
+            def bar(message_args, locale, errors):
+                return foo(message_args, locale, errors)
 
-            def foo(message_args, errors):
+            def foo(message_args, locale, errors):
                 return ('Foo', errors)
         """)
 
@@ -111,7 +111,7 @@ class TestCompiler(unittest.TestCase):
         # We already know that foo does not exist, so we can hard code the error
         # into the function.
         self.assertCodeEqual(code, """
-            def bar(message_args, errors):
+            def bar(message_args, locale, errors):
                 errors.append(FluentReferenceError('Unknown message: foo'))
                 return ('foo', errors)
         """)
@@ -121,7 +121,7 @@ class TestCompiler(unittest.TestCase):
             errors = Errors
         """), self.locale)
         self.assertCodeEqual(code, """
-            def errors2(message_args, errors):
+            def errors2(message_args, locale, errors):
                 return ('Errors', errors)
         """)
 
@@ -130,7 +130,7 @@ class TestCompiler(unittest.TestCase):
             zip = Zip
         """), self.locale)
         self.assertCodeEqual(code, """
-            def zip2(message_args, errors):
+            def zip2(message_args, locale, errors):
                 return ('Zip', errors)
         """)
 
@@ -142,11 +142,11 @@ class TestCompiler(unittest.TestCase):
             str = { zip }
         """), self.locale)
         self.assertCodeEqual(code, """
-            def zip2(message_args, errors):
+            def zip2(message_args, locale, errors):
                 return ('Foo', errors)
 
-            def str2(message_args, errors):
-                return zip2(message_args, errors)
+            def str2(message_args, locale, errors):
+                return zip2(message_args, locale, errors)
         """)
 
     def test_external_argument(self):
@@ -154,14 +154,14 @@ class TestCompiler(unittest.TestCase):
             with-arg = { $arg }
         """), self.locale)
         self.assertCodeEqual(code, """
-            def with_arg(message_args, errors):
+            def with_arg(message_args, locale, errors):
                 try:
                     _tmp = message_args['arg']
                 except LookupError:
                     errors.append(FluentReferenceError('Unknown external: arg'))
                     _tmp = '???'
                 else:
-                    _tmp = handle_argument(_tmp, 'arg', errors)
+                    _tmp = handle_argument(_tmp, 'arg', locale, errors)
 
                 return (_tmp, errors)
         """)

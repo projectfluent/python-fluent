@@ -95,9 +95,10 @@ def messages_to_module(messages, locale, use_isolating=True, strict=False):
 # TODO Need to choose args that are guaranteed not to clash with other generated
 # names
 MESSAGE_ARGS_NAME = "message_args"
+LOCALE_NAME = "locale"
 ERRORS_NAME = "errors"
 
-MESSAGE_FUNCTION_ARGS = [MESSAGE_ARGS_NAME, ERRORS_NAME]
+MESSAGE_FUNCTION_ARGS = [MESSAGE_ARGS_NAME, LOCALE_NAME, ERRORS_NAME]
 
 
 def compile_message(msg, function_name, module, compile_env):
@@ -202,6 +203,7 @@ def compile_expr_external_argument(argument, local_scope, compile_env):
         codegen.FunctionCall("handle_argument",
                              [codegen.VariableReference(tmp_name, local_scope),
                               codegen.String(name),
+                              codegen.VariableReference(LOCALE_NAME, local_scope),
                               codegen.VariableReference(ERRORS_NAME, local_scope)],
                              local_scope))
 

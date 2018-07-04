@@ -60,18 +60,23 @@ def compiling_message_context():
 
 
 def build_message_context(cls):
-    ctx = cls(['en'])
+    # We choose 'use_isolating=False' for feature parity with gettext
+    ctx = cls(['en'], use_isolating=False)
     with open(ftl_file, "r") as f:
         ctx.add_messages(f.read())
     return ctx
 
 
+def unicode_gettext_method(gettext_translations):
+    if hasattr(gettext_translations, 'ugettext'):
+        return gettext_translations.ugettext
+    else:
+        return gettext_translations.gettext
+
+
 def test_single_string_gettext(gettext_translations, benchmark):
     gettext_translations.gettext("Hello I am a single string literal")  # for extract process
-    if hasattr(gettext_translations, 'ugettext'):
-        result = benchmark(gettext_translations.ugettext, "Hello I am a single string literal")
-    else:
-        result = benchmark(gettext_translations.gettext, "Hello I am a single string literal")
+    result = benchmark(unicode_gettext_method(gettext_translations), "Hello I am a single string literal")
     assert result == "Translated Hello I am a single string literal"
     assert type(result) is six.text_type
 
@@ -85,6 +90,29 @@ def test_single_string_fluent_interpreter(interpreting_message_context, benchmar
 def test_single_string_fluent_compiler(compiling_message_context, benchmark):
     result = benchmark(compiling_message_context.format, 'single-string-literal')
     assert result[0] == "Translated Hello I am a single string literal"
+    assert type(result[0]) is six.text_type
+
+
+def test_single_interpolation_gettext(gettext_translations, benchmark):
+    gettext_translations.gettext("Hello %(username)s, welcome to our website!")  # for extract process
+    t = unicode_gettext_method(gettext_translations)
+    args = {'username': 'Mary'}
+    result = benchmark(lambda: t("Hello %(username)s, welcome to our website!") % args)
+    assert result == "Translated Hello Mary, welcome to our website!"
+    assert type(result) is six.text_type
+
+
+def test_single_interpolation_fluent_interpreter(interpreting_message_context, benchmark):
+    args = {'username': 'Mary'}
+    result = benchmark(interpreting_message_context.format, 'single-interpolation', args)
+    assert result[0] == "Translated Hello Mary, welcome to our website!"
+    assert type(result[0]) is six.text_type
+
+
+def test_single_interpolation_fluent_compiler(compiling_message_context, benchmark):
+    args = {'username': 'Mary'}
+    result = benchmark(compiling_message_context.format, 'single-interpolation', args)
+    assert result[0] == "Translated Hello Mary, welcome to our website!"
     assert type(result[0]) is six.text_type
 
 

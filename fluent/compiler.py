@@ -115,8 +115,7 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
     for msg_id, msg in get_message_functions(messages):
         # TODO - handle duplicate names correctly
         function_name = module.reserve_name(
-            message_function_name_for_msg_id(msg_id),
-            properties={codegen.PROPERTY_RETURN_TYPE: text_type})
+            message_function_name_for_msg_id(msg_id))
         compiler_env.message_mapping[msg_id] = function_name
 
     # Pass 2, actual compilation

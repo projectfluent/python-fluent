@@ -111,15 +111,15 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
 
     # Pass one, find all the names, so that we can populate message_mapping,
     # which is needed for compilation.
-    for msg_id, msg in messages.items():
+    for msg_id, msg in get_message_functions(messages):
         # TODO - handle duplicate names correctly
         function_name = module.reserve_name(
-            msg_id,
+            message_function_name_for_msg_id(msg_id),
             properties={codegen.PROPERTY_RETURN_TYPE: text_type})
         compiler_env.message_mapping[msg_id] = function_name
 
     # Pass 2, actual compilation
-    for msg_id, msg in messages.items():
+    for msg_id, msg in get_message_functions(messages):
         function_name = compiler_env.message_mapping[msg_id]
         try:
             function = compile_message(msg, function_name, module, compiler_env)
@@ -130,6 +130,23 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
         else:
             module.add_function(function_name, function)
     return (module, compiler_env.message_mapping, module_globals)
+
+
+def get_message_functions(message_dict):
+    for msg_id, msg in message_dict.items():
+        yield (msg_id, msg)
+        for msg_attr in msg.attributes:
+            yield (message_id_for_attr(msg_id, msg_attr.id.name), msg_attr)
+
+
+def message_id_for_attr(parent_msg_id, attr_name):
+    return "{0}.{1}".format(parent_msg_id, attr_name)
+
+
+def message_function_name_for_msg_id(msg_id):
+    # Scope.reserve_name does further sanitising of name, which we don't need to
+    # worry about.
+    return msg_id.replace('.', '__').replace('-', '_')
 
 
 def compile_message(msg, function_name, module, compiler_env):

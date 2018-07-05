@@ -221,3 +221,20 @@ class TestCompiler(unittest.TestCase):
             def foo(message_args, locale, errors):
                 return (NUMBER(12345, useGrouping=0).format(locale), errors)
         """)
+
+    def test_message_with_attrs(self):
+        code = compile_messages_to_python("""
+            foo = Foo
+               .attr-1 = Attr 1
+               .attr-2 = Attr 2
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, locale, errors):
+                return ('Foo', errors)
+
+            def foo__attr_1(message_args, locale, errors):
+                return ('Attr 1', errors)
+
+            def foo__attr_2(message_args, locale, errors):
+                return ('Attr 2', errors)
+        """)

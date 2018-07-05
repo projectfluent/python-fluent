@@ -53,7 +53,7 @@ class TestCompiler(unittest.TestCase):
             foo = Foo
         """, self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 return ('Foo', errors)
         """)
 
@@ -62,7 +62,7 @@ class TestCompiler(unittest.TestCase):
             foo = { "Foo" }
         """, self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 return ('Foo', errors)
         """)
 
@@ -71,7 +71,7 @@ class TestCompiler(unittest.TestCase):
             foo = { 123 }
         """, self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 return (NUMBER(123).format(locale), errors)
         """)
 
@@ -80,7 +80,7 @@ class TestCompiler(unittest.TestCase):
             foo = x { 123 } y
         """, self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 return (''.join(['x ', NUMBER(123).format(locale), ' y']), errors)
         """)
 
@@ -90,11 +90,11 @@ class TestCompiler(unittest.TestCase):
             bar = X { foo }
         """, self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 return ('Foo', errors)
 
-            def bar(message_args, locale, errors):
-                _tmp, errors = foo(message_args, locale, errors)
+            def bar(message_args, errors):
+                _tmp, errors = foo(message_args, errors)
                 return (''.join(['X ', _tmp]), errors)
         """)
 
@@ -104,11 +104,11 @@ class TestCompiler(unittest.TestCase):
             bar = { foo }
         """, self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 return ('Foo', errors)
 
-            def bar(message_args, locale, errors):
-                return foo(message_args, locale, errors)
+            def bar(message_args, errors):
+                return foo(message_args, errors)
         """)
 
     def test_single_message_reference_reversed_order(self):
@@ -118,10 +118,10 @@ class TestCompiler(unittest.TestCase):
             foo = Foo
         """, self.locale)
         self.assertCodeEqual(code, """
-            def bar(message_args, locale, errors):
-                return foo(message_args, locale, errors)
+            def bar(message_args, errors):
+                return foo(message_args, errors)
 
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 return ('Foo', errors)
         """)
 
@@ -132,7 +132,7 @@ class TestCompiler(unittest.TestCase):
         # We already know that foo does not exist, so we can hard code the error
         # into the function.
         self.assertCodeEqual(code, """
-            def bar(message_args, locale, errors):
+            def bar(message_args, errors):
                 errors.append(FluentReferenceError('Unknown message: foo'))
                 return ('foo', errors)
         """)
@@ -142,7 +142,7 @@ class TestCompiler(unittest.TestCase):
             errors = Errors
         """, self.locale)
         self.assertCodeEqual(code, """
-            def errors2(message_args, locale, errors):
+            def errors2(message_args, errors):
                 return ('Errors', errors)
         """)
 
@@ -151,7 +151,7 @@ class TestCompiler(unittest.TestCase):
             zip = Zip
         """, self.locale)
         self.assertCodeEqual(code, """
-            def zip2(message_args, locale, errors):
+            def zip2(message_args, errors):
                 return ('Zip', errors)
         """)
 
@@ -163,11 +163,11 @@ class TestCompiler(unittest.TestCase):
             str = { zip }
         """, self.locale)
         self.assertCodeEqual(code, """
-            def zip2(message_args, locale, errors):
+            def zip2(message_args, errors):
                 return ('Foo', errors)
 
-            def str2(message_args, locale, errors):
-                return zip2(message_args, locale, errors)
+            def str2(message_args, errors):
+                return zip2(message_args, errors)
         """)
 
     def test_external_argument(self):
@@ -175,7 +175,7 @@ class TestCompiler(unittest.TestCase):
             with-arg = { $arg }
         """, self.locale)
         self.assertCodeEqual(code, """
-            def with_arg(message_args, locale, errors):
+            def with_arg(message_args, errors):
                 try:
                     _tmp = message_args['arg']
                 except LookupError:
@@ -192,7 +192,7 @@ class TestCompiler(unittest.TestCase):
             foo = { NUMBER(12345) }
         """, self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 return (NUMBER(12345).format(locale), errors)
         """)
 
@@ -201,7 +201,7 @@ class TestCompiler(unittest.TestCase):
             foo = { NUMBER($arg) }
         """, self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 try:
                     _tmp = message_args['arg']
                 except LookupError:
@@ -218,7 +218,7 @@ class TestCompiler(unittest.TestCase):
             foo = { NUMBER(12345, useGrouping: 0) }
         """, self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 return (NUMBER(12345, useGrouping=0).format(locale), errors)
         """)
 
@@ -229,12 +229,12 @@ class TestCompiler(unittest.TestCase):
                .attr-2 = Attr 2
         """, self.locale)
         self.assertCodeEqual(code, """
-            def foo(message_args, locale, errors):
+            def foo(message_args, errors):
                 return ('Foo', errors)
 
-            def foo__attr_1(message_args, locale, errors):
+            def foo__attr_1(message_args, errors):
                 return ('Attr 1', errors)
 
-            def foo__attr_2(message_args, locale, errors):
+            def foo__attr_2(message_args, errors):
                 return ('Attr 2', errors)
         """)

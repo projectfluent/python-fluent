@@ -29,10 +29,10 @@ BUILTIN_RETURN_TYPES = {
 
 
 MESSAGE_ARGS_NAME = "message_args"
-LOCALE_NAME = "locale"
 ERRORS_NAME = "errors"
-MESSAGE_FUNCTION_ARGS = [MESSAGE_ARGS_NAME, LOCALE_NAME, ERRORS_NAME]
+MESSAGE_FUNCTION_ARGS = [MESSAGE_ARGS_NAME, ERRORS_NAME]
 
+LOCALE_NAME = "locale"
 
 @attr.s
 class CompilerEnvironment(object):
@@ -87,6 +87,7 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
         k: getattr(runtime, k) for k in runtime.__all__
     }
     module_globals.update(six.moves.builtins.__dict__)
+    module_globals[LOCALE_NAME] = locale
 
     known_return_types = {}
     known_return_types.update(BUILTIN_RETURN_TYPES)

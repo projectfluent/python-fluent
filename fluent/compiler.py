@@ -229,6 +229,10 @@ def compile_expr_placeable(placeable, local_scope, parent_expr, compiler_env):
 @compile_expr.register(MessageReference)
 def compile_expr_message_reference(reference, local_scope, parent_expr, compiler_env):
     name = reference.id.name
+    return do_message_call(name, local_scope, parent_expr, compiler_env)
+
+
+def do_message_call(name, local_scope, parent_expr, compiler_env):
     if name in compiler_env.message_mapping:
         # Message functions always return strings, so we can type this variable:
         tmp_name = local_scope.reserve_name('_tmp', properties={codegen.PROPERTY_TYPE: text_type})
@@ -248,6 +252,20 @@ def compile_expr_message_reference(reference, local_scope, parent_expr, compiler
             error = FluentReferenceError("Unknown message: {0}".format(name))
         add_msg_error(local_scope, error)
         return codegen.String(name)
+
+
+@compile_expr.register(AttributeExpression)
+def compile_expr_attribute_expression(attribute, local_scope, parent_expr, compiler_env):
+    parent_id = attribute.id.name
+    attr_name = attribute.name.name
+    msg_id = "{0}.{1}".format(parent_id, attr_name)
+    if msg_id in compiler_env.message_mapping:
+        return do_message_call(msg_id, local_scope, attribute, compiler_env)
+    else:
+        add_msg_error(local_scope, FluentReferenceError("Unknown attribute: {0}"
+                                                        .format(msg_id)))
+        # Fallback to parent
+        return do_message_call(parent_id, local_scope, parent_expr, compiler_env)
 
 
 @compile_expr.register(ExternalArgument)

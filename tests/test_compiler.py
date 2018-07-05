@@ -111,6 +111,20 @@ class TestCompiler(unittest.TestCase):
                 return foo(message_args, errors)
         """)
 
+    def test_message_attr_reference(self):
+        code = compile_messages_to_python("""
+            foo
+               .attr = Foo Attr
+            bar = { foo.attr }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo__attr(message_args, errors):
+                return ('Foo Attr', errors)
+
+            def bar(message_args, errors):
+                return foo__attr(message_args, errors)
+        """)
+
     def test_single_message_reference_reversed_order(self):
         # We should cope with forward references
         code = compile_messages_to_python("""

@@ -135,7 +135,11 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
 
 def get_message_functions(message_dict):
     for msg_id, msg in message_dict.items():
-        yield (msg_id, msg)
+        if msg.value is None:
+            # No body, skip it.
+            pass
+        else:
+            yield (msg_id, msg)
         for msg_attr in msg.attributes:
             yield (message_id_for_attr(msg_id, msg_attr.id.name), msg_attr)
 

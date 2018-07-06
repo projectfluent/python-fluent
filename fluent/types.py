@@ -67,7 +67,7 @@ class NumberFormatOptions(object):
     maximumSignificantDigits = attr.ib(default=None)
 
 
-class FluentNumber(object):
+class FluentNumber(FluentType):
 
     default_number_format_options = NumberFormatOptions()
 
@@ -214,7 +214,7 @@ def fluent_number(number, **kwargs):
     elif isinstance(number, FluentNone):
         return number
     else:
-        raise TypeError("Can't use fluent_number with object {0} for type {1}"
+        raise TypeError("Can't use fluent_number with object {0} of type {1}"
                         .format(number, type(number)))
 
 
@@ -262,7 +262,7 @@ class DateFormatOptions(object):
 _SUPPORTED_DATETIME_OPTIONS = ['dateStyle', 'timeStyle', 'timeZone']
 
 
-class FluentDateType(object):
+class FluentDateType(FluentType):
     def _init(self, dt_obj, kwargs):
         if 'timeStyle' in kwargs and not isinstance(self, datetime):
             raise TypeError("timeStyle option can only be specified for datetime instances, not date instance")

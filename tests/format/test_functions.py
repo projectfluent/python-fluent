@@ -104,12 +104,14 @@ class TestResolving(unittest.TestCase):
         self.assertEqual(val, "1")
         self.assertEqual(len(errs), 0)
         self.assertEqual(self.args_passed, [1])
+        self.assertEqual(self.args_passed, [fluent_number(1)])
 
     def test_literals_passed_as_numbers(self):
         val, errs = self.ctx.format('pass-number', {})
         self.assertEqual(val, "1")
         self.assertEqual(len(errs), 0)
         self.assertEqual(self.args_passed, [1])
+        self.assertEqual(self.args_passed, [fluent_number(1)])
 
 
 @all_message_context_implementations

@@ -72,6 +72,12 @@ class TestCodeGen(unittest.TestCase):
                           scope.reserve_function_arg_name,
                           'my_arg')
 
+    def test_name_properties(self):
+        scope = codegen.Scope()
+        scope.reserve_name('name', properties={'FOO': True})
+        self.assertEqual(scope.get_name_properties('name'),
+                         {'FOO': True})
+
     def test_function(self):
         module = codegen.Module()
         func = codegen.Function('myfunc', ['myarg1', 'myarg2'],
@@ -180,13 +186,20 @@ class TestCodeGen(unittest.TestCase):
                           codegen.FunctionCall,
                           'a_function',
                           [],
+                          {},
                           scope)
 
     def test_function_call_known(self):
         scope = codegen.Scope()
         scope.reserve_name('a_function')
-        func_call = codegen.FunctionCall('a_function', [], scope)
+        func_call = codegen.FunctionCall('a_function', [], {}, scope)
         self.assertCodeEqual(func_call.as_source_code(), "a_function()")
+
+    def test_function_call_args_and_kwargs(self):
+        scope = codegen.Scope()
+        scope.reserve_name('a_function')
+        func_call = codegen.FunctionCall('a_function', [codegen.Number(123)], {'x': codegen.String("hello")}, scope)
+        self.assertCodeEqual(func_call.as_source_code(), "a_function(123, x='hello')")
 
     def test_try_catch(self):
         scope = codegen.Scope()

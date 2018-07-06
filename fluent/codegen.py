@@ -37,6 +37,7 @@ class Scope(object):
         self.statements = []
         self.names = set()
         self._function_arg_reserved_names = set()
+        self._properties = {}
 
     def names_in_use(self):
         names = self.names
@@ -53,17 +54,21 @@ class Scope(object):
     def all_reserved_names(self):
         return self.names_in_use() | self.function_arg_reserved_names()
 
-    def reserve_name(self, requested, function_arg=False):
+    def reserve_name(self, requested, function_arg=False, properties=None):
         """
         Reserve a name as being in use in a scope.
 
         Pass function_arg=True if this is a function argument.
         """
+        def _add(final):
+            self.names.add(final)
+            self._properties[final] = properties or {}
+            return final
+
         if function_arg:
             if requested in self.function_arg_reserved_names():
                 assert requested not in self.names_in_use()
-                self.names.add(requested)
-                return requested
+                return _add(requested)
             else:
                 if requested in self.all_reserved_names():
                     raise AssertionError("Cannot use '{0}' as argument name as it is already in use"
@@ -79,8 +84,7 @@ class Scope(object):
         while attempt in used:
             attempt = attempt + str(count)
             count += 1
-        self.names.add(attempt)
-        return attempt
+        return _add(attempt)
 
     def reserve_function_arg_name(self, name):
         """
@@ -95,6 +99,9 @@ class Scope(object):
             raise AssertionError("Can't reserve '{0}' as function arg name as it is already reserved"
                                  .format(name))
         self._function_arg_reserved_names.add(name)
+
+    def get_name_properties(self, name):
+        return self._properties[name]
 
     # self.statements can be manipulated explicitly, appending statement
     # objects. But in some cases for a better and safe API we have explicit
@@ -285,21 +292,27 @@ class VariableReference(Expression):
         if name not in scope.names_in_use():
             raise AssertionError("Cannot refer to undefined variable '{0}'".format(name))
         self.name = name
+        self.scope = scope
 
     def as_source_code(self):
         return self.name
 
 
 class FunctionCall(Expression):
-    def __init__(self, function_name, args, scope):
+    def __init__(self, function_name, args, kwargs, scope):
         if function_name not in scope.names_in_use():
             raise AssertionError("Cannot call unknown function '{0}'".format(function_name))
         self.function_name = function_name
         self.args = args
+        self.kwargs = kwargs
 
     def as_source_code(self):
-        return "{0}({1})".format(self.function_name,
-                                 ", ".join(arg.as_source_code() for arg in self.args))
+        return "{0}({1}{2})".format(self.function_name,
+                                    ", ".join(arg.as_source_code() for arg in self.args),
+                                    (", " if self.args and self.kwargs else "") +
+                                    ", ".join("{0}={1}".format(name, val.as_source_code())
+                                              for name, val in self.kwargs.items())
+                                    )
 
 
 class MethodCall(Expression):

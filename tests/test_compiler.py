@@ -184,5 +184,40 @@ class TestCompiler(unittest.TestCase):
                 else:
                     _tmp = handle_argument(_tmp, 'arg', locale, errors)
 
-                return (_tmp, errors)
+                return (handle_output(_tmp, locale, errors), errors)
+        """)
+
+    def test_function_call(self):
+        code = compile_messages_to_python("""
+            foo = { NUMBER(12345) }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, locale, errors):
+                return (NUMBER(12345).format(locale), errors)
+        """)
+
+    def test_function_call_external_arg(self):
+        code = compile_messages_to_python("""
+            foo = { NUMBER($arg) }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, locale, errors):
+                try:
+                    _tmp = message_args['arg']
+                except LookupError:
+                    errors.append(FluentReferenceError('Unknown external: arg'))
+                    _tmp = '???'
+                else:
+                    _tmp = handle_argument(_tmp, 'arg', locale, errors)
+
+                return (NUMBER(_tmp).format(locale), errors)
+        """)
+
+    def test_function_call_kwargs(self):
+        code = compile_messages_to_python("""
+            foo = { NUMBER(12345, useGrouping: 0) }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, locale, errors):
+                return (NUMBER(12345, useGrouping=0).format(locale), errors)
         """)

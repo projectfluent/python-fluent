@@ -6,9 +6,9 @@ from decimal import Decimal
 import six
 
 from fluent.exceptions import FluentReferenceError
-from .types import fluent_date, fluent_number
+from .types import fluent_date, fluent_number, FluentType
 
-__all__ = ['handle_argument', 'FluentReferenceError']
+__all__ = ['handle_argument', 'handle_output', 'FluentReferenceError']
 
 
 text_type = six.text_type
@@ -18,9 +18,21 @@ def handle_argument(arg, name, locale, errors):
     if isinstance(arg, text_type):
         return arg
     elif isinstance(arg, (int, float, Decimal)):
-        return fluent_number(arg).format(locale)
+        return fluent_number(arg)
     elif isinstance(arg, (date, datetime)):
-        return fluent_date(arg).format(locale)
+        return fluent_date(arg)
     errors.append(TypeError("Unsupported external type: {0}, {1}"
                             .format(name, type(arg))))
     return name
+
+
+def handle_output(val, locale, errors):
+    if isinstance(val, text_type):
+        return val
+    elif isinstance(val, FluentType):
+        return val.format(locale)
+    else:
+        # TODO - tests for this branch, check it is the same
+        # as for interpreter
+        errors.append(TypeError("Cannot output object {0} of type {1}"
+                                .format(val, type(val))))

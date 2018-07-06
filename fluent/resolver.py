@@ -199,6 +199,12 @@ def handle_fluent_none(none, env):
     return none.name or "???"
 
 
+@handle.register(type(None))
+def handle_none(none, env):
+    # We raise the same error type here as when a message is completely missing.
+    raise LookupError("Message body not defined")
+
+
 @handle.register(ExternalArgument)
 def handle_external_argument(argument, env):
     name = argument.id.name

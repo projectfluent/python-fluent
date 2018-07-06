@@ -99,6 +99,8 @@ class TestMissing(unittest.TestCase):
             ref-bar = { bar.missing }
             ref-baz = { baz.missing }
             ref-qux = { qux.missing }
+            attr-only
+                     .attr  = Attr Only Attribute
         """))
 
     def test_falls_back_for_msg_with_string_value_and_no_attributes(self):
@@ -128,3 +130,15 @@ class TestMissing(unittest.TestCase):
         self.assertEqual(errs,
                          [FluentReferenceError(
                              'Unknown attribute: qux.missing')])
+
+    def test_attr_only_main(self):
+        # For reference, Javascript implementation returns null for this case.
+        # For Python returning `None` doesn't seem appropriate, since this will
+        # only blow up later if you attempt to add this to a string, so we raise
+        # a LookupError instead, as per entirely missing messages.
+        self.assertRaises(LookupError, self.ctx.format, 'attr-only', {})
+
+    def test_attr_only_attribute(self):
+        val, errs = self.ctx.format('attr-only.attr', {})
+        self.assertEqual(val, 'Attr Only Attribute')
+        self.assertEqual(len(errs), 0)

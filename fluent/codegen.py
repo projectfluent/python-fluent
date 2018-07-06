@@ -91,7 +91,7 @@ class Scope(object):
         # take into account parent scope when assigning names.
         used = self.all_reserved_names()
         while attempt in used:
-            attempt = attempt + str(count)
+            attempt = cleaned + str(count)
             count += 1
         return _add(attempt)
 
@@ -272,6 +272,14 @@ class If(Statement):
     def as_source_code(self):
         first = True
         output = []
+        if not self.if_blocks:
+            if self.else_block.statements:
+                # Unusual case of no conditions, only default case, but it
+                # simplifies other code to be able to handle this uniformly
+                return self.else_block.as_source_code()
+            else:
+                return ''
+
         for condition, if_block in zip(self._conditions, self.if_blocks):
             if_start = "if" if first else "elif"
             output.append("{0} {1}:\n".format(if_start, condition.as_source_code()))
@@ -459,6 +467,7 @@ NotEquals = infix_operator("!=", bool)
 And = infix_operator("and", bool)
 Is = infix_operator("is", bool)
 IsNot = infix_operator("is not", bool)
+Or = infix_operator("or", bool)
 
 
 def indent(text):

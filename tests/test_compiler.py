@@ -264,16 +264,16 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def _my_term(message_args, errors, variant=None):
                 if variant == 'a':
-                    _tmp = 'A'
+                    _ret = 'A'
                 elif variant == 'c':
-                    _tmp = 'C'
+                    _ret = 'C'
                 else:
                     if variant is not None and variant != 'b':
                         errors.append(FluentReferenceError('Unknown variant: {0}'.format(variant)))
 
-                    _tmp = 'B'
+                    _ret = 'B'
 
-                return (_tmp, errors)
+                return (_ret, errors)
         """)
 
     def test_variant_select(self):
@@ -294,3 +294,88 @@ class TestCompiler(unittest.TestCase):
 def foo(message_args, errors):
     return _my_term(message_args, errors, variant='a')
         """.strip())
+
+    def test_select_string(self):
+        code = compile_messages_to_python("""
+           foo = { "a" ->
+                [a] A
+               *[b] B
+             }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                _key = 'a'
+                if _key == 'a':
+                    _ret = 'A'
+                else:
+                    _ret = 'B'
+
+                return (_ret, errors)
+        """)
+
+    def test_select_number(self):
+        code = compile_messages_to_python("""
+           foo = { 1 ->
+                [1] One
+               *[2] { 2 }
+             }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                _key = 1
+                if _key == 1:
+                    _ret = 'One'
+                else:
+                    _ret = NUMBER(2).format(locale)
+
+                return (_ret, errors)
+        """)
+
+    def test_select_plural_category_with_literal(self):
+        code = compile_messages_to_python("""
+           foo = { 1 ->
+                [one] One
+               *[other] Other
+             }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                _key = 1
+                _plural_form = plural_form_for_number(_key)
+                if _key == 'one' or _plural_form == 'one':
+                    _ret = 'One'
+                else:
+                    _ret = 'Other'
+
+                return (_ret, errors)
+        """)
+
+    def test_select_plural_category_with_arg(self):
+        code = compile_messages_to_python("""
+           foo = { $count ->
+                [0] You have nothing
+                [one] You have one thing
+               *[other] You have some things
+             }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                try:
+                    _tmp = message_args['count']
+                except LookupError:
+                    errors.append(FluentReferenceError('Unknown external: count'))
+                    _tmp = '???'
+                else:
+                    _tmp = handle_argument(_tmp, 'count', locale, errors)
+
+                _key = _tmp
+                _plural_form = plural_form_for_number(_key)
+                if _key == 0:
+                    _ret = 'You have nothing'
+                elif _key == 'one' or _plural_form == 'one':
+                    _ret = 'You have one thing'
+                else:
+                    _ret = 'You have some things'
+
+                return (_ret, errors)
+        """)

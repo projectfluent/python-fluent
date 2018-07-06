@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import attr
+import babel
 import six
 
 from . import codegen, runtime
@@ -36,6 +37,18 @@ VARIANT_NAME = "variant"
 VARIANT_FUNCTION_KWARGS = {VARIANT_NAME: codegen.NoneExpr()}
 
 LOCALE_NAME = "locale"
+
+PLURAL_FORM_FOR_NUMBER_NAME = 'plural_form_for_number'
+
+
+CLDR_PLURAL_FORMS = set([
+    'zero',
+    'one',
+    'two',
+    'few',
+    'many',
+    'other',
+])
 
 
 @attr.s
@@ -93,10 +106,26 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
     module_globals.update(six.moves.builtins.__dict__)
     module_globals[LOCALE_NAME] = locale
 
+    # Return types of known functions.
     known_return_types = {}
     known_return_types.update(BUILTIN_RETURN_TYPES)
     known_return_types.update(runtime.RETURN_TYPES)
 
+    # Plural form function
+    plural_form_for_number_main = babel.plural.to_python(locale.plural_form)
+
+    def plural_form_for_number(number):
+        try:
+            return plural_form_for_number_main(number)
+        except TypeError:
+            # This function can legitimately be passed strings if we incorrectly
+            # guessed it was a CLDR category. So we ignore silently
+            return None
+
+    module_globals[PLURAL_FORM_FOR_NUMBER_NAME] = plural_form_for_number
+    known_return_types[PLURAL_FORM_FOR_NUMBER_NAME] = text_type
+
+    # functions from context
     for name, func in functions.items():
         # TODO handle clash properly
         assert name not in module_globals
@@ -241,6 +270,11 @@ def compile_expr_number_expression(expr, local_scope, parent_expr, compiler_env)
     if is_NUMBER_call_expr(parent_expr):
         # Don't need two calls to NUMBER
         return number_expr
+    if isinstance(parent_expr, SelectExpression):
+        # Don't need to wrap in NUMBER for either the key expression or
+        # the variant selector.
+        return number_expr
+
     return codegen.FunctionCall(BUILTIN_NUMBER,
                                 [number_expr],
                                 {},
@@ -300,12 +334,13 @@ def compile_expr_attribute_expression(attribute, local_scope, parent_expr, compi
 def compile_expr_select_expression(select_expr, local_scope, parent_expr, compiler_env):
     if is_variant_definition_expression(select_expr):
         return compile_expr_variant_definition(select_expr, local_scope, parent_expr, compiler_env)
-    raise NotImplementedError()
+    else:
+        return compile_expr_select_definition(select_expr, local_scope, parent_expr, compiler_env)
 
 
 def compile_expr_variant_definition(variant_expr, local_scope, parent_expr, compiler_env):
     if_statement = codegen.If(local_scope)
-    tmp_name = local_scope.reserve_name('_tmp')
+    return_name = local_scope.reserve_name('_ret')
     assigned_types = []
     for variant in variant_expr.variants:
         if variant.default:
@@ -349,22 +384,87 @@ def compile_expr_variant_definition(variant_expr, local_scope, parent_expr, comp
             )
             block.statements.append(no_match_if_statement)
         else:
-            # TODO - handle other types of matching, not just strict equality,
-            # for things like plural rules
+            # TODO - do we need to handle number/plural form matching for variants,
+            # like in select expressions?
             condition = codegen.Equals(codegen.VariableReference(VARIANT_NAME, local_scope),
                                        compile_expr(variant.key, local_scope, variant_expr, compiler_env))
             block = if_statement.add_if(condition)
         assigned_value = compile_expr(variant.value, block, variant_expr, compiler_env)
-        block.add_assignment(tmp_name, assigned_value)
+        block.add_assignment(return_name, assigned_value)
         assigned_types.append(assigned_value.type)
 
     if assigned_types:
         first_type = assigned_types[0]
         if all(t == first_type for t in assigned_types):
-            local_scope.set_name_properties(tmp_name, {codegen.PROPERTY_TYPE: first_type})
+            local_scope.set_name_properties(return_name, {codegen.PROPERTY_TYPE: first_type})
 
     local_scope.statements.append(if_statement)
-    return codegen.VariableReference(tmp_name, local_scope)
+    return codegen.VariableReference(return_name, local_scope)
+
+
+def is_cldr_plural_form_key(key_expr):
+    return (isinstance(key_expr, VariantName) and
+            key_expr.name in CLDR_PLURAL_FORMS)
+
+
+def compile_expr_select_definition(select_expr, local_scope, parent_expr, compiler_env):
+    # This is very similar to compile_expr_variant_definition, but it is different
+    # enough that implementing them together makes the code rather hard to understand
+    if_statement = codegen.If(local_scope)
+    key_tmp_name = local_scope.reserve_name('_key')
+    key_value = compile_expr(select_expr.expression, local_scope, select_expr, compiler_env)
+    local_scope.add_assignment(key_tmp_name, key_value)
+
+    return_tmp_name = local_scope.reserve_name('_ret')
+
+    need_plural_form = any(is_cldr_plural_form_key(variant.key)
+                           for variant in select_expr.variants)
+    if need_plural_form:
+        plural_form_tmp_name = local_scope.reserve_name('_plural_form')
+        plural_form_value = codegen.FunctionCall(PLURAL_FORM_FOR_NUMBER_NAME,
+                                                 [codegen.VariableReference(key_tmp_name, local_scope)],
+                                                 {},
+                                                 local_scope)
+        local_scope.add_assignment(plural_form_tmp_name, plural_form_value)
+
+    assigned_types = []
+    for variant in select_expr.variants:
+        if variant.default:
+            # This is default, so gets chosen if nothing else matches, or there
+            # was no requested variant. Therefore we use the final 'else' block
+            # with no condition.
+            block = if_statement.else_block
+        else:
+            # For cases like:
+            #    { $arg ->
+            #       [one] X
+            #       [other] Y
+            #      }
+            # we can't be sure whether $arg is a string, and the 'one' and 'other'
+            # keys are just strings, or whether $arg is a number and we need to
+            # do a plural category comparison. So we have to do both. We can use equality
+            # checks because they implicitly do a type check
+            condition1 = codegen.Equals(codegen.VariableReference(key_tmp_name, local_scope),
+                                        compile_expr(variant.key, local_scope, select_expr, compiler_env))
+
+            if is_cldr_plural_form_key(variant.key):
+                condition2 = codegen.Equals(codegen.VariableReference(plural_form_tmp_name, local_scope),
+                                            compile_expr(variant.key, local_scope, select_expr, compiler_env))
+                condition = codegen.Or(condition1, condition2)
+            else:
+                condition = condition1
+            block = if_statement.add_if(condition)
+        assigned_value = compile_expr(variant.value, block, select_expr, compiler_env)
+        block.add_assignment(return_tmp_name, assigned_value)
+        assigned_types.append(assigned_value.type)
+
+    if assigned_types:
+        first_type = assigned_types[0]
+        if all(t == first_type for t in assigned_types):
+            local_scope.set_name_properties(return_tmp_name, {codegen.PROPERTY_TYPE: first_type})
+
+    local_scope.statements.append(if_statement)
+    return codegen.VariableReference(return_tmp_name, local_scope)
 
 
 @compile_expr.register(VariantName)

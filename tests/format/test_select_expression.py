@@ -58,6 +58,29 @@ class TestSelectExpressionWithStrings(unittest.TestCase):
         val, errs = self.ctx.format('foo', {'arg': 'a'})
         self.assertEqual(val, "A")
 
+    def test_string_selector_with_plural_categories(self):
+        self.ctx.add_messages(dedent_ftl("""
+            foo = { $arg ->
+                [something] A
+               *[other] B
+             }
+        """))
+        # Even though 'other' matches a CLDR plural, this is not a plural
+        # category match, and should work without errors when we pass
+        # a string.
+
+        val, errs = self.ctx.format('foo', {'arg': 'something'})
+        self.assertEqual(val, "A")
+        self.assertEqual(errs, [])
+
+        val2, errs2 = self.ctx.format('foo', {'arg': 'other'})
+        self.assertEqual(val2, "B")
+        self.assertEqual(errs2, [])
+
+        val3, errs3 = self.ctx.format('foo', {'arg': 'not listed'})
+        self.assertEqual(val3, "B")
+        self.assertEqual(errs3, [])
+
 
 @all_message_context_implementations
 class TestSelectExpressionWithNumbers(unittest.TestCase):

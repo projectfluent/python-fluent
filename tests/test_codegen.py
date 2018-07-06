@@ -232,3 +232,53 @@ class TestCodeGen(unittest.TestCase):
             else:
                 x = 'z'
         """)
+
+    def test_if_empty(self):
+        scope = codegen.Scope()
+        if_statement = codegen.If(scope)
+        self.assertCodeEqual(if_statement.as_source_code(), "")
+
+    def test_if_one_if(self):
+        scope = codegen.Scope()
+        if_statement = codegen.If(scope)
+        first_block = if_statement.add_if(codegen.Number(1))
+        first_block.statements.append(codegen.Return(codegen.Number(2)))
+        self.assertCodeEqual(if_statement.as_source_code(), """
+            if 1:
+                return 2
+        """)
+
+    def test_if_two_ifs(self):
+        scope = codegen.Scope()
+        if_statement = codegen.If(scope)
+        first_block = if_statement.add_if(codegen.Number(1))
+        first_block.statements.append(codegen.Return(codegen.Number(2)))
+        second_block = if_statement.add_if(codegen.Number(3))
+        second_block.statements.append(codegen.Return(codegen.Number(4)))
+        self.assertCodeEqual(if_statement.as_source_code(), """
+            if 1:
+                return 2
+            elif 3:
+                return 4
+        """)
+
+    def test_if_with_else(self):
+        scope = codegen.Scope()
+        if_statement = codegen.If(scope)
+        first_block = if_statement.add_if(codegen.Number(1))
+        first_block.statements.append(codegen.Return(codegen.Number(2)))
+        if_statement.else_block.statements.append(codegen.Return(codegen.Number(3)))
+        self.assertCodeEqual(if_statement.as_source_code(), """
+            if 1:
+                return 2
+            else:
+                return 3
+        """)
+
+    def test_if_no_ifs(self):
+        scope = codegen.Scope()
+        if_statement = codegen.If(scope)
+        if_statement.else_block.statements.append(codegen.Return(codegen.Number(3)))
+        self.assertCodeEqual(if_statement.as_source_code(), """
+            return 3
+        """)

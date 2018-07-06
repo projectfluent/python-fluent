@@ -6,9 +6,9 @@ from decimal import Decimal
 import six
 
 from fluent.exceptions import FluentReferenceError
-from .types import fluent_date, fluent_number, FluentType
+from .types import fluent_date, fluent_number, FluentNone, FluentType
 
-__all__ = ['handle_argument', 'handle_output', 'FluentReferenceError']
+__all__ = ['handle_argument', 'handle_output', 'FluentReferenceError', 'FluentNone']
 
 
 text_type = six.text_type
@@ -17,6 +17,7 @@ RETURN_TYPES = {
     'handle_argument': object,
     'handle_output': text_type,
     'FluentReferenceError': FluentReferenceError,
+    'FluentNone': FluentNone,
 }
 
 

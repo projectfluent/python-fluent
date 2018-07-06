@@ -148,7 +148,7 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def bar(message_args, errors):
                 errors.append(FluentReferenceError('Unknown message: foo'))
-                return ('foo', errors)
+                return (FluentNone('foo').format(locale), errors)
         """)
 
     def test_name_collision_function_args(self):
@@ -194,7 +194,7 @@ class TestCompiler(unittest.TestCase):
                     _tmp = message_args['arg']
                 except LookupError:
                     errors.append(FluentReferenceError('Unknown external: arg'))
-                    _tmp = '???'
+                    _tmp = FluentNone('arg')
                 else:
                     _tmp = handle_argument(_tmp, 'arg', locale, errors)
 
@@ -220,7 +220,7 @@ class TestCompiler(unittest.TestCase):
                     _tmp = message_args['arg']
                 except LookupError:
                     errors.append(FluentReferenceError('Unknown external: arg'))
-                    _tmp = '???'
+                    _tmp = FluentNone('arg')
                 else:
                     _tmp = handle_argument(_tmp, 'arg', locale, errors)
 
@@ -364,7 +364,7 @@ def foo(message_args, errors):
                     _tmp = message_args['count']
                 except LookupError:
                     errors.append(FluentReferenceError('Unknown external: count'))
-                    _tmp = '???'
+                    _tmp = FluentNone('count')
                 else:
                     _tmp = handle_argument(_tmp, 'count', locale, errors)
 

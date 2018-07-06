@@ -313,7 +313,14 @@ def do_message_call(name, local_scope, parent_expr, compiler_env, call_kwargs=No
         else:
             error = FluentReferenceError("Unknown message: {0}".format(name))
         add_static_msg_error(local_scope, error)
-        return codegen.String(name)
+        return make_fluent_none(name, local_scope)
+
+
+def make_fluent_none(name, local_scope):
+    return codegen.ObjectCreation('FluentNone',
+                                  [codegen.String(name)],
+                                  {},
+                                  local_scope)
 
 
 @compile_expr.register(AttributeExpression)
@@ -484,7 +491,7 @@ def compile_expr_variant_expression(variant_expr, local_scope, parent_expr, comp
     else:
         add_static_msg_error(local_scope, FluentReferenceError("Unknown message: {0}"
                                                                .format(msg_id)))
-        return codegen.String(msg_id)
+        return make_fluent_none(msg_id, local_scope)
 
 
 @compile_expr.register(ExternalArgument)
@@ -501,7 +508,7 @@ def compile_expr_external_argument(argument, local_scope, parent_expr, compiler_
     add_static_msg_error(try_catch.except_block, FluentReferenceError("Unknown external: {0}".format(name)))
     try_catch.except_block.add_assignment(
         tmp_name,
-        codegen.String("???"))
+        make_fluent_none(name, local_scope))
     # Else block
     try_catch.else_block.add_assignment(
         tmp_name,
@@ -532,7 +539,7 @@ def compile_expr_call_expression(expr, local_scope, parent_expr, compiler_env):
         # TODO report compile error
         add_static_msg_error(local_scope, FluentReferenceError("Unknown function: {0}"
                                                                .format(function_name)))
-        return codegen.String(function_name + "()")
+        return make_fluent_none(function_name + "()", local_scope)
 
 
 def finalize_expr_as_string(python_expr, scope, compiler_env):

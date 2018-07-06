@@ -45,16 +45,22 @@ class TestUseIsolating(unittest.TestCase):
         self.assertEqual(len(errs), 0)
 
 
-class TestSkipIsolation(unittest.TestCase):
+class TestSkipIsolating(unittest.TestCase):
 
     def setUp(self):
         self.ctx = MessageContext(['en-US'])
         self.ctx.add_messages(dedent_ftl("""
             -brand-short-name = Amaya
             foo = { -brand-short-name }
+            with-arg = { $arg }
         """))
 
-    def test_skip_isolation_if_only_one_placeable(self):
+    def test_skip_isolating_chars_if_just_one_message_ref(self):
         val, errs = self.ctx.format('foo', {})
         self.assertEqual(val, 'Amaya')
+        self.assertEqual(len(errs), 0)
+
+    def test_skip_isolating_chars_if_just_one_placeable_arg(self):
+        val, errs = self.ctx.format('with-arg', {'arg': 'Arg'})
+        self.assertEqual(val, 'Arg')
         self.assertEqual(len(errs), 0)

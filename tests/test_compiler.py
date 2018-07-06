@@ -5,12 +5,14 @@ from collections import OrderedDict
 
 import babel
 
+from fluent.builtins import BUILTINS
 from fluent.compiler import messages_to_module
 from fluent.syntax import FluentParser
 from fluent.syntax.ast import Message, Term
 
 from .syntax import dedent_ftl
 from .test_codegen import normalize_python
+
 
 # Some TDD tests to help develop CompilingMessageContext. It should be possible to delete
 # the tests here and still have complete test coverage of the compiler.py module, via
@@ -32,6 +34,7 @@ def compile_messages_to_python(source, locale, use_isolating=True, strict=True):
     messages = parse_ftl(dedent_ftl(source))
     module, message_mapping, module_globals = messages_to_module(messages, locale,
                                                                  use_isolating=use_isolating,
+                                                                 functions=BUILTINS,
                                                                  strict=strict)
     return module.as_source_code()
 
@@ -59,8 +62,26 @@ class TestCompiler(unittest.TestCase):
             foo = { "Foo" }
         """, self.locale)
         self.assertCodeEqual(code, """
-        def foo(message_args, locale, errors):
-            return ('Foo', errors)
+            def foo(message_args, locale, errors):
+                return ('Foo', errors)
+        """)
+
+    def test_number_literal(self):
+        code = compile_messages_to_python("""
+            foo = { 123 }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, locale, errors):
+                return (NUMBER(123).format(locale), errors)
+        """)
+
+    def test_interpolated_number(self):
+        code = compile_messages_to_python("""
+            foo = x { 123 } y
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, locale, errors):
+                return (''.join(['x ', NUMBER(123).format(locale), ' y']), errors)
         """)
 
     def test_message_reference_plus_string_literal(self):

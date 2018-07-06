@@ -121,7 +121,8 @@ class CompilingMessageContext(MessageContextBase):
         # somehow.
         self._compiled_messages = compile_messages(all_messages,
                                                    self._babel_locale,
-                                                   use_isolating=self._use_isolating)
+                                                   use_isolating=self._use_isolating,
+                                                   functions=self._functions)
         self._is_dirty = False
 
     def format(self, message_id, args=None):

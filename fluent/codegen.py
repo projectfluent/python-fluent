@@ -247,6 +247,14 @@ class String(Expression):
             return retval
 
 
+class Number(Expression):
+    def __init__(self, number):
+        self.number = number
+
+    def as_source_code(self):
+        return repr(self.number)
+
+
 class List(Expression):
     def __init__(self, items):
         self.items = items
@@ -292,6 +300,20 @@ class FunctionCall(Expression):
     def as_source_code(self):
         return "{0}({1})".format(self.function_name,
                                  ", ".join(arg.as_source_code() for arg in self.args))
+
+
+class MethodCall(Expression):
+    def __init__(self, obj, method_name, args):
+        # We can't check method_name because we don't know the type of obj yet.
+        self.obj = obj
+        self.method_name = method_name
+        self.args = args
+
+    def as_source_code(self):
+        return "{0}.{1}({2})".format(
+            self.obj.as_source_code(),
+            self.method_name,
+            ", ".join(arg.as_source_code() for arg in self.args))
 
 
 class DictLookup(Expression):

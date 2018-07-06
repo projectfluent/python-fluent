@@ -31,6 +31,22 @@ DATE_STYLE_OPTIONS = ["full", "long", "medium", "short", None]
 TIME_STYLE_OPTIONS = ["full", "long", "medium", "short", None]
 
 
+class FluentType(object):
+    def format(self, locale):
+        raise NotImplementedError()
+
+
+class FluentNone(FluentType):
+    def __init__(self, name=None):
+        self.name = name
+
+    def __eq__(self, other):
+        return isinstance(other, FluentNone) and self.name == other.name
+
+    def format(self, locale):
+        return self.name or "???"
+
+
 @attr.s
 class NumberFormatOptions(object):
     # We follow the Intl.NumberFormat parameter names here,
@@ -195,6 +211,8 @@ def fluent_number(number, **kwargs):
         return FluentFloat(number, **kwargs)
     elif isinstance(number, Decimal):
         return FluentDecimal(number, **kwargs)
+    elif isinstance(number, FluentNone):
+        return number
     else:
         raise TypeError("Can't use fluent_number with object {0} for type {1}"
                         .format(number, type(number)))
@@ -327,6 +345,8 @@ def fluent_date(dt, **kwargs):
         return FluentDateTime(dt, **kwargs)
     elif isinstance(dt, date):
         return FluentDate(dt, **kwargs)
+    elif isinstance(dt, FluentNone):
+        return dt
     else:
         raise TypeError("Can't use fluent_date with object {0} of type {1}"
                         .format(dt, type(dt)))

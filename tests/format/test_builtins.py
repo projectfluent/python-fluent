@@ -5,6 +5,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from fluent.context import MessageContext
+from fluent.exceptions import FluentReferenceError
 from fluent.types import fluent_date, fluent_number
 
 from ..syntax import dedent_ftl
@@ -73,6 +74,13 @@ class TestNumberBuiltin(unittest.TestCase):
         val, errs = self.ctx.format('from-arg', {'arg': Decimal('123456.0')})
         self.assertEqual(val, "123,456")
         self.assertEqual(len(errs), 0)
+
+    def test_from_arg_missing(self):
+        val, errs = self.ctx.format('from-arg', {})
+        self.assertEqual(val, "arg")
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(errs,
+                         [FluentReferenceError('Unknown external: arg')])
 
     def test_partial_application(self):
         number = fluent_number(123456.78, currency="USD", style="currency")

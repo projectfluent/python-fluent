@@ -9,8 +9,8 @@ import six
 from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, Message, MessageReference,
                          NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
                          TextElement, VariantExpression, VariantName)
-from .types import FluentDateType, FluentNumber, fluent_date, fluent_number
-from .utils import partition
+from .types import FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
+from .utils import numeric_to_native, partition
 
 try:
     from functools import singledispatch
@@ -40,11 +40,6 @@ class ResolverEnvironment(object):
     errors = attr.ib()
     dirty = attr.ib(factory=set)
     part_count = attr.ib(default=0)
-
-
-@attr.s
-class FluentNone(object):
-    name = attr.ib(default=None)
 
 
 class FluentFormatError(ValueError):
@@ -196,7 +191,7 @@ def handle_message_reference(message_reference, env):
 
 @handle.register(FluentNone)
 def handle_fluent_none(none, env):
-    return none.name or "???"
+    return none.format(env.context._babel_locale)
 
 
 @handle.register(type(None))

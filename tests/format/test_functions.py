@@ -4,6 +4,7 @@ import unittest
 
 from fluent.context import MessageContext
 from fluent.resolver import FluentReferenceError
+from fluent.types import FluentNone, fluent_number
 
 from ..syntax import dedent_ftl
 
@@ -124,6 +125,7 @@ class TestKeywordArgs(unittest.TestCase):
             pass-kwarg1     = { MYFUNC("a", kwarg1: 1) }
             pass-kwarg2     = { MYFUNC("a", kwarg2: "other") }
             pass-kwargs     = { MYFUNC("a", kwarg1: 1, kwarg2: "other") }
+            pass-user-arg   = { MYFUNC($arg) }
         """))
 
     def test_defaults(self):
@@ -149,3 +151,9 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertEqual(self.args_passed,
                          [("a", 1, "other")])
         self.assertEqual(len(errs), 0)
+
+    def test_missing_arg(self):
+        val, errs = self.ctx.format('pass-user-arg', {})
+        self.assertEqual(self.args_passed,
+                         [(FluentNone('arg'), None, "default")])
+        self.assertEqual(len(errs), 1)

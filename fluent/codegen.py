@@ -110,10 +110,27 @@ class Scope(object):
         self._function_arg_reserved_names.add(name)
 
     def get_name_properties(self, name):
+        """
+        Gets a dictionary of properties for the name.
+        Raises exception if the name is not reserved in this scope or parent
+        """
         if name in self._properties:
             return self._properties[name]
         else:
             return self.parent_scope.get_name_properties(name)
+
+    def set_name_properties(self, name, props):
+        """
+        Sets a dictionary of properties for the name.
+        Raises exception if the name is not reserved in this scope or parent.
+        """
+        scope = self
+        while True:
+            if name in scope._properties:
+                scope._properties[name].update(props)
+                break
+            else:
+                scope = scope.parent_scope
 
     # self.statements can be manipulated explicitly, appending statement
     # objects. But in some cases for a better and safe API we have explicit
@@ -182,20 +199,31 @@ class Block(Scope):
 
 
 class Function(Block, Statement):
-    def __init__(self, name, args, parent_scope, **kwargs):
+    def __init__(self, name, args=None, kwargs=None, parent_scope=None):
         super(Function, self).__init__(parent_scope=parent_scope)
         self.func_name = name
-        for arg in args:
-            if (arg in parent_scope.names_in_use()):
-                raise AssertionError("Can't use '{0}' as function argument name because it shadows other names"
-                                     .format(arg))
-            self.reserve_name(arg, function_arg=True)
+        if args is None:
+            args = ()
+        if kwargs is None:
+            kwargs = {}
+        for arg_set in [args, kwargs.keys()]:
+            for arg in arg_set:
+                if (arg in parent_scope.names_in_use()):
+                    raise AssertionError("Can't use '{0}' as function argument name because it shadows other names"
+                                         .format(arg))
+                self.reserve_name(arg, function_arg=True)
         self.args = args
+        self.kwargs = kwargs
 
     def as_source_code(self):
         self.simplify()
-        line1 = 'def {0}({1}):\n'.format(self.func_name,
-                                         ', '.join(self.args))
+        line1 = 'def {0}({1}{2}):\n'.format(
+            self.func_name,
+            ', '.join(self.args),
+            (", " if self.args and self.kwargs else "") +
+            ", ".join("{0}={1}".format(name, val.as_source_code())
+                      for name, val in self.kwargs.items())
+        )
         body = super(Function, self).as_source_code()
         return line1 + indent(body)
 
@@ -226,6 +254,33 @@ class Return(Statement):
 
     def as_source_code(self):
         return 'return {0}'.format(self.value.as_source_code())
+
+
+class If(Statement):
+    def __init__(self, parent_scope):
+        self.if_blocks = []
+        self._conditions = []
+        self.else_block = Block(parent_scope=parent_scope)
+        self._parent_scope = parent_scope
+
+    def add_if(self, condition):
+        new_if = Block(parent_scope=self._parent_scope)
+        self.if_blocks.append(new_if)
+        self._conditions.append(condition)
+        return new_if
+
+    def as_source_code(self):
+        first = True
+        output = []
+        for condition, if_block in zip(self._conditions, self.if_blocks):
+            if_start = "if" if first else "elif"
+            output.append("{0} {1}:\n".format(if_start, condition.as_source_code()))
+            output.append(indent(if_block.as_source_code()))
+            first = False
+        if self.else_block.statements:
+            output.append("else:\n")
+            output.append(indent(self.else_block.as_source_code()))
+        return ''.join(output)
 
 
 class TryCatch(Statement):
@@ -376,6 +431,34 @@ class Verbatim(Expression):
 
     def as_source_code(self):
         return self.code
+
+
+class NoneExpr(Expression):
+    type = type(None)
+
+    def as_source_code(self):
+        return "None"
+
+
+def infix_operator(operator, return_type):
+    class Op(Expression):
+        type = return_type
+
+        def __init__(self, left, right):
+            self.left = left
+            self.right = right
+
+        def as_source_code(self):
+            return "{0} {1} {2}".format(self.left.as_source_code(),
+                                        operator,
+                                        self.right.as_source_code())
+    return Op
+
+Equals = infix_operator("==", bool)
+NotEquals = infix_operator("!=", bool)
+And = infix_operator("and", bool)
+Is = infix_operator("is", bool)
+IsNot = infix_operator("is not", bool)
 
 
 def indent(text):

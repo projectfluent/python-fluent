@@ -252,3 +252,45 @@ class TestCompiler(unittest.TestCase):
             def foo__attr_2(message_args, errors):
                 return ('Attr 2', errors)
         """)
+
+    def test_variant(self):
+        code = compile_messages_to_python("""
+            -my-term = {
+                [a] A
+               *[b] B
+                [c] C
+              }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def _my_term(message_args, errors, variant=None):
+                if variant == 'a':
+                    _tmp = 'A'
+                elif variant == 'c':
+                    _tmp = 'C'
+                else:
+                    if variant is not None and variant != 'b':
+                        errors.append(FluentReferenceError('Unknown variant: {0}'.format(variant)))
+
+                    _tmp = 'B'
+
+                return (_tmp, errors)
+        """)
+
+    def test_variant_select(self):
+        term_ftl = """
+            -my-term = {
+                [a] A
+               *[b] B
+              }
+        """
+        calling_ftl = """
+            foo = { -my-term[a] }
+        """
+        term_code = compile_messages_to_python(term_ftl,
+                                               self.locale)
+        combined_code = compile_messages_to_python(term_ftl + calling_ftl,
+                                                   self.locale)
+        self.assertCodeEqual(combined_code, term_code + """
+def foo(message_args, errors):
+    return _my_term(message_args, errors, variant='a')
+        """.strip())

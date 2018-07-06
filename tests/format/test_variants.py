@@ -22,6 +22,7 @@ class TestVariants(unittest.TestCase):
             bar = { variant[a] }
             baz = { variant[b] }
             qux = { variant[c] }
+            goo = { missing[a] }
         """))
 
     def test_format_directly_returns_the_default_variant(self):
@@ -51,3 +52,11 @@ class TestVariants(unittest.TestCase):
         self.assertEqual(
             errs,
             [FluentReferenceError("Unknown variant: c")])
+
+    def test_choose_missing_message(self):
+        val, errs = self.ctx.format('goo', {})
+        self.assertEqual(val, 'missing')
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(
+            errs,
+            [FluentReferenceError("Unknown message: missing")])

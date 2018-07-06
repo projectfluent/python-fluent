@@ -37,8 +37,8 @@ class TestCodeGen(unittest.TestCase):
         scope.reserve_function_arg_name('arg_name')
         scope.reserve_name('myfunc')
         func = codegen.Function('myfunc',
-                                ['arg_name'],
-                                scope)
+                                args=['arg_name'],
+                                parent_scope=scope)
         self.assertNotIn('arg_name2', func.all_reserved_names())
 
     def test_reserve_name_nested(self):
@@ -80,16 +80,25 @@ class TestCodeGen(unittest.TestCase):
 
     def test_function(self):
         module = codegen.Module()
-        func = codegen.Function('myfunc', ['myarg1', 'myarg2'],
+        func = codegen.Function('myfunc', args=['myarg1', 'myarg2'],
                                 parent_scope=module)
         self.assertCodeEqual(func.as_source_code(), """
             def myfunc(myarg1, myarg2):
                 pass
         """)
 
+    def test_function_kwargs(self):
+        module = codegen.Module()
+        func = codegen.Function('myfunc', args=['myarg1'], kwargs={'myarg2': codegen.NoneExpr()},
+                                parent_scope=module)
+        self.assertCodeEqual(func.as_source_code(), """
+            def myfunc(myarg1, myarg2=None):
+                pass
+        """)
+
     def test_function_return(self):
         module = codegen.Module()
-        func = codegen.Function('myfunc', [],
+        func = codegen.Function('myfunc',
                                 parent_scope=module)
         func.add_return(codegen.String("Hello"))
         self.assertCodeEqual(func.as_source_code(), """
@@ -100,7 +109,7 @@ class TestCodeGen(unittest.TestCase):
     def test_add_function(self):
         module = codegen.Module()
         func_name = module.reserve_name('myfunc')
-        func = codegen.Function(func_name, [],
+        func = codegen.Function(func_name,
                                 parent_scope=module)
         module.add_function(func_name, func)
         self.assertCodeEqual(module.as_source_code(), """
@@ -124,7 +133,7 @@ class TestCodeGen(unittest.TestCase):
     def test_variable_reference_function_arg_check(self):
         module = codegen.Module()
         func_name = module.reserve_name('myfunc')
-        func = codegen.Function(func_name, ['my_arg'],
+        func = codegen.Function(func_name, args=['my_arg'],
                                 parent_scope=module)
         # Can't use undefined 'some_name'
         self.assertRaises(AssertionError,
@@ -141,15 +150,15 @@ class TestCodeGen(unittest.TestCase):
         func_name = module.reserve_name('myfunc')
         self.assertRaises(AssertionError,
                           codegen.Function,
-                          func_name, ['my_arg'],
-                          module)
+                          func_name, args=['my_arg'],
+                          parent_scope=module)
 
     def test_function_args_name_reserved_check(self):
         module = codegen.Module()
         module.reserve_function_arg_name('my_arg')
         func_name = module.reserve_name('myfunc')
-        func = codegen.Function(func_name, ['my_arg'],
-                                module)
+        func = codegen.Function(func_name, args=['my_arg'],
+                                parent_scope=module)
         func.add_return(codegen.VariableReference('my_arg', func))
         self.assertCodeEqual(func.as_source_code(), """
             def myfunc(my_arg):

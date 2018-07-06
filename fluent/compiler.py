@@ -32,7 +32,11 @@ MESSAGE_ARGS_NAME = "message_args"
 ERRORS_NAME = "errors"
 MESSAGE_FUNCTION_ARGS = [MESSAGE_ARGS_NAME, ERRORS_NAME]
 
+VARIANT_NAME = "variant"
+VARIANT_FUNCTION_KWARGS = {VARIANT_NAME: codegen.NoneExpr()}
+
 LOCALE_NAME = "locale"
+
 
 @attr.s
 class CompilerEnvironment(object):
@@ -106,8 +110,10 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
         name = module.reserve_name(k, properties=properties)
         assert name == k
 
-    # Reserve names for function arguments
-    for arg in MESSAGE_FUNCTION_ARGS:
+    # Reserve names for function arguments, so that we always
+    # know the name of these arguments without needing to do
+    # lookups etc.
+    for arg in (list(MESSAGE_FUNCTION_ARGS) + list(VARIANT_FUNCTION_KWARGS.keys())):
         module.reserve_function_arg_name(arg)
 
     # Pass one, find all the names, so that we can populate message_mapping,
@@ -154,17 +160,38 @@ def message_function_name_for_msg_id(msg_id):
 
 
 def compile_message(msg, function_name, module, compiler_env):
+    start = msg.value
+    if is_variant_definition_message(msg):
+        func_kwargs = VARIANT_FUNCTION_KWARGS
+    else:
+        func_kwargs = None
     msg_func = codegen.Function(parent_scope=module,
                                 name=function_name,
-                                args=MESSAGE_FUNCTION_ARGS)
+                                args=MESSAGE_FUNCTION_ARGS,
+                                kwargs=func_kwargs)
 
-    start = msg.value
     if not isinstance(start, Pattern):
         raise AssertionError("Not expecting object of type {0}".format(type(start)))
 
     return_expression = compile_expr(start, msg_func, None, compiler_env)
     msg_func.add_return(codegen.Tuple(return_expression, codegen.VariableReference(ERRORS_NAME, msg_func)))
     return msg_func
+
+
+def is_variant_definition_message(msg):
+    checks = []
+
+    def checker(node):
+        checks.append(is_variant_definition_expression(node))
+        return node
+
+    msg.traverse(checker)
+    return any(checks)
+
+
+def is_variant_definition_expression(expr):
+    return (isinstance(expr, SelectExpression) and
+            expr.expression is None)
 
 
 @singledispatch
@@ -231,7 +258,9 @@ def compile_expr_message_reference(reference, local_scope, parent_expr, compiler
     return do_message_call(name, local_scope, parent_expr, compiler_env)
 
 
-def do_message_call(name, local_scope, parent_expr, compiler_env):
+def do_message_call(name, local_scope, parent_expr, compiler_env, call_kwargs=None):
+    if call_kwargs is None:
+        call_kwargs = {}
     if name in compiler_env.message_mapping:
         # Message functions always return strings, so we can type this variable:
         tmp_name = local_scope.reserve_name('_tmp', properties={codegen.PROPERTY_TYPE: text_type})
@@ -239,7 +268,7 @@ def do_message_call(name, local_scope, parent_expr, compiler_env):
             (tmp_name, ERRORS_NAME),
             codegen.FunctionCall(compiler_env.message_mapping[name],
                                  [codegen.VariableReference(a, local_scope) for a in MESSAGE_FUNCTION_ARGS],
-                                 {},
+                                 call_kwargs,
                                  local_scope))
 
         return codegen.VariableReference(tmp_name, local_scope)
@@ -249,7 +278,7 @@ def do_message_call(name, local_scope, parent_expr, compiler_env):
             error = FluentReferenceError("Unknown term: {0}".format(name))
         else:
             error = FluentReferenceError("Unknown message: {0}".format(name))
-        add_msg_error(local_scope, error)
+        add_static_msg_error(local_scope, error)
         return codegen.String(name)
 
 
@@ -261,10 +290,101 @@ def compile_expr_attribute_expression(attribute, local_scope, parent_expr, compi
     if msg_id in compiler_env.message_mapping:
         return do_message_call(msg_id, local_scope, attribute, compiler_env)
     else:
-        add_msg_error(local_scope, FluentReferenceError("Unknown attribute: {0}"
-                                                        .format(msg_id)))
+        add_static_msg_error(local_scope, FluentReferenceError("Unknown attribute: {0}"
+                                                               .format(msg_id)))
         # Fallback to parent
         return do_message_call(parent_id, local_scope, parent_expr, compiler_env)
+
+
+@compile_expr.register(SelectExpression)
+def compile_expr_select_expression(select_expr, local_scope, parent_expr, compiler_env):
+    if is_variant_definition_expression(select_expr):
+        return compile_expr_variant_definition(select_expr, local_scope, parent_expr, compiler_env)
+    raise NotImplementedError()
+
+
+def compile_expr_variant_definition(variant_expr, local_scope, parent_expr, compiler_env):
+    if_statement = codegen.If(local_scope)
+    tmp_name = local_scope.reserve_name('_tmp')
+    assigned_types = []
+    for variant in variant_expr.variants:
+        if variant.default:
+            # This is default, so gets chosen if nothing else matches, or there
+            # was no requested variant. Therefore we use the final 'else' block
+            # with no condition.
+            block = if_statement.else_block
+
+            # However, we should report an error if the requested variant
+            # doesn't match. TODO - in fact we ought to be able to detect all
+            # missing variants at compile time, and therefore eliminate this
+            # runtime check.
+            no_match_if_statement = codegen.If(block)
+            # 'if variant is not None and variant != $thisvariant'
+            no_match_condition = (
+                codegen.And(
+                    codegen.IsNot(
+                        codegen.VariableReference(VARIANT_NAME, local_scope),
+                        codegen.NoneExpr()
+                    ),
+                    codegen.NotEquals(
+                        codegen.VariableReference(VARIANT_NAME, local_scope),
+                        compile_expr(variant.key, local_scope, variant_expr, compiler_env)
+                    )
+                )
+            )
+
+            no_match_body = no_match_if_statement.add_if(no_match_condition)
+            add_msg_error_with_expr(
+                no_match_body,
+                codegen.ObjectCreation(
+                    "FluentReferenceError",
+                    [codegen.MethodCall(
+                        codegen.String("Unknown variant: {0}"),
+                        "format",
+                        [codegen.VariableReference(VARIANT_NAME, local_scope)]
+                    )],
+                    {},
+                    local_scope
+                )
+            )
+            block.statements.append(no_match_if_statement)
+        else:
+            # TODO - handle other types of matching, not just strict equality,
+            # for things like plural rules
+            condition = codegen.Equals(codegen.VariableReference(VARIANT_NAME, local_scope),
+                                       compile_expr(variant.key, local_scope, variant_expr, compiler_env))
+            block = if_statement.add_if(condition)
+        assigned_value = compile_expr(variant.value, block, variant_expr, compiler_env)
+        block.add_assignment(tmp_name, assigned_value)
+        assigned_types.append(assigned_value.type)
+
+    if assigned_types:
+        first_type = assigned_types[0]
+        if all(t == first_type for t in assigned_types):
+            local_scope.set_name_properties(tmp_name, {codegen.PROPERTY_TYPE: first_type})
+
+    local_scope.statements.append(if_statement)
+    return codegen.VariableReference(tmp_name, local_scope)
+
+
+@compile_expr.register(VariantName)
+def compile_expr_variant_name(name, local_scope, parent_expr, compiler_env):
+    # TODO - handle numeric literals here?
+    return codegen.String(name.name)
+
+
+@compile_expr.register(VariantExpression)
+def compile_expr_variant_expression(variant_expr, local_scope, parent_expr, compiler_env):
+    msg_id = variant_expr.ref.id.name
+    if msg_id in compiler_env.message_mapping:
+        # TODO - compile time detection of missing variant
+        return do_message_call(
+            msg_id, local_scope, parent_expr, compiler_env,
+            call_kwargs={VARIANT_NAME: compile_expr(variant_expr.key, local_scope, variant_expr, compiler_env)})
+    else:
+        add_static_msg_error(local_scope, FluentReferenceError("Unknown message: {0}"
+                                                               .format(msg_id)))
+        return codegen.String(msg_id)
 
 
 @compile_expr.register(ExternalArgument)
@@ -278,7 +398,7 @@ def compile_expr_external_argument(argument, local_scope, parent_expr, compiler_
         codegen.DictLookup(codegen.VariableReference(MESSAGE_ARGS_NAME, local_scope),
                            codegen.String(name)))
     # Except block
-    add_msg_error(try_catch.except_block, FluentReferenceError("Unknown external: {0}".format(name)))
+    add_static_msg_error(try_catch.except_block, FluentReferenceError("Unknown external: {0}".format(name)))
     try_catch.except_block.add_assignment(
         tmp_name,
         codegen.String("???"))
@@ -310,8 +430,8 @@ def compile_expr_call_expression(expr, local_scope, parent_expr, compiler_env):
         return codegen.FunctionCall(function_name, args, kwargs, local_scope)
     else:
         # TODO report compile error
-        add_msg_error(local_scope, FluentReferenceError("Unknown function: {0}"
-                                                        .format(function_name)))
+        add_static_msg_error(local_scope, FluentReferenceError("Unknown function: {0}"
+                                                               .format(function_name)))
         return codegen.String(function_name + "()")
 
 
@@ -345,7 +465,7 @@ def is_NUMBER_call_expr(expr):
             expr.callee.name == 'NUMBER')
 
 
-def add_msg_error(local_scope, exception):
+def add_static_msg_error(local_scope, exception):
     """
     Given a scope and an exception object, add the code
     to the scope needed to generate that add that exception
@@ -353,11 +473,17 @@ def add_msg_error(local_scope, exception):
     """
     # ObjectCreation checks that the exception name is available in the scope,
     # so we don't need to do that.
+    return add_msg_error_with_expr(
+        local_scope,
+        codegen.ObjectCreation(exception.__class__.__name__,
+                               [codegen.String(exception.args[0])],
+                               {},
+                               local_scope))
+
+
+def add_msg_error_with_expr(local_scope, exception_expr):
     local_scope.statements.append(
-        codegen.Verbatim(
-            "{0}.append({1})".format(
-                ERRORS_NAME,
-                codegen.ObjectCreation(exception.__class__.__name__,
-                                       [codegen.String(exception.args[0])],
-                                       {},
-                                       local_scope).as_source_code())))
+        codegen.MethodCall(
+            codegen.VariableReference(ERRORS_NAME, local_scope),
+            "append",
+            [exception_expr]))

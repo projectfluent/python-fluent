@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+from collections import OrderedDict
+
 import babel
 import babel.numbers
 import babel.plural
@@ -33,8 +35,8 @@ class MessageContextBase(object):
             _functions.update(functions)
         self._functions = _functions
         self._use_isolating = use_isolating
-        self._messages = {}
-        self._terms = {}
+        self._messages = OrderedDict()
+        self._terms = OrderedDict()
 
     def add_messages(self, source):
         parser = FluentParser()
@@ -112,7 +114,7 @@ class CompilingMessageContext(MessageContextBase):
         self._is_dirty = True
 
     def _compile(self):
-        all_messages = {}
+        all_messages = OrderedDict()
         all_messages.update(self._messages)
         all_messages.update(self._terms)
         # TODO errors occurring at this point should be collected/reported

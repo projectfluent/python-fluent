@@ -379,3 +379,12 @@ def foo(message_args, errors):
 
                 return (_ret, errors)
         """)
+
+    def test_combine_strings(self):
+        code = compile_messages_to_python("""
+            foo = Start { "Middle" } End
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                return ('Start Middle End', errors)
+        """)

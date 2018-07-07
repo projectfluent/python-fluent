@@ -358,7 +358,26 @@ class StringJoin(Expression):
         self.parts = parts
 
     def as_source_code(self):
-        return "''.join(" + List(self.parts).as_source_code() + ')'
+        self.simplify()
+        if len(self.parts) == 0:
+            return ''
+        elif len(self.parts) == 1:
+            return self.parts[0].as_source_code()
+        else:
+            return "''.join(" + List(self.parts).as_source_code() + ')'
+
+    def simplify(self):
+        # Merge adjacent String objects.
+        new_parts = []
+        for part in self.parts:
+            if (len(new_parts) > 0 and
+                isinstance(new_parts[-1], String) and
+                    isinstance(part, String)):
+                new_parts[-1] = String(new_parts[-1].string_value +
+                                       part.string_value)
+            else:
+                new_parts.append(part)
+        self.parts = new_parts
 
 
 class Tuple(Expression):

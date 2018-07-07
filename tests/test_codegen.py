@@ -282,3 +282,30 @@ class TestCodeGen(unittest.TestCase):
         self.assertCodeEqual(if_statement.as_source_code(), """
             return 3
         """)
+
+    def test_string_join_empty(self):
+        join = codegen.StringJoin([])
+        self.assertCodeEqual(join.as_source_code(), '')
+
+    def test_string_join_one(self):
+        join = codegen.StringJoin([codegen.String('hello')])
+        self.assertCodeEqual(join.as_source_code(), "'hello'")
+
+    def test_string_join_two(self):
+        scope = codegen.Scope()
+        scope.reserve_name('tmp')
+        var = codegen.VariableReference('tmp', scope)
+        join = codegen.StringJoin([codegen.String('hello '), var])
+        self.assertCodeEqual(join.as_source_code(), "''.join(['hello ', tmp])")
+
+    def test_string_join_collapse_strings(self):
+        scope = codegen.Scope()
+        scope.reserve_name('tmp')
+        var = codegen.VariableReference('tmp', scope)
+        join1 = codegen.StringJoin([codegen.String('hello '),
+                                    codegen.String('there '),
+                                    var,
+                                    codegen.String(' how'),
+                                    codegen.String(' are you?'),
+                                    ])
+        self.assertCodeEqual(join1.as_source_code(), "''.join(['hello there ', tmp, ' how are you?'])")

@@ -16,7 +16,7 @@ from fluent.context import CompilingMessageContext, InterpretingMessageContext
 this_file = os.path.abspath(__file__)
 this_dir = os.path.dirname(this_file)
 locale_dir = os.path.join(this_dir, "locale")
-messages_dir = os.path.join(locale_dir, "en", "LC_MESSAGES")
+messages_dir = os.path.join(locale_dir, "pl", "LC_MESSAGES")
 ftl_file = os.path.join(this_dir, "benchmark.ftl")
 
 
@@ -24,12 +24,13 @@ ftl_file = os.path.join(this_dir, "benchmark.ftl")
 def gettext_translations():
     pot_file = os.path.join(this_dir, "benchmark.pot")
     po_file = os.path.join(messages_dir, "benchmark.po")
+    os.makedirs(messages_dir, exist_ok=True)
     subprocess.check_call(["pybabel", "extract", "-o", pot_file, this_file])
     do_dummy_translation(pot_file, po_file)
 
     mo_file = os.path.join(messages_dir, "benchmark.mo")
     subprocess.check_call(["pybabel", "compile", "-f", "-i", po_file, "-o", mo_file])
-    translation_obj = translation("benchmark", localedir=locale_dir, languages=['en'])
+    translation_obj = translation("benchmark", localedir=locale_dir, languages=['pl'])
     return translation_obj
 
 
@@ -42,7 +43,7 @@ def do_dummy_translation(pot_file, po_file):
         if not line.startswith("msgstr "):
             output.append(line)
         if line.startswith("msgid \""):
-            output.append(line.replace("msgid \"", "msgstr \"Translated "))
+            output.append(line[0:-1].replace("msgid", "msgstr") + ' in Polish"')
     with open(po_file, "w") as f:
         f.write("\n".join(output))
 
@@ -61,7 +62,7 @@ def compiling_message_context():
 
 def build_message_context(cls):
     # We choose 'use_isolating=False' for feature parity with gettext
-    ctx = cls(['en'], use_isolating=False)
+    ctx = cls(['pl'], use_isolating=False)
     with open(ftl_file, "r") as f:
         ctx.add_messages(f.read())
     return ctx
@@ -77,19 +78,19 @@ def unicode_gettext_method(gettext_translations):
 def test_single_string_gettext(gettext_translations, benchmark):
     gettext_translations.gettext("Hello I am a single string literal")  # for extract process
     result = benchmark(unicode_gettext_method(gettext_translations), "Hello I am a single string literal")
-    assert result == "Translated Hello I am a single string literal"
+    assert result == "Hello I am a single string literal in Polish"
     assert type(result) is six.text_type
 
 
 def test_single_string_fluent_interpreter(interpreting_message_context, benchmark):
     result = benchmark(interpreting_message_context.format, 'single-string-literal')
-    assert result[0] == "Translated Hello I am a single string literal"
+    assert result[0] == "Hello I am a single string literal in Polish"
     assert type(result[0]) is six.text_type
 
 
 def test_single_string_fluent_compiler(compiling_message_context, benchmark):
     result = benchmark(compiling_message_context.format, 'single-string-literal')
-    assert result[0] == "Translated Hello I am a single string literal"
+    assert result[0] == "Hello I am a single string literal in Polish"
     assert type(result[0]) is six.text_type
 
 
@@ -98,21 +99,21 @@ def test_single_interpolation_gettext(gettext_translations, benchmark):
     t = unicode_gettext_method(gettext_translations)
     args = {'username': 'Mary'}
     result = benchmark(lambda: t("Hello %(username)s, welcome to our website!") % args)
-    assert result == "Translated Hello Mary, welcome to our website!"
+    assert result == "Hello Mary, welcome to our website! in Polish"
     assert type(result) is six.text_type
 
 
 def test_single_interpolation_fluent_interpreter(interpreting_message_context, benchmark):
     args = {'username': 'Mary'}
     result = benchmark(interpreting_message_context.format, 'single-interpolation', args)
-    assert result[0] == "Translated Hello Mary, welcome to our website!"
+    assert result[0] == "Hello Mary, welcome to our website! in Polish"
     assert type(result[0]) is six.text_type
 
 
 def test_single_interpolation_fluent_compiler(compiling_message_context, benchmark):
     args = {'username': 'Mary'}
     result = benchmark(compiling_message_context.format, 'single-interpolation', args)
-    assert result[0] == "Translated Hello Mary, welcome to our website!"
+    assert result[0] == "Hello Mary, welcome to our website! in Polish"
     assert type(result[0]) is six.text_type
 
 

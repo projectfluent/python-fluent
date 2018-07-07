@@ -1,4 +1,4 @@
 
-single-string-literal = Translated Hello I am a single string literal
+single-string-literal = Hello I am a single string literal in Polish
 
-single-interpolation = Translated Hello { $username }, welcome to our website!
+single-interpolation = Hello { $username }, welcome to our website! in Polish

@@ -77,6 +77,9 @@ def compile_messages(messages, locale, use_isolating=True, functions=None):
     exec(module.as_source_code(), module_globals)
     retval = {}
     for key, val in message_mapping.items():
+        if key.startswith('-'):
+            # term, shouldn't be in publicly available messages
+            continue
         try:
             retval[six.text_type(key)] = module_globals[val]
         except KeyError:

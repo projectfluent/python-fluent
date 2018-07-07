@@ -35,10 +35,12 @@ class TestMessageContext(unittest.TestCase):
     def test_has_message(self):
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo
+            -term = Term
         """))
 
         self.assertTrue(self.ctx.has_message('foo'))
         self.assertFalse(self.ctx.has_message('bar'))
+        self.assertFalse(self.ctx.has_message('-term'))
 
     def test_has_message_with_attribute(self):
         self.ctx.add_messages(dedent_ftl("""
@@ -93,3 +95,9 @@ class TestMessageContext(unittest.TestCase):
         self.assertRaises(LookupError,
                           self.ctx.format,
                           'a-missing-message')
+
+    def test_format_term(self):
+        self.ctx.add_messages('-term = Term')
+        self.assertRaises(LookupError,
+                          self.ctx.format,
+                          '-term')

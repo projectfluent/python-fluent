@@ -205,6 +205,24 @@ a `functions` dictionary to the `MessageContext` constructor:
     >>> print(context.format('greet-by-name', {'name': 'Jane'})[0])
     Hello 😄 Jane 😄
 
+These functions need to accept the following types of arguments:
+
+* unicode strings (i.e. `unicode` on Python 2, `str` on Python 3)
+* `fluent.types.FluentType` subclasses, namely:
+  * `FluentNumber` - `int`, `float` or `Decimal` objects passed in externally,
+    or expressed as literals, are wrapped in these. Note that these objects also
+    subclass builtin `int`, `float` or `Decimal`, so can be used as numbers in
+    the normal way.
+  * `FluentDateType` - `date` or `datetime` objects passed in are wrapped in
+    these. Again, these classes also subclass `date` or `datetime`, and can be
+    used as such.
+  * `FluentNone` - in error conditions, such as a message referring to an argument
+    that hasn't been passed in, objects of this type are passed in.
+
+Custom functions should not throw errors, but return `FluentNone` instances to
+indicate an error or missing data. Otherwise they should return unicode strings,
+or instances of a `FluentType` subclass as above.
+
 
 Known limitations and bugs
 --------------------------

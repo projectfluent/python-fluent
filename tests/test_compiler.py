@@ -365,8 +365,6 @@ def foo(message_args, errors):
                 except LookupError:
                     errors.append(FluentReferenceError('Unknown external: count'))
                     _tmp = FluentNone('count')
-                else:
-                    _tmp = handle_argument(_tmp, 'count', locale, errors)
 
                 _key = _tmp
                 _plural_form = plural_form_for_number(_key)

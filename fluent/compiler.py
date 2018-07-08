@@ -517,16 +517,20 @@ def compile_expr_external_argument(argument, local_scope, parent_expr, compiler_
     try_catch.except_block.add_assignment(
         tmp_name,
         make_fluent_none(name, local_scope))
-    # Else block
-    try_catch.else_block.add_assignment(
-        tmp_name,
-        codegen.FunctionCall("handle_argument",
-                             [codegen.VariableReference(tmp_name, local_scope),
-                              codegen.String(name),
-                              codegen.VariableReference(LOCALE_NAME, local_scope),
-                              codegen.VariableReference(ERRORS_NAME, local_scope)],
-                             {},
-                             local_scope))
+    # Else block In select expression, we only case about matching against a
+    # selector, not the other things (like wrapping in fluent_number, which is
+    # expensive). So we miss that out if possible.
+    add_handle_argument = not isinstance(parent_expr, SelectExpression)
+    if add_handle_argument:
+        try_catch.else_block.add_assignment(
+            tmp_name,
+            codegen.FunctionCall("handle_argument",
+                                 [codegen.VariableReference(tmp_name, local_scope),
+                                  codegen.String(name),
+                                  codegen.VariableReference(LOCALE_NAME, local_scope),
+                                  codegen.VariableReference(ERRORS_NAME, local_scope)],
+                                 {},
+                                 local_scope))
 
     local_scope.statements.append(try_catch)
     return codegen.VariableReference(tmp_name, local_scope)

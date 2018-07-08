@@ -199,7 +199,7 @@ class Block(Scope):
 
 
 class Function(Block, Statement):
-    def __init__(self, name, args=None, kwargs=None, parent_scope=None):
+    def __init__(self, name, args=None, kwargs=None, parent_scope=None, debug=False):
         super(Function, self).__init__(parent_scope=parent_scope)
         self.func_name = name
         if args is None:
@@ -214,6 +214,9 @@ class Function(Block, Statement):
                 self.reserve_name(arg, function_arg=True)
         self.args = args
         self.kwargs = kwargs
+
+        if debug:
+            self.statements.append(SetBreakpoint())
 
     def as_source_code(self):
         self.simplify()
@@ -465,6 +468,11 @@ class NoneExpr(Expression):
 
     def as_source_code(self):
         return "None"
+
+
+class SetBreakpoint(Statement):
+    def as_source_code(self):
+        return "import ipdb; ipdb.set_trace()"
 
 
 def infix_operator(operator, return_type):

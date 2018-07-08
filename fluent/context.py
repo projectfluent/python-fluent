@@ -28,7 +28,7 @@ class MessageContextBase(object):
     See the documentation of the Fluent syntax for more information.
     """
 
-    def __init__(self, locales, functions=None, use_isolating=True):
+    def __init__(self, locales, functions=None, use_isolating=True, debug=False):
         self.locales = locales
         _functions = BUILTINS.copy()
         if functions:
@@ -37,6 +37,7 @@ class MessageContextBase(object):
         self._use_isolating = use_isolating
         self._messages = OrderedDict()
         self._terms = OrderedDict()
+        self._debug = debug
 
     def add_messages(self, source):
         parser = FluentParser()
@@ -122,7 +123,8 @@ class CompilingMessageContext(MessageContextBase):
         self._compiled_messages = compile_messages(all_messages,
                                                    self._babel_locale,
                                                    use_isolating=self._use_isolating,
-                                                   functions=self._functions)
+                                                   functions=self._functions,
+                                                   debug=self._debug)
         self._is_dirty = False
 
     def format(self, message_id, args=None):

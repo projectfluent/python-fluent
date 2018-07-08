@@ -58,9 +58,10 @@ class CompilerEnvironment(object):
     message_mapping = attr.ib(factory=dict)
     errors = attr.ib(factory=list)
     functions = attr.ib(factory=dict)
+    debug = attr.ib(default=False)
 
 
-def compile_messages(messages, locale, use_isolating=True, functions=None):
+def compile_messages(messages, locale, use_isolating=True, functions=None, debug=False):
     """
     Compile a dictionary of {id: Message/Term objects} to a Python module,
     and return a dictionary mapping the message IDs to Python functions
@@ -70,7 +71,8 @@ def compile_messages(messages, locale, use_isolating=True, functions=None):
     module, message_mapping, module_globals = messages_to_module(messages, locale,
                                                                  use_isolating=use_isolating,
                                                                  functions=functions,
-                                                                 strict=False)
+                                                                 strict=False,
+                                                                 debug=debug)
     # TODO - it would be nice to be able to get back to FTL source file lines,
     # if were knew what they were, and pass absolute filename that to 'compile'
     # builtin as the filepath. Instead of that just use 'exec' for now.
@@ -88,7 +90,8 @@ def compile_messages(messages, locale, use_isolating=True, functions=None):
     return retval
 
 
-def messages_to_module(messages, locale, use_isolating=True, functions=None, strict=False):
+def messages_to_module(messages, locale, use_isolating=True, functions=None, strict=False,
+                       debug=False):
     """
     Compile a set of messages to a Python module, returning a tuple:
     (Python source code as a string, dictionary mapping message IDs to Python functions)
@@ -101,6 +104,7 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
         locale=locale,
         use_isolating=use_isolating,
         functions=functions,
+        debug=debug,
     )
     # Setup globals, and reserve names for them
     module_globals = {
@@ -200,7 +204,8 @@ def compile_message(msg, function_name, module, compiler_env):
     msg_func = codegen.Function(parent_scope=module,
                                 name=function_name,
                                 args=MESSAGE_FUNCTION_ARGS,
-                                kwargs=func_kwargs)
+                                kwargs=func_kwargs,
+                                debug=compiler_env.debug)
 
     if not isinstance(start, Pattern):
         raise AssertionError("Not expecting object of type {0}".format(type(start)))

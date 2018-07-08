@@ -34,16 +34,44 @@ def gettext_translations():
     return translation_obj
 
 
+dummy_gettext_plural_translations = {
+    "There is %(count)d thing":
+        ["There is one thing, in Polish",
+         "There are few things, in Polish",
+         "There are many things, in Polish",
+         "There are other things, in Polish",
+         ]
+}
+
+
 def do_dummy_translation(pot_file, po_file):
     # Copy and fill in some default translations
     with open(pot_file, "r") as f:
         contents = f.read()
     output = []
+    last_id = None
     for line in contents.split("\n"):
-        if not line.startswith("msgstr "):
-            output.append(line)
         if line.startswith("msgid \""):
-            output.append(line[0:-1].replace("msgid", "msgstr") + ' in Polish"')
+            last_id = line.replace("msgid ", "").strip('"')
+
+        if line.startswith("msgstr "):
+            # Generate 'translation':
+            msgstr = 'msgstr "{0} in Polish"'.format(last_id)
+            output.append(msgstr)
+        elif line.startswith('msgstr[0]'):
+            msgstrs = dummy_gettext_plural_translations[last_id]
+            for i, msgstr in enumerate(msgstrs):
+                output.append('''msgstr[{0}] "{1}"'''.format(i, msgstr))
+        elif line.startswith('msgstr['):
+            pass  # ignore, done these already
+        else:
+            output.append(line)
+
+        if line.startswith('"Generated-By:'):
+            # extra header stuff:
+            output.append(r'''"Language: pl\n"''')
+            output.append(r'''"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>=14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"''')
+
     with open(po_file, "w") as f:
         f.write("\n".join(output))
 
@@ -73,6 +101,13 @@ def unicode_gettext_method(gettext_translations):
         return gettext_translations.ugettext
     else:
         return gettext_translations.gettext
+
+
+def unicode_ngettext_method(gettext_translations):
+    if hasattr(gettext_translations, 'ungettext'):
+        return gettext_translations.ungettext
+    else:
+        return gettext_translations.ngettext
 
 
 def test_single_string_gettext(gettext_translations, benchmark):
@@ -115,6 +150,33 @@ def test_single_interpolation_fluent_compiler(compiling_message_context, benchma
     result = benchmark(compiling_message_context.format, 'single-interpolation', args)
     assert result[0] == "Hello Mary, welcome to our website! in Polish"
     assert type(result[0]) is six.text_type
+
+
+def test_plural_form_select_gettext(gettext_translations, benchmark):
+    gettext_translations.ngettext("There is %(count)d thing", "There are %(count)d things", 1)  # for extract process
+    t = unicode_ngettext_method(gettext_translations)
+
+    def f():
+        for i in range(0, 10):
+            t("There is %(count)d thing", "There are %(count)d things", i)
+
+    benchmark(f)
+
+
+def test_plural_form_select_fluent_compiler(compiling_message_context, benchmark):
+    return _test_plural_form_select_fluent(compiling_message_context, benchmark)
+
+
+def test_plural_form_select_fluent_interpreter(interpreting_message_context, benchmark):
+    return _test_plural_form_select_fluent(interpreting_message_context, benchmark)
+
+
+def _test_plural_form_select_fluent(ctx, benchmark):
+    def f():
+        for i in range(0, 10):
+            ctx.format("plural-form-select", {'count': i})[0]
+
+    benchmark(f)
 
 
 if __name__ == '__main__':

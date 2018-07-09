@@ -24,7 +24,7 @@ class TestFunctionCalls(unittest.TestCase):
             return 1/0
 
         def ANY_ARGS(*args, **kwargs):
-            return six.text_type(args) + " " + six.text_type(kwargs)
+            return ' '.join(map(six.text_type, args)) + " " + ''.join("{0}={1}".format(k, v) for k, v in kwargs.items())
 
         def RESTRICTED(allowed=None, notAllowed=None):
             return allowed
@@ -110,7 +110,7 @@ class TestFunctionCalls(unittest.TestCase):
 
     def test_use_any_args(self):
         val, errs = self.ctx.format('use-any-args')
-        self.assertEqual(val, "(1, 2, 3) {'x': 1}")
+        self.assertEqual(val, "1 2 3 x=1")
         self.assertEqual(len(errs), 0)
 
     def test_restricted_ok(self):

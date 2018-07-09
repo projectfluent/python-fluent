@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+from collections import OrderedDict
+
 import attr
 import babel
 import six
@@ -107,7 +109,7 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
     if functions is None:
         functions = {}
 
-    msg_ids_to_ast = dict(get_message_functions(messages))
+    msg_ids_to_ast = OrderedDict(get_message_functions(messages))
 
     compiler_env = CompilerEnvironment(
         locale=locale,

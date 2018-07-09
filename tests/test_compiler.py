@@ -400,7 +400,7 @@ def foo(message_args, errors):
         code = compile_messages_to_python("""
             foo = Foo { $arg } Bar
         """, self.locale, use_isolating=True)
-        self.assertCodeEqual(code, r"""
+        self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 try:
                     _tmp = message_args['arg']
@@ -410,7 +410,7 @@ def foo(message_args, errors):
                 else:
                     _tmp = handle_argument(_tmp, 'arg', locale, errors)
 
-                return (''.join(['Foo \u2068', handle_output(_tmp, locale, errors), '\u2069 Bar']), errors)
+                return (''.join(['Foo \\u2068', handle_output(_tmp, locale, errors), '\\u2069 Bar']), errors)
         """)
 
     def test_cycle_detection(self):

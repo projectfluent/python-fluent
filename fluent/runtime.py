@@ -5,10 +5,11 @@ from decimal import Decimal
 
 import six
 
-from fluent.exceptions import FluentReferenceError
-from .types import fluent_date, fluent_number, FluentNone, FluentType
+from fluent.exceptions import FluentCyclicReferenceError, FluentReferenceError
 
-__all__ = ['handle_argument', 'handle_output', 'FluentReferenceError', 'FluentNone']
+from .types import FluentNone, FluentType, fluent_date, fluent_number
+
+__all__ = ['handle_argument', 'handle_output', 'FluentCyclicReferenceError', 'FluentReferenceError', 'FluentNone']
 
 
 text_type = six.text_type

@@ -412,3 +412,49 @@ def foo(message_args, errors):
 
                 return (''.join(['Foo \u2068', handle_output(_tmp, locale, errors), '\u2069 Bar']), errors)
         """)
+
+    def test_cycle_detection(self):
+        code = compile_messages_to_python("""
+            foo = { foo }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                errors.append(FluentCyclicReferenceError('Cyclic reference in foo'))
+                return (FluentNone().format(locale), errors)
+        """)
+
+    def test_cycle_detection_with_attrs(self):
+        code = compile_messages_to_python("""
+            foo
+               .attr1 = { bar.attr2 }
+
+            bar
+               .attr2 = { foo.attr1 }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo__attr1(message_args, errors):
+                errors.append(FluentCyclicReferenceError('Cyclic reference in foo.attr1'))
+                return (FluentNone().format(locale), errors)
+
+            def bar__attr2(message_args, errors):
+                errors.append(FluentCyclicReferenceError('Cyclic reference in bar.attr2'))
+                return (FluentNone().format(locale), errors)
+        """)
+
+    def test_cycle_detection_with_unknown_attr(self):
+        # unknown attributes fall back to main message, which brings
+        # another option for a cycle.
+        code = compile_messages_to_python("""
+            foo = { bar.bad-attr }
+
+            bar = { foo }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                errors.append(FluentCyclicReferenceError('Cyclic reference in foo'))
+                return (FluentNone().format(locale), errors)
+
+            def bar(message_args, errors):
+                errors.append(FluentCyclicReferenceError('Cyclic reference in bar'))
+                return (FluentNone().format(locale), errors)
+        """)

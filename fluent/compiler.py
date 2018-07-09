@@ -6,8 +6,8 @@ import six
 
 from . import codegen, runtime
 from .exceptions import FluentCyclicReferenceError, FluentReferenceError
-from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, Message, MessageReference,
-                         NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
+from .syntax.ast import (AttributeExpression, BaseNode, CallExpression, ExternalArgument, MessageReference,
+                         NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression,
                          TextElement, VariantExpression, VariantName)
 from .types import FluentDateType, FluentNumber, FluentType
 from .utils import args_match, inspect_function_args, numeric_to_native, partition
@@ -64,6 +64,7 @@ class CompilerEnvironment(object):
     functions = attr.ib(factory=dict)
     debug = attr.ib(default=False)
     functions_arg_spec = attr.ib(factory=dict)
+    msg_ids_to_ast = attr.ib(factory=dict)
 
 
 def compile_messages(messages, locale, use_isolating=True, functions=None, debug=False):
@@ -105,13 +106,17 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
     """
     if functions is None:
         functions = {}
+
+    msg_ids_to_ast = dict(get_message_functions(messages))
+
     compiler_env = CompilerEnvironment(
         locale=locale,
         use_isolating=use_isolating,
         functions=functions,
         debug=debug,
         functions_arg_spec={name: inspect_function_args(func)
-                            for name, func in functions.items()}
+                            for name, func in functions.items()},
+        msg_ids_to_ast=msg_ids_to_ast,
     )
     # Setup globals, and reserve names for them
     module_globals = {
@@ -161,17 +166,17 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
 
     # Pass one, find all the names, so that we can populate message_mapping,
     # which is needed for compilation.
-    for msg_id, msg in get_message_functions(messages):
+    for msg_id, msg in msg_ids_to_ast.items():
         # TODO - handle duplicate names correctly
         function_name = module.reserve_name(
             message_function_name_for_msg_id(msg_id))
         compiler_env.message_mapping[msg_id] = function_name
 
     # Pass 2, actual compilation
-    for msg_id, msg in get_message_functions(messages):
+    for msg_id, msg in msg_ids_to_ast.items():
         function_name = compiler_env.message_mapping[msg_id]
         try:
-            function = compile_message(msg, function_name, module, compiler_env)
+            function = compile_message(msg, msg_id, function_name, module, compiler_env)
         except Exception as e:
             compiler_env.errors.append(e)
             if strict:
@@ -198,13 +203,17 @@ def message_id_for_attr(parent_msg_id, attr_name):
     return "{0}.{1}".format(parent_msg_id, attr_name)
 
 
+def message_id_for_attr_expression(attr_expr):
+    return message_id_for_attr(attr_expr.id.name, attr_expr.name.name)
+
+
 def message_function_name_for_msg_id(msg_id):
     # Scope.reserve_name does further sanitising of name, which we don't need to
     # worry about.
     return msg_id.replace('.', '__').replace('-', '_')
 
 
-def compile_message(msg, function_name, module, compiler_env):
+def compile_message(msg, msg_id, function_name, module, compiler_env):
     start = msg.value
     if is_variant_definition_message(msg):
         func_kwargs = VARIANT_FUNCTION_KWARGS
@@ -219,7 +228,11 @@ def compile_message(msg, function_name, module, compiler_env):
     if not isinstance(start, Pattern):
         raise AssertionError("Not expecting object of type {0}".format(type(start)))
 
-    return_expression = compile_expr(start, msg_func, None, compiler_env)
+    if contains_reference_cycle(msg, msg_id, compiler_env):
+        add_static_msg_error(msg_func, FluentCyclicReferenceError("Cyclic reference in {0}".format(msg_id)))
+        return_expression = finalize_expr_as_string(make_fluent_none(None, module), msg_func, compiler_env)
+    else:
+        return_expression = compile_expr(start, msg_func, None, compiler_env)
     msg_func.add_return(codegen.Tuple(return_expression, codegen.VariableReference(ERRORS_NAME, msg_func)))
     return msg_func
 
@@ -232,16 +245,110 @@ def contains_matching_node(start_node, predicate):
     checks = []
 
     def checker(node):
-        checks.append(predicate(node))
-        return node
+        if predicate(node):
+            checks.append(True)
 
-    start_node.traverse(checker)
+    traverse_ast(start_node, checker)
     return any(checks)
+
+
+def traverse_ast(node, fun, exclude_attributes=None):
+    """Postorder-traverse this node and apply `fun` to all child nodes.
+
+    Traverse this node depth-first applying `fun` to subnodes and leaves.
+    Children are processed before parents (postorder traversal).
+    """
+
+    def visit(value):
+        """Call `fun` on `value` and its descendants."""
+        if isinstance(value, BaseNode):
+            return traverse_ast(value, fun)
+        if isinstance(value, list):
+            return fun(list(map(visit, value)))
+        else:
+            return fun(value)
+
+    # Use all attributes found on the node
+    parts = vars(node).items()
+    for name, value in parts:
+        if exclude_attributes is not None and name in exclude_attributes:
+            continue
+        visit(value)
+
+    return fun(node)
 
 
 def is_variant_definition_expression(expr):
     return (isinstance(expr, SelectExpression) and
             expr.expression is None)
+
+
+def contains_reference_cycle(msg, msg_id, compiler_env):
+    msg_ids_to_ast = compiler_env.msg_ids_to_ast
+    return contains_matching_node_deep(
+        msg,
+        lambda node: (
+            (isinstance(node, MessageReference) and
+             node.id.name == msg_id) or
+            (isinstance(node, AttributeExpression) and
+             message_id_for_attr_expression(node) == msg_id) or
+            (isinstance(node, AttributeExpression) and
+             message_id_for_attr_expression(node) not in msg_ids_to_ast
+             and node.id.name == msg_id)
+        ),
+        msg_ids_to_ast)
+
+
+def contains_matching_node_deep(start_node, predicate, msg_ids_to_ast):
+    checks = []
+
+    checked_nodes = set([])
+
+    # We don't recurse into message attributes, because a message and its
+    # attributes are considered distinct. For example, the following is fine,
+    # there is cycle, foo.attr is not reached from foo
+    #
+    #  foo = Foo
+    #     .attr = { foo } Attribute
+
+    exclude_attributes = ['attributes']
+
+    def checker(node):
+        node_id = id(node)
+        if node_id in checked_nodes:
+            # break infinite loop for this checking code
+            return
+        checked_nodes.add(node_id)
+
+        if predicate(node):
+            checks.append(True)
+            return
+
+        sub_node = None
+        if isinstance(node, MessageReference):
+            ref = node.id.name
+            if ref in msg_ids_to_ast:
+                sub_node = msg_ids_to_ast[ref]
+        elif isinstance(node, AttributeExpression):
+            ref = message_id_for_attr_expression(node)
+            if ref in msg_ids_to_ast:
+                sub_node = msg_ids_to_ast[ref]
+            else:
+                # Compiler falls back to parent ref in this situation,
+                # so we have to as well to check for cycles
+                parent_ref = node.id.name
+                if parent_ref in msg_ids_to_ast:
+                    sub_node = msg_ids_to_ast[parent_ref]
+
+        if sub_node is not None:
+            traverse_ast(sub_node, checker, exclude_attributes=exclude_attributes)
+            if any(checks):
+                return
+
+        return
+
+    traverse_ast(start_node, checker, exclude_attributes=exclude_attributes)
+    return any(checks)
 
 
 @singledispatch
@@ -340,7 +447,7 @@ def do_message_call(name, local_scope, parent_expr, compiler_env, call_kwargs=No
 
 def make_fluent_none(name, local_scope):
     return codegen.ObjectCreation('FluentNone',
-                                  [codegen.String(name)],
+                                  [codegen.String(name)] if name else [],
                                   {},
                                   local_scope)
 
@@ -348,8 +455,7 @@ def make_fluent_none(name, local_scope):
 @compile_expr.register(AttributeExpression)
 def compile_expr_attribute_expression(attribute, local_scope, parent_expr, compiler_env):
     parent_id = attribute.id.name
-    attr_name = attribute.name.name
-    msg_id = "{0}.{1}".format(parent_id, attr_name)
+    msg_id = message_id_for_attr_expression(attribute)
     if msg_id in compiler_env.message_mapping:
         return do_message_call(msg_id, local_scope, attribute, compiler_env)
     else:

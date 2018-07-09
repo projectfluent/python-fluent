@@ -89,19 +89,15 @@ class TestPlaceables(unittest.TestCase):
 
     def test_cycle_detection(self):
         val, errs = self.ctx.format('self-referencing-message', {})
-        self.assertEqual(val, 'Text ???')
+        self.assertIn('???', val)
         self.assertEqual(len(errs), 1)
-        self.assertEqual(
-            errs,
-            [FluentCyclicReferenceError("Cyclic reference")])
+        self.assertEqual(type(errs[0]), FluentCyclicReferenceError)
 
     def test_mutual_cycle_detection(self):
         val, errs = self.ctx.format('cyclic-msg1', {})
-        self.assertEqual(val, 'Text1 Text2 ???')
+        self.assertIn('???', val)
         self.assertEqual(len(errs), 1)
-        self.assertEqual(
-            errs,
-            [FluentCyclicReferenceError("Cyclic reference")])
+        self.assertEqual(type(errs[0]), FluentCyclicReferenceError)
 
     def test_allowed_self_reference(self):
         val, errs = self.ctx.format('self-attribute-ref-ok', {})

@@ -93,6 +93,13 @@ errors)`, as below.
     >>> errs
     [FluentReferenceError('Unknown external: name')]
 
+The use of `LookupError` for missing messages also means that you can choose to
+fall back to a default locale. If you need this, it is expected that you will
+wrap use of `MessageContext.format` in your own utility functions that implement
+your fallback strategy.
+
+See also the 'Error handling' section below for more information on errors.
+
 
 Numbers
 -------
@@ -221,7 +228,62 @@ These functions need to accept the following types of arguments:
 
 Custom functions should not throw errors, but return `FluentNone` instances to
 indicate an error or missing data. Otherwise they should return unicode strings,
-or instances of a `FluentType` subclass as above.
+or instances of a `FluentType` subclass as above. Return numbers and datetimes
+should be converted to `FluentNumber` or `FluentDateType` subclasses using
+`fluent.types.fluent_number` and `fluent.types.fluent_date` respectively.
+
+The type signatures of custom functions will be checked before they are used, to
+ensure the right the numnber of positional arguments are used, and only
+available keyword arguments are used - otherwise a `TypeError` will be appended
+to the `errors` list. Using `*args` or `**kwargs` to allow any number of
+positional or keyword arguments is supported, but you should ensure that your
+function actually does allow all positional or keyword arguemtns.
+
+If you want to override the detected type signature (for example, to limit the
+arguments that can be used in an FTL file, or to provide a proper signature for
+a function that has a signature using `*args` and `**kwargs` but is more
+restricted in reality), you can add an `ftl_arg_spec` attribute to the function.
+The value should be a two-tuple containing 1) a integer specifying the number of
+positional arguments, and 2) a list of allowed keyword arguments. For example,
+for a custom function `my_func` the following will stop the `restricted` keyword
+argument from being used from FTL files, while allowing `allowed`, and requiring
+that a single positional argument is passed:
+
+    def my_func(arg1, allowed=None, restricted=None):
+        pass
+
+    my_func.ftl_arg_spec = (1, ['allowed'])
+
+
+Error handling
+--------------
+
+The Fluent philosophy is to try to recover from errors, and not throw
+exceptions, on the basis that a partial translation is usually better than one
+that is entirely missing or a 500 page.
+
+python-fluent adopts that philosophy, but also tries to abide by the Zen of
+Python - “Errors should never pass silently. Unless explicitly silenced.”
+
+The combination of these two different philosophies works as follows:
+
+* Errors made by **translators** in the contents of FTL files do not raise
+  exceptions. Instead the errors are collected in the `errors` argument returned
+  by `MessageContext.format`, and some kind of substitute string is returned.
+  For example, if a non-existent term `-brand-name` is referenced from a
+  message, the string `-brand-name` is inserted into the returned string.
+
+  Also, if the translator uses a function and passes the wrong number of
+  positional arguments, or unavailable keyword arguments, this error will be
+  caught and reported, without allowing the exception to propagate.
+
+* Exceptions triggered by **developer** errors (whether the authors of
+  python-fluent or a user of python-fluent) are not caught, but are allowed to
+  propagate. For example, an incorrect message ID passed to
+  `MessageContext.format` is most likely a developer error (a typo in the
+  message ID), and so causes an exception to be raised. Exceptions raised by
+  custom functions are also assumed to be developer errors (as documented above,
+  these functions should not raise exceptions), and are not caught.
 
 
 Known limitations and bugs

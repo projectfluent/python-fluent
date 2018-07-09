@@ -30,7 +30,7 @@ def parse_ftl(source):
     return messages
 
 
-def compile_messages_to_python(source, locale, use_isolating=True, strict=True):
+def compile_messages_to_python(source, locale, use_isolating=False, strict=True):
     messages = parse_ftl(dedent_ftl(source))
     module, message_mapping, module_globals = messages_to_module(messages, locale,
                                                                  use_isolating=use_isolating,
@@ -385,4 +385,30 @@ def foo(message_args, errors):
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 return ('Start Middle End', errors)
+        """)
+
+    def test_single_string_literal_isolating(self):
+        code = compile_messages_to_python("""
+            foo = Foo
+        """, self.locale, use_isolating=True)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                return ('Foo', errors)
+        """)
+
+    def test_interpolation_isolating(self):
+        code = compile_messages_to_python("""
+            foo = Foo { $arg } Bar
+        """, self.locale, use_isolating=True)
+        self.assertCodeEqual(code, r"""
+            def foo(message_args, errors):
+                try:
+                    _tmp = message_args['arg']
+                except LookupError:
+                    errors.append(FluentReferenceError('Unknown external: arg'))
+                    _tmp = FluentNone('arg')
+                else:
+                    _tmp = handle_argument(_tmp, 'arg', locale, errors)
+
+                return (''.join(['Foo \u2068', handle_output(_tmp, locale, errors), '\u2069 Bar']), errors)
         """)

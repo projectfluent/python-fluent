@@ -20,6 +20,10 @@ except ImportError:
 
 text_type = six.text_type
 
+# Unicode bidi isolation characters.
+FSI = "\u2068"
+PDI = "\u2069"
+
 BUILTIN_NUMBER = 'NUMBER'
 BUILTIN_DATETIME = 'DATETIME'
 
@@ -255,14 +259,15 @@ def compile_expr_pattern(pattern, local_scope, parent_expr, compiler_env):
     parts = []
     subelements = pattern.elements
 
-    if len(subelements) == 1:
-        if isinstance(subelements[0], (TextElement, Placeable)):
-            # Optimization for the very common cases of single component
-            return finalize_expr_as_string(compile_expr(subelements[0], local_scope, pattern, compiler_env),
-                                           local_scope, compiler_env)
+    use_isolating = compiler_env.use_isolating and len(subelements) > 1
 
     for element in pattern.elements:
+        wrap_this_with_isolating = use_isolating and not isinstance(element, TextElement)
+        if wrap_this_with_isolating:
+            parts.append(codegen.String(FSI))
         parts.append(compile_expr(element, local_scope, pattern, compiler_env))
+        if wrap_this_with_isolating:
+            parts.append(codegen.String(PDI))
 
     return codegen.StringJoin([finalize_expr_as_string(p, local_scope, compiler_env) for p in parts])
 

@@ -279,16 +279,19 @@ class TestCodeGen(unittest.TestCase):
         scope = codegen.Scope()
         if_statement = codegen.If(scope)
         if_statement.else_block.statements.append(codegen.Return(codegen.Number(3)))
+        if_statement = codegen.simplify(if_statement)
         self.assertCodeEqual(if_statement.as_source_code(), """
             return 3
         """)
 
     def test_string_join_empty(self):
         join = codegen.StringJoin([])
-        self.assertCodeEqual(join.as_source_code(), '')
+        join = codegen.simplify(join)
+        self.assertCodeEqual(join.as_source_code(), "''")
 
     def test_string_join_one(self):
         join = codegen.StringJoin([codegen.String('hello')])
+        join = codegen.simplify(join)
         self.assertCodeEqual(join.as_source_code(), "'hello'")
 
     def test_string_join_two(self):
@@ -308,4 +311,5 @@ class TestCodeGen(unittest.TestCase):
                                     codegen.String(' how'),
                                     codegen.String(' are you?'),
                                     ])
+        join1 = codegen.simplify(join1)
         self.assertCodeEqual(join1.as_source_code(), "''.join(['hello there ', tmp, ' how are you?'])")

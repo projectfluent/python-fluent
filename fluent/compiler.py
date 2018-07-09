@@ -171,6 +171,8 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
                 raise
         else:
             module.add_function(function_name, function)
+
+    module = codegen.simplify(module)
     return (module, compiler_env.message_mapping, module_globals)
 
 

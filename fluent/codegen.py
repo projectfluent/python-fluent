@@ -37,7 +37,21 @@ PROPERTY_RETURN_TYPE = 'PROPERTY_RETURN_TYPE'
 UNKNOWN_TYPE = object
 
 
-class Scope(object):
+class SourceCode(object):
+    def simplify(self, changes):
+        """
+        Simplify the statement/expression, returning either a modified
+        self, or a new object.
+
+        This method should call .simplify(changes) on any contained subexpressions
+        or statements.
+
+        If changes were made, a True value must be appended to the passed in changes list.
+        """
+        return self
+
+
+class Scope(SourceCode):
     def __init__(self, parent_scope=None):
         super(Scope, self).__init__()
         self.parent_scope = parent_scope
@@ -163,6 +177,10 @@ class Scope(object):
     def as_source_code(self):
         return "".join(s.as_source_code() + "\n" for s in self.statements)
 
+    def simplify(self, changes):
+        self.statements = [s.simplify(changes) for s in self.statements]
+        return self
+
 
 def cleanup_name(name):
     # TODO - a lot more sanitising required
@@ -173,7 +191,7 @@ class Module(Scope):
     pass
 
 
-class Statement(object):
+class Statement(SourceCode):
     pass
 
 
@@ -188,6 +206,10 @@ class _Assignment(Statement):
     def as_source_code(self):
         return "{0} = {1}".format(self.format_names(),
                                   self.value.as_source_code())
+
+    def simplify(self, changes):
+        self.value = self.value.simplify(changes)
+        return self
 
 
 class Block(Scope):
@@ -219,7 +241,6 @@ class Function(Block, Statement):
             self.statements.append(SetBreakpoint())
 
     def as_source_code(self):
-        self.simplify()
         line1 = 'def {0}({1}{2}):\n'.format(
             self.func_name,
             ', '.join(self.args),
@@ -233,9 +254,10 @@ class Function(Block, Statement):
     def add_return(self, value):
         self.statements.append(Return(value))
 
-    def simplify(self):
+    def simplify(self, changes):
+        self = super(Function, self).simplify(changes)
         if len(self.statements) < 2:
-            return
+            return self
         # Remove needless unpacking and repacking of final return tuple
         if (isinstance(self.statements[-1], Return) and
                 isinstance(self.statements[-2], _Assignment)):
@@ -249,6 +271,8 @@ class Function(Block, Statement):
                 new_return = Return(self.statements[-2].value)
                 self.statements = self.statements[:-2]
                 self.statements.append(new_return)
+                changes.append(True)
+        return self
 
 
 class Return(Statement):
@@ -257,6 +281,10 @@ class Return(Statement):
 
     def as_source_code(self):
         return 'return {0}'.format(self.value.as_source_code())
+
+    def simplify(self, changes):
+        self.value = self.value.simplify(changes)
+        return self
 
 
 class If(Statement):
@@ -275,13 +303,6 @@ class If(Statement):
     def as_source_code(self):
         first = True
         output = []
-        if not self.if_blocks:
-            if self.else_block.statements:
-                # Unusual case of no conditions, only default case, but it
-                # simplifies other code to be able to handle this uniformly
-                return self.else_block.as_source_code()
-            else:
-                return ''
 
         for condition, if_block in zip(self._conditions, self.if_blocks):
             if_start = "if" if first else "elif"
@@ -292,6 +313,19 @@ class If(Statement):
             output.append("else:\n")
             output.append(indent(self.else_block.as_source_code()))
         return ''.join(output)
+
+    def simplify(self, changes):
+        self.if_blocks = [block.simplify(changes) for block in self.if_blocks]
+        self._conditions = [expr.simplify(changes) for expr in self._conditions]
+        self.else_block = self.else_block.simplify(changes)
+        if not self.if_blocks:
+            # Unusual case of no conditions, only default case, but it
+            # simplifies other code to be able to handle this uniformly. We can
+            # replace this if statement with a single unconditional block.
+            changes.append(True)
+            return self.else_block
+        else:
+            return self
 
 
 class TryCatch(Statement):
@@ -311,8 +345,15 @@ class TryCatch(Statement):
                        indent(self.else_block.as_source_code()))
         return retval
 
+    def simplify(self, changes):
+        self.catch_exception = self.catch_exception.simplify(changes)
+        self.try_block = self.try_block.simplify(changes)
+        self.except_block = self.except_block.simplify(changes)
+        self.else_block = self.else_block.simplify(changes)
+        return self
 
-class Expression(object):
+
+class Expression(SourceCode):
     # type represents the Python type this expression will produce,
     # if we know it (UNKNOWN_TYPE otherwise).
     type = UNKNOWN_TYPE
@@ -353,6 +394,10 @@ class List(Expression):
     def as_source_code(self):
         return '[' + ', '.join(i.as_source_code() for i in self.items) + ']'
 
+    def simplify(self, changes):
+        self.items = [item.simplify(changes) for item in self.items]
+        return self
+
 
 class StringJoin(Expression):
     type = text_type
@@ -361,15 +406,12 @@ class StringJoin(Expression):
         self.parts = parts
 
     def as_source_code(self):
-        self.simplify()
-        if len(self.parts) == 0:
-            return ''
-        elif len(self.parts) == 1:
-            return self.parts[0].as_source_code()
-        else:
-            return "''.join(" + List(self.parts).as_source_code() + ')'
+        return "''.join(" + List(self.parts).as_source_code() + ')'
 
-    def simplify(self):
+    def simplify(self, changes):
+        # Simplify sub parts
+        self.parts = [part.simplify(changes) for part in self.parts]
+
         # Merge adjacent String objects.
         new_parts = []
         for part in self.parts:
@@ -380,7 +422,19 @@ class StringJoin(Expression):
                                        part.string_value)
             else:
                 new_parts.append(part)
+        if len(new_parts) < len(self.parts):
+            changes.append(True)
         self.parts = new_parts
+
+        # See if we eliminate the StringJoin altogether
+        if len(self.parts) == 0:
+            changes.append(True)
+            return String('')
+        elif len(self.parts) == 1:
+            changes.append(True)
+            return self.parts[0]
+        else:
+            return self
 
 
 class Tuple(Expression):
@@ -392,6 +446,10 @@ class Tuple(Expression):
 
     def as_source_code(self):
         return '(' + ", ".join(i.as_source_code() for i in self.items) + ')'
+
+    def simplify(self, changes):
+        self.items = [item.simplify(changes) for item in self.items]
+        return self
 
 
 class VariableReference(Expression):
@@ -425,6 +483,11 @@ class FunctionCall(Expression):
                                               for name, val in self.kwargs.items())
                                     )
 
+    def simplify(self, changes):
+        self.args = [arg.simplify(changes) for arg in self.args]
+        self.kwargs = {name: val.simplify(changes) for name, val in self.kwargs.items()}
+        return self
+
 
 class MethodCall(Expression):
     def __init__(self, obj, method_name, args, expr_type=UNKNOWN_TYPE):
@@ -440,6 +503,10 @@ class MethodCall(Expression):
             self.method_name,
             ", ".join(arg.as_source_code() for arg in self.args))
 
+    def simplify(self, changes):
+        self.args = [arg.simplify(changes) for arg in self.args]
+        return self
+
 
 class DictLookup(Expression):
     def __init__(self, lookup_obj, lookup_arg, expr_type=UNKNOWN_TYPE):
@@ -450,6 +517,11 @@ class DictLookup(Expression):
     def as_source_code(self):
         return "{0}[{1}]".format(self.lookup_obj.as_source_code(),
                                  self.lookup_arg.as_source_code())
+
+    def simplify(self, changes):
+        self.lookup_obj = self.lookup_obj.simplify(changes)
+        self.lookup_arg = self.lookup_arg.simplify(changes)
+        return self
 
 
 ObjectCreation = FunctionCall
@@ -487,6 +559,12 @@ def infix_operator(operator, return_type):
             return "{0} {1} {2}".format(self.left.as_source_code(),
                                         operator,
                                         self.right.as_source_code())
+
+        def simplify(self, changes):
+            self.left = self.left.simplify(changes)
+            self.right = self.right.simplify(changes)
+            return self
+
     return Op
 
 Equals = infix_operator("==", bool)
@@ -499,3 +577,11 @@ Or = infix_operator("or", bool)
 
 def indent(text):
     return ''.join('    ' + l + '\n' for l in text.rstrip('\n').split('\n'))
+
+
+def simplify(source_code):
+    changes = [True]
+    while any(changes):
+        changes = []
+        source_code = source_code.simplify(changes)
+    return source_code

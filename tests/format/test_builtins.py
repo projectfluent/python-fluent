@@ -21,9 +21,10 @@ class TestNumberBuiltin(unittest.TestCase):
             implicit-call2   = { $arg }
             defaults         = { NUMBER(123456) }
             percent-style    = { NUMBER(1.234, style: "percent") }
-            currency-style   = { NUMBER(123456, style: "currency", currency: "USD") }
             from-arg         = { NUMBER($arg) }
             merge-params     = { NUMBER($arg, useGrouping: 0) }
+            bad-kwarg        = { NUMBER(1, badkwarg: 0) }
+            bad-arity        = { NUMBER(1, 2) }
         """))
 
     def test_implicit_call(self):
@@ -51,14 +52,15 @@ class TestNumberBuiltin(unittest.TestCase):
         self.assertEqual(val, "123,456")
         self.assertEqual(len(errs), 0)
 
-    def test_percent_style(self):
+    def test_style_in_ftl(self):
+        # style is only allowed as developer option
         val, errs = self.ctx.format('percent-style', {})
-        self.assertEqual(val, "123%")
-        self.assertEqual(len(errs), 0)
+        self.assertEqual(val, "NUMBER()")
+        self.assertEqual(len(errs), 1)
 
-    def test_currency_style(self):
-        val, errs = self.ctx.format('currency-style', {})
-        self.assertEqual(val, "$123,456.00")
+    def test_percent_style(self):
+        val, errs = self.ctx.format('from-arg', {'arg': fluent_number(1.234, style="percent")})
+        self.assertEqual(val, "123%")
         self.assertEqual(len(errs), 0)
 
     def test_from_arg_int(self):
@@ -95,6 +97,18 @@ class TestNumberBuiltin(unittest.TestCase):
                                     {'arg': number})
         self.assertEqual(val, "$123456.78")
         self.assertEqual(len(errs), 0)
+
+    def test_bad_kwarg(self):
+        val, errs = self.ctx.format('bad-kwarg')
+        self.assertEqual(val, "NUMBER()")
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(type(errs[0]), TypeError)
+
+    def test_bad_arity(self):
+        val, errs = self.ctx.format('bad-arity')
+        self.assertEqual(val, "NUMBER()")
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(type(errs[0]), TypeError)
 
 
 @all_message_context_implementations

@@ -1,3 +1,6 @@
+import inspect
+
+
 class cachedproperty(object):
     """
     Use cachedproperty as a decorator for turning expensive methods into
@@ -57,3 +60,72 @@ def numeric_to_native(val):
         return float(val)
     else:
         return int(val)
+
+
+class Any(object):
+    pass
+
+
+Any = Any()
+
+
+if hasattr(inspect, 'signature'):
+    def inspect_function_args(function):
+        """
+        For a Python function, returns a 2 tuple containing:
+        (number of positional args or Any,
+        set of keyword args or Any)
+
+        Keyword args are defined as those with default values.
+        'Keyword only' args with no default values are not supported.
+        """
+        if hasattr(function, 'ftl_arg_spec'):
+            return function.ftl_arg_spec
+        sig = inspect.signature(function)
+        parameters = list(sig.parameters.values())
+
+        positional = (
+            Any if any(p.kind == inspect.Parameter.VAR_POSITIONAL
+                       for p in parameters)
+            else len(list(p for p in parameters
+                          if p.default == inspect.Parameter.empty and
+                          p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD)))
+
+        keywords = (
+            Any if any(p.kind == inspect.Parameter.VAR_KEYWORD
+                       for p in parameters)
+            else [p.name for p in parameters
+                  if p.default != inspect.Parameter.empty])
+        return (positional, keywords)
+else:
+    def inspect_function_args(function):
+        """
+        For a Python function, returns a 2 tuple containing:
+        (number of positional args or Any,
+        set of keyword args or Any)
+
+        Keyword args are defined as those with default values.
+        'Keyword only' args with no default values are not supported.
+        """
+        if hasattr(function, 'ftl_arg_spec'):
+            return function.ftl_arg_spec
+        args = inspect.getargspec(function)
+
+        num_defaults = 0 if args.defaults is None else len(args.defaults)
+        positional = (
+            Any if args.varargs is not None
+            else len(args.args) - num_defaults
+        )
+
+        keywords = (
+            Any if args.keywords is not None
+            else ([] if num_defaults == 0 else args.args[-num_defaults:])
+        )
+        return (positional, keywords)
+
+
+def args_match(args, kwargs, arg_spec):
+    return ((arg_spec[0] is Any
+             or arg_spec[0] == len(args)) and
+            (arg_spec[1] is Any
+             or all(kw in arg_spec[1] for kw in kwargs.keys())))

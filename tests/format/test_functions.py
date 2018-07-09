@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import six
 import unittest
 
 from fluent.exceptions import FluentReferenceError
@@ -13,8 +14,30 @@ from ..syntax import dedent_ftl
 class TestFunctionCalls(unittest.TestCase):
 
     def setUp(self):
+        def IDENTITY(x):
+            return x
+
+        def WITH_KEYWORD(x, y=0):
+            return six.text_type(x + y)
+
+        def RUNTIME_ERROR(x):
+            return 1/0
+
+        def ANY_ARGS(*args, **kwargs):
+            return six.text_type(args) + " " + six.text_type(kwargs)
+
+        def RESTRICTED(allowed=None, notAllowed=None):
+            return allowed
+
+        RESTRICTED.ftl_arg_spec = (0, ['allowed'])
+
         self.ctx = self.message_context_cls(['en-US'], use_isolating=False,
-                                            functions={'IDENTITY': lambda x: x})
+                                            functions={'IDENTITY': IDENTITY,
+                                                       'WITH_KEYWORD': WITH_KEYWORD,
+                                                       'RUNTIME_ERROR': RUNTIME_ERROR,
+                                                       'ANY_ARGS': ANY_ARGS,
+                                                       'RESTRICTED': RESTRICTED,
+                                                       })
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo
                 .attr = Attribute
@@ -25,6 +48,12 @@ class TestFunctionCalls(unittest.TestCase):
             pass-attr          = { IDENTITY(foo.attr) }
             pass-external      = { IDENTITY($ext) }
             pass-function-call = { IDENTITY(IDENTITY(1)) }
+            use-good-kwarg     = { WITH_KEYWORD(1, y: 1) }
+            use-bad-kwarg      = { WITH_KEYWORD(1, bad: 1) }
+            runtime-error      = { RUNTIME_ERROR(1) }
+            use-any-args       = { ANY_ARGS(1, 2, 3, x:1) }
+            use-restricted-ok  = { RESTRICTED(allowed: 1) }
+            use-restricted-bad = { RESTRICTED(notAllowed: 1) }
         """))
 
     def test_accepts_strings(self):
@@ -60,6 +89,38 @@ class TestFunctionCalls(unittest.TestCase):
     def test_wrong_arity(self):
         val, errs = self.ctx.format('pass-nothing', {})
         self.assertEqual(val, "IDENTITY()")
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(type(errs[0]), TypeError)
+
+    def test_good_kwarg(self):
+        val, errs = self.ctx.format('use-good-kwarg')
+        self.assertEqual(val, "2")
+        self.assertEqual(len(errs), 0)
+
+    def test_bad_kwarg(self):
+        val, errs = self.ctx.format('use-bad-kwarg')
+        self.assertEqual(val, "WITH_KEYWORD()")
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(type(errs[0]), TypeError)
+
+    def test_runtime_error(self):
+        self.assertRaises(ZeroDivisionError,
+                          self.ctx.format,
+                          'runtime-error')
+
+    def test_use_any_args(self):
+        val, errs = self.ctx.format('use-any-args')
+        self.assertEqual(val, "(1, 2, 3) {'x': 1}")
+        self.assertEqual(len(errs), 0)
+
+    def test_restricted_ok(self):
+        val, errs = self.ctx.format('use-restricted-ok')
+        self.assertEqual(val, "1")
+        self.assertEqual(len(errs), 0)
+
+    def test_restricted_bad(self):
+        val, errs = self.ctx.format('use-restricted-bad')
+        self.assertEqual(val, "RESTRICTED()")
         self.assertEqual(len(errs), 1)
         self.assertEqual(type(errs[0]), TypeError)
 

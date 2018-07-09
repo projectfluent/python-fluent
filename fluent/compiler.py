@@ -9,8 +9,8 @@ from .exceptions import FluentCyclicReferenceError, FluentReferenceError
 from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, Message, MessageReference,
                          NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
                          TextElement, VariantExpression, VariantName)
-from .types import FluentNumber, FluentType, FluentDateType
-from .utils import numeric_to_native, partition
+from .types import FluentDateType, FluentNumber, FluentType
+from .utils import args_match, inspect_function_args, numeric_to_native, partition
 
 try:
     from functools import singledispatch
@@ -59,6 +59,7 @@ class CompilerEnvironment(object):
     errors = attr.ib(factory=list)
     functions = attr.ib(factory=dict)
     debug = attr.ib(default=False)
+    functions_arg_spec = attr.ib(factory=dict)
 
 
 def compile_messages(messages, locale, use_isolating=True, functions=None, debug=False):
@@ -105,6 +106,8 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
         use_isolating=use_isolating,
         functions=functions,
         debug=debug,
+        functions_arg_spec={name: inspect_function_args(func)
+                            for name, func in functions.items()}
     )
     # Setup globals, and reserve names for them
     module_globals = {
@@ -547,8 +550,13 @@ def compile_expr_call_expression(expr, local_scope, parent_expr, compiler_env):
                                  lambda i: isinstance(i, NamedArgument))
         args = [compile_expr(arg, local_scope, expr, compiler_env) for arg in args]
         kwargs = {kwarg.name.name: compile_expr(kwarg.val, local_scope, expr, compiler_env) for kwarg in kwargs}
-        # TODO catch errors in function call
-        return codegen.FunctionCall(function_name, args, kwargs, local_scope)
+        if args_match(args, kwargs, compiler_env.functions_arg_spec[function_name]):
+            return codegen.FunctionCall(function_name, args, kwargs, local_scope)
+        else:
+            add_static_msg_error(local_scope,
+                                 TypeError("function {0} called with incorrect parameters".format(function_name)))
+            return make_fluent_none(function_name + "()", local_scope)
+
     else:
         # TODO report compile error
         add_static_msg_error(local_scope, FluentReferenceError("Unknown function: {0}"

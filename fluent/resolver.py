@@ -11,7 +11,7 @@ from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, 
                          NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
                          TextElement, VariantExpression, VariantName)
 from .types import FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
-from .utils import numeric_to_native, partition
+from .utils import args_match, inspect_function_args, numeric_to_native, partition
 
 try:
     from functools import singledispatch
@@ -41,6 +41,7 @@ class ResolverEnvironment(object):
     errors = attr.ib()
     dirty = attr.ib(factory=set)
     part_count = attr.ib(default=0)
+    functions_arg_spec = attr.ib(factory=dict)
 
 
 def resolve(context, message, args, errors=None):
@@ -54,7 +55,11 @@ def resolve(context, message, args, errors=None):
         errors = []
     env = ResolverEnvironment(context=context,
                               args=args,
-                              errors=errors)
+                              errors=errors,
+                              functions_arg_spec={name: inspect_function_args(func)
+                                                  for name, func in context._functions.items()}
+                              )
+
     return fully_resolve(message, env)
 
 
@@ -314,10 +319,11 @@ def handle_call_expression(expression, env):
                              lambda i: isinstance(i, NamedArgument))
     args = [handle(arg, env) for arg in args]
     kwargs = {kwarg.name.name: handle(kwarg.val, env) for kwarg in kwargs}
-    try:
+    if args_match(args, kwargs, env.functions_arg_spec[function_name]):
         return function(*args, **kwargs)
-    except Exception as e:
-        env.errors.append(e)
+    else:
+        env.errors.append(TypeError("function {0} called with incorrect parameters: {1}, {2}"
+                                    .format(function_name, args, kwargs)))
         return FluentNone(function_name + "()")
 
 

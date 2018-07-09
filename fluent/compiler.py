@@ -225,13 +225,17 @@ def compile_message(msg, function_name, module, compiler_env):
 
 
 def is_variant_definition_message(msg):
+    return contains_matching_node(msg, is_variant_definition_expression)
+
+
+def contains_matching_node(start_node, predicate):
     checks = []
 
     def checker(node):
-        checks.append(is_variant_definition_expression(node))
+        checks.append(predicate(node))
         return node
 
-    msg.traverse(checker)
+    start_node.traverse(checker)
     return any(checks)
 
 

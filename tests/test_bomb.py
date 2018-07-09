@@ -2,12 +2,16 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from . import all_message_context_implementations
+from fluent.context import InterpretingMessageContext
 from .syntax import dedent_ftl
 
 
-@all_message_context_implementations
+# Only InterpretingMessageContext has protection, for compiler it is too much of
+# a (relative) performance hit and an increase in complexity to track this issue.
+
 class TestBillionLaughs(unittest.TestCase):
+
+    message_context_cls = InterpretingMessageContext
 
     def setUp(self):
         self.ctx = self.message_context_cls(['en-US'], use_isolating=False)

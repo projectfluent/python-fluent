@@ -133,4 +133,4 @@ class CompilingMessageContext(MessageContextBase):
         return self._compiled_messages[message_id](args, [])
 
 
-MessageContext = InterpretingMessageContext
+MessageContext = CompilingMessageContext

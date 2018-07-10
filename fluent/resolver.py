@@ -6,6 +6,7 @@ from decimal import Decimal
 import attr
 import six
 
+from .exceptions import FluentCyclicReferenceError, FluentReferenceError
 from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, Message, MessageReference,
                          NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
                          TextElement, VariantExpression, VariantName)
@@ -40,20 +41,6 @@ class ResolverEnvironment(object):
     errors = attr.ib()
     dirty = attr.ib(factory=set)
     part_count = attr.ib(default=0)
-
-
-class FluentFormatError(ValueError):
-    def __eq__(self, other):
-        return ((other.__class__ == self.__class__) and
-                other.args == self.args)
-
-
-class FluentReferenceError(FluentFormatError):
-    pass
-
-
-class FluentCyclicReferenceError(FluentFormatError):
-    pass
 
 
 def resolve(context, message, args, errors=None):
@@ -378,16 +365,3 @@ def handle_argument(arg, name, env):
     env.errors.append(TypeError("Unsupported external type: {0}, {1}"
                                 .format(name, type(arg))))
     return FluentNone(name)
-
-
-def numeric_to_native(val):
-    """
-    Given a numeric string (as defined by fluent spec),
-    return an int or float
-    """
-    # val matches this EBNF:
-    #  '-'? [0-9]+ ('.' [0-9]+)?
-    if '.' in val:
-        return float(val)
-    else:
-        return int(val)

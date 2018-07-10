@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import unittest
 
 from fluent.context import MessageContext
-from fluent.resolver import FluentReferenceError
+from fluent.exceptions import FluentReferenceError
 from fluent.types import FluentNone, fluent_number
 
 from ..syntax import dedent_ftl

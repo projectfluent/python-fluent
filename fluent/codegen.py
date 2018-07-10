@@ -37,7 +37,7 @@ PROPERTY_RETURN_TYPE = 'PROPERTY_RETURN_TYPE'
 UNKNOWN_TYPE = object
 
 
-class SourceCode(object):
+class PythonAst(object):
     def simplify(self, changes):
         """
         Simplify the statement/expression, returning either a modified
@@ -51,7 +51,7 @@ class SourceCode(object):
         return self
 
 
-class Scope(SourceCode):
+class Scope(PythonAst):
     def __init__(self, parent_scope=None):
         super(Scope, self).__init__()
         self.parent_scope = parent_scope
@@ -191,7 +191,7 @@ class Module(Scope):
     pass
 
 
-class Statement(SourceCode):
+class Statement(PythonAst):
     pass
 
 
@@ -353,7 +353,7 @@ class TryCatch(Statement):
         return self
 
 
-class Expression(SourceCode):
+class Expression(PythonAst):
     # type represents the Python type this expression will produce,
     # if we know it (UNKNOWN_TYPE otherwise).
     type = UNKNOWN_TYPE

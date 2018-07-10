@@ -235,6 +235,7 @@ def compile_message(msg, msg_id, function_name, module, compiler_env):
         return_expression = finalize_expr_as_string(make_fluent_none(None, module), msg_func, compiler_env)
     else:
         return_expression = compile_expr(start, msg_func, None, compiler_env)
+    # > return ($return_expression, errors)
     msg_func.add_return(codegen.Tuple(return_expression, codegen.VariableReference(ERRORS_NAME, msg_func)))
     return msg_func
 
@@ -382,6 +383,7 @@ def compile_expr_pattern(pattern, local_scope, parent_expr, compiler_env):
         if wrap_this_with_isolating:
             parts.append(codegen.String(PDI))
 
+    # > ''.join($[p for p in parts])
     return codegen.StringJoin([finalize_expr_as_string(p, local_scope, compiler_env) for p in parts])
 
 
@@ -406,6 +408,7 @@ def compile_expr_number_expression(expr, local_scope, parent_expr, compiler_env)
         # the variant selector.
         return number_expr
 
+    # > NUMBER($number_expr)
     return codegen.FunctionCall(BUILTIN_NUMBER,
                                 [number_expr],
                                 {},
@@ -429,13 +432,18 @@ def do_message_call(name, local_scope, parent_expr, compiler_env, call_kwargs=No
     if name in compiler_env.message_mapping:
         # Message functions always return strings, so we can type this variable:
         tmp_name = local_scope.reserve_name('_tmp', properties={codegen.PROPERTY_TYPE: text_type})
+        msg_func_name = compiler_env.message_mapping[name]
+        # > $tmp_name = $msg_func_name(message_args, errors)
+        # OR:
+        # > $tmp_name = $msg_func_name(message_args, errors, variant=$variant)
         local_scope.add_assignment(
             (tmp_name, ERRORS_NAME),
-            codegen.FunctionCall(compiler_env.message_mapping[name],
+            codegen.FunctionCall(msg_func_name,
                                  [codegen.VariableReference(a, local_scope) for a in MESSAGE_FUNCTION_ARGS],
                                  call_kwargs,
                                  local_scope))
 
+        # > $tmp_name
         return codegen.VariableReference(tmp_name, local_scope)
 
     else:
@@ -448,6 +456,9 @@ def do_message_call(name, local_scope, parent_expr, compiler_env, call_kwargs=No
 
 
 def make_fluent_none(name, local_scope):
+    # > FluentNone(name)
+    # OR
+    # > FluentNone()
     return codegen.ObjectCreation('FluentNone',
                                   [codegen.String(name)] if name else [],
                                   {},
@@ -491,7 +502,7 @@ def compile_expr_variant_definition(variant_expr, local_scope, parent_expr, comp
             # missing variants at compile time, and therefore eliminate this
             # runtime check.
             no_match_if_statement = codegen.If(block)
-            # 'if variant is not None and variant != $thisvariant'
+            # > if variant is not None and variant != $variant.key
             no_match_condition = (
                 codegen.And(
                     codegen.IsNot(
@@ -523,6 +534,8 @@ def compile_expr_variant_definition(variant_expr, local_scope, parent_expr, comp
         else:
             # TODO - do we need to handle number/plural form matching for variants,
             # like in select expressions?
+
+            # > if variant == $variant.key
             condition = codegen.Equals(codegen.VariableReference(VARIANT_NAME, local_scope),
                                        compile_expr(variant.key, local_scope, variant_expr, compiler_env))
             block = if_statement.add_if(condition)
@@ -530,6 +543,7 @@ def compile_expr_variant_definition(variant_expr, local_scope, parent_expr, comp
         block.add_assignment(return_name, assigned_value)
         assigned_types.append(assigned_value.type)
 
+    # If all branches return the same type, record the type against the variable
     if assigned_types:
         first_type = assigned_types[0]
         if all(t == first_type for t in assigned_types):
@@ -562,6 +576,7 @@ def compile_expr_select_definition(select_expr, local_scope, parent_expr, compil
                                                  [codegen.VariableReference(key_tmp_name, local_scope)],
                                                  {},
                                                  local_scope)
+        # > $plural_form_tmp_name = plural_form_for_number($key_tmp_name)
         local_scope.add_assignment(plural_form_tmp_name, plural_form_value)
 
     assigned_types = []
@@ -581,10 +596,12 @@ def compile_expr_select_definition(select_expr, local_scope, parent_expr, compil
             # keys are just strings, or whether $arg is a number and we need to
             # do a plural category comparison. So we have to do both. We can use equality
             # checks because they implicitly do a type check
+            # > $key_tmp_name == $variant.key
             condition1 = codegen.Equals(codegen.VariableReference(key_tmp_name, local_scope),
                                         compile_expr(variant.key, local_scope, select_expr, compiler_env))
 
             if is_cldr_plural_form_key(variant.key):
+                # > $plural_form_tmp_name == $variant.key
                 condition2 = codegen.Equals(codegen.VariableReference(plural_form_tmp_name, local_scope),
                                             compile_expr(variant.key, local_scope, select_expr, compiler_env))
                 condition = codegen.Or(condition1, condition2)
@@ -630,20 +647,26 @@ def compile_expr_external_argument(argument, local_scope, parent_expr, compiler_
     tmp_name = local_scope.reserve_name('_tmp')
     try_catch = codegen.TryCatch(codegen.VariableReference("LookupError", local_scope), local_scope)
     # Try block
+    # > $tmp_name = message_args[$name]
     try_catch.try_block.add_assignment(
         tmp_name,
         codegen.DictLookup(codegen.VariableReference(MESSAGE_ARGS_NAME, local_scope),
                            codegen.String(name)))
     # Except block
     add_static_msg_error(try_catch.except_block, FluentReferenceError("Unknown external: {0}".format(name)))
+    # > $tmp_name = FluentNone("$name")
     try_catch.except_block.add_assignment(
         tmp_name,
         make_fluent_none(name, local_scope))
-    # Else block In select expression, we only case about matching against a
+
+    # Else block
+
+    # In a select expression, we only care about matching against a
     # selector, not the other things (like wrapping in fluent_number, which is
     # expensive). So we miss that out if possible.
     add_handle_argument = not isinstance(parent_expr, SelectExpression)
     if add_handle_argument:
+        # > $tmp_name = handle_argument($tmp_name, "$name", locale, errors)
         try_catch.else_block.add_assignment(
             tmp_name,
             codegen.FunctionCall("handle_argument",
@@ -689,11 +712,13 @@ def finalize_expr_as_string(python_expr, scope, compiler_env):
     if issubclass(python_expr.type, text_type):
         return python_expr
     elif issubclass(python_expr.type, FluentType):
+        # > $python_expr.format(locale)
         return codegen.MethodCall(python_expr,
                                   'format',
                                   [codegen.VariableReference(LOCALE_NAME, scope)],
                                   expr_type=text_type)
     else:
+        # > handle_output($python_expr, locale, errors)
         return codegen.FunctionCall('handle_output',
                                     [python_expr,
                                      codegen.VariableReference(LOCALE_NAME, scope),
@@ -713,12 +738,11 @@ def is_NUMBER_call_expr(expr):
 
 def add_static_msg_error(local_scope, exception):
     """
-    Given a scope and an exception object, add the code
-    to the scope needed to generate that add that exception
-    to the returned errors list
+    Given a scope and an exception object, inspect the object and add the code
+    to the scope needed to create and add that exception to the returned errors
+    list.
+
     """
-    # ObjectCreation checks that the exception name is available in the scope,
-    # so we don't need to do that.
     return add_msg_error_with_expr(
         local_scope,
         codegen.ObjectCreation(exception.__class__.__name__,

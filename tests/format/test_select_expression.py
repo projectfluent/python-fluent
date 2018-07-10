@@ -2,16 +2,17 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
 from fluent.exceptions import FluentReferenceError
 
+from .. import all_message_context_implementations
 from ..syntax import dedent_ftl
 
 
+@all_message_context_implementations
 class TestSelectExpressionWithStrings(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
 
     def test_with_a_matching_selector(self):
         self.ctx.add_messages(dedent_ftl("""
@@ -58,10 +59,11 @@ class TestSelectExpressionWithStrings(unittest.TestCase):
         self.assertEqual(val, "A")
 
 
+@all_message_context_implementations
 class TestSelectExpressionWithNumbers(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo = { 1 ->
                *[0] A
@@ -113,10 +115,11 @@ class TestSelectExpressionWithNumbers(unittest.TestCase):
         self.assertEqual(val, "B")
 
 
+@all_message_context_implementations
 class TestSelectExpressionWithPluralCategories(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo = { 1 ->
                 [one] A

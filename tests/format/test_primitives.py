@@ -2,14 +2,14 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
-
+from .. import all_message_context_implementations
 from ..syntax import dedent_ftl
 
 
+@all_message_context_implementations
 class TestSimpleStringValue(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo               = Foo
             placeable-literal = { "Foo" } Bar
@@ -63,9 +63,10 @@ class TestSimpleStringValue(unittest.TestCase):
         self.assertEqual(len(errs), 0)
 
 
+@all_message_context_implementations
 class TestComplexStringValue(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo               = Foo
             bar               = { foo } Bar
@@ -110,9 +111,10 @@ class TestComplexStringValue(unittest.TestCase):
         self.assertEqual(len(errs), 0)
 
 
+@all_message_context_implementations
 class TestNumbers(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             one           =  { 1 }
             one_point_two =  { 1.2 }

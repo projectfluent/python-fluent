@@ -2,16 +2,17 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
 from fluent.exceptions import FluentReferenceError
 
+from .. import all_message_context_implementations
 from ..syntax import dedent_ftl
 
 
+@all_message_context_implementations
 class TestAttributesWithStringValues(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo
                 .attr = Foo Attribute
@@ -42,10 +43,11 @@ class TestAttributesWithStringValues(unittest.TestCase):
         self.assertEqual(len(errs), 0)
 
 
+@all_message_context_implementations
 class TestAttributesWithSimplePatternValues(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo
             bar = Bar
@@ -85,9 +87,10 @@ class TestAttributesWithSimplePatternValues(unittest.TestCase):
         self.assertEqual(len(errs), 0)
 
 
+@all_message_context_implementations
 class TestMissing(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo
             bar = Bar

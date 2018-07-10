@@ -4,17 +4,18 @@ import unittest
 from datetime import date, datetime
 from decimal import Decimal
 
-from fluent.context import MessageContext
 from fluent.exceptions import FluentReferenceError
 from fluent.types import fluent_date, fluent_number
 
+from .. import all_message_context_implementations
 from ..syntax import dedent_ftl
 
 
+@all_message_context_implementations
 class TestNumberBuiltin(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             implicit-call    = { 123456 }
             implicit-call2   = { $arg }
@@ -96,10 +97,11 @@ class TestNumberBuiltin(unittest.TestCase):
         self.assertEqual(len(errs), 0)
 
 
+@all_message_context_implementations
 class TestDatetimeBuiltin(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             implicit-call    = { $date }
             explicit-call    = { DATETIME($date) }

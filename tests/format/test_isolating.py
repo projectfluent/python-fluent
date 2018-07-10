@@ -2,8 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
-
+from .. import all_message_context_implementations
 from ..syntax import dedent_ftl
 
 # Unicode bidi isolation characters.
@@ -11,10 +10,11 @@ FSI = '\u2068'
 PDI = '\u2069'
 
 
+@all_message_context_implementations
 class TestUseIsolating(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'])
+        self.ctx = self.message_context_cls(['en-US'])
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo
             bar = { foo } Bar
@@ -45,10 +45,11 @@ class TestUseIsolating(unittest.TestCase):
         self.assertEqual(len(errs), 0)
 
 
+@all_message_context_implementations
 class TestSkipIsolating(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'])
+        self.ctx = self.message_context_cls(['en-US'])
         self.ctx.add_messages(dedent_ftl("""
             -brand-short-name = Amaya
             foo = { -brand-short-name }

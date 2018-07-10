@@ -3,14 +3,14 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
-
+from . import all_message_context_implementations
 from .syntax import dedent_ftl
 
 
+@all_message_context_implementations
 class TestMessageContext(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'])
+        self.ctx = self.message_context_cls(['en-US'])
 
     def test_add_messages(self):
         self.ctx.add_messages(dedent_ftl("""
@@ -51,7 +51,7 @@ class TestMessageContext(unittest.TestCase):
         self.assertFalse(self.ctx.has_message('foo.other-attribute'))
 
     def test_plural_form_english_ints(self):
-        ctx = MessageContext(['en-US'])
+        ctx = self.message_context_cls(['en-US'])
         self.assertEqual(ctx.plural_form_for_number(0),
                          'other')
         self.assertEqual(ctx.plural_form_for_number(1),
@@ -60,7 +60,7 @@ class TestMessageContext(unittest.TestCase):
                          'other')
 
     def test_plural_form_english_floats(self):
-        ctx = MessageContext(['en-US'])
+        ctx = self.message_context_cls(['en-US'])
         self.assertEqual(ctx.plural_form_for_number(0.0),
                          'other')
         self.assertEqual(ctx.plural_form_for_number(1.0),
@@ -73,7 +73,7 @@ class TestMessageContext(unittest.TestCase):
     def test_plural_form_french(self):
         # Just spot check one other, to ensure that we
         # are not getting the EN locale by accident or
-        ctx = MessageContext(['fr'])
+        ctx = self.message_context_cls(['fr'])
         self.assertEqual(ctx.plural_form_for_number(0),
                          'one')
         self.assertEqual(ctx.plural_form_for_number(1),

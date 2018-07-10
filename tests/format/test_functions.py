@@ -2,18 +2,19 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
 from fluent.exceptions import FluentReferenceError
 from fluent.types import FluentNone, fluent_number
 
+from .. import all_message_context_implementations
 from ..syntax import dedent_ftl
 
 
+@all_message_context_implementations
 class TestFunctionCalls(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False,
-                                  functions={'IDENTITY': lambda x: x})
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False,
+                                            functions={'IDENTITY': lambda x: x})
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo
                 .attr = Attribute
@@ -63,10 +64,11 @@ class TestFunctionCalls(unittest.TestCase):
         self.assertEqual(type(errs[0]), TypeError)
 
 
+@all_message_context_implementations
 class TestMissing(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             missing = { MISSING(1) }
         """))
@@ -78,6 +80,7 @@ class TestMissing(unittest.TestCase):
                          [FluentReferenceError("Unknown function: MISSING")])
 
 
+@all_message_context_implementations
 class TestResolving(unittest.TestCase):
 
     def setUp(self):
@@ -87,9 +90,9 @@ class TestResolving(unittest.TestCase):
             self.args_passed.append(number)
             return number
 
-        self.ctx = MessageContext(['en-US'], use_isolating=False,
-                                  functions={'NUMBER_PROCESSOR':
-                                             number_processor})
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False,
+                                            functions={'NUMBER_PROCESSOR':
+                                                       number_processor})
 
         self.ctx.add_messages(dedent_ftl("""
             pass-number = { NUMBER_PROCESSOR(1) }
@@ -109,6 +112,7 @@ class TestResolving(unittest.TestCase):
         self.assertEqual(self.args_passed, [1])
 
 
+@all_message_context_implementations
 class TestKeywordArgs(unittest.TestCase):
 
     def setUp(self):
@@ -118,8 +122,8 @@ class TestKeywordArgs(unittest.TestCase):
             self.args_passed.append((arg, kwarg1, kwarg2))
             return arg
 
-        self.ctx = MessageContext(['en-US'], use_isolating=False,
-                                  functions={'MYFUNC': my_function})
+        self.ctx = self.message_context_cls(['en-US'], use_isolating=False,
+                                            functions={'MYFUNC': my_function})
         self.ctx.add_messages(dedent_ftl("""
             pass-arg        = { MYFUNC("a") }
             pass-kwarg1     = { MYFUNC("a", kwarg1: 1) }

@@ -79,7 +79,6 @@ def compile_messages(messages, locale, use_isolating=True, functions=None, debug
     module, message_mapping, module_globals = messages_to_module(messages, locale,
                                                                  use_isolating=use_isolating,
                                                                  functions=functions,
-                                                                 strict=False,
                                                                  debug=debug)
     # TODO - it would be nice to be able to get back to FTL source file lines,
     # if were knew what they were, and pass absolute filename that to 'compile'
@@ -90,21 +89,15 @@ def compile_messages(messages, locale, use_isolating=True, functions=None, debug
         if key.startswith('-'):
             # term, shouldn't be in publicly available messages
             continue
-        try:
-            retval[six.text_type(key)] = module_globals[val]
-        except KeyError:
-            pass
+        retval[six.text_type(key)] = module_globals[val]
 
     return retval
 
 
-def messages_to_module(messages, locale, use_isolating=True, functions=None, strict=False,
-                       debug=False):
+def messages_to_module(messages, locale, use_isolating=True, functions=None, debug=False):
     """
     Compile a set of messages to a Python module, returning a tuple:
     (Python source code as a string, dictionary mapping message IDs to Python functions)
-
-    If strict=True is passed, raise exceptions for any errors instead of suppressing them.
     """
     if functions is None:
         functions = {}
@@ -177,14 +170,8 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, str
     # Pass 2, actual compilation
     for msg_id, msg in msg_ids_to_ast.items():
         function_name = compiler_env.message_mapping[msg_id]
-        try:
-            function = compile_message(msg, msg_id, function_name, module, compiler_env)
-        except Exception as e:
-            compiler_env.errors.append(e)
-            if strict:
-                raise
-        else:
-            module.add_function(function_name, function)
+        function = compile_message(msg, msg_id, function_name, module, compiler_env)
+        module.add_function(function_name, function)
 
     module = codegen.simplify(module)
     return (module, compiler_env.message_mapping, module_globals)

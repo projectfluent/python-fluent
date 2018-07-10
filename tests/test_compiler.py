@@ -30,12 +30,11 @@ def parse_ftl(source):
     return messages
 
 
-def compile_messages_to_python(source, locale, use_isolating=False, strict=True):
+def compile_messages_to_python(source, locale, use_isolating=False):
     messages = parse_ftl(dedent_ftl(source))
     module, message_mapping, module_globals = messages_to_module(messages, locale,
                                                                  use_isolating=use_isolating,
-                                                                 functions=BUILTINS,
-                                                                 strict=strict)
+                                                                 functions=BUILTINS)
     return module.as_source_code()
 
 

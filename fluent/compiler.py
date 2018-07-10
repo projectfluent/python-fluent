@@ -64,6 +64,7 @@ class CompilerEnvironment(object):
     message_mapping = attr.ib(factory=dict)
     errors = attr.ib(factory=list)
     functions = attr.ib(factory=dict)
+    function_renames = attr.ib(factory=dict)
     debug = attr.ib(default=False)
     functions_arg_spec = attr.ib(factory=dict)
     msg_ids_to_ast = attr.ib(factory=dict)
@@ -139,19 +140,24 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, deb
     module_globals[PLURAL_FORM_FOR_NUMBER_NAME] = plural_form_for_number
     known_return_types[PLURAL_FORM_FOR_NUMBER_NAME] = text_type
 
-    # functions from context
-    for name, func in functions.items():
-        # TODO handle clash properly
-        assert name not in module_globals
-        module_globals[name] = func
+    def get_name_properties(name):
+        properties = {}
+        if name in known_return_types:
+            properties[codegen.PROPERTY_RETURN_TYPE] = known_return_types[name]
+        return properties
 
     module = codegen.Module()
     for k in module_globals:
-        properties = {}
-        if k in known_return_types:
-            properties[codegen.PROPERTY_RETURN_TYPE] = known_return_types[k]
-        name = module.reserve_name(k, properties=properties)
+        name = module.reserve_name(k, properties=get_name_properties(k))
+        # We should have chosen all our module_globals to avoid name conflicts:
         assert name == k
+
+    # functions from context
+    for name, func in functions.items():
+        # These might clash, because we can't control what the user passed in.
+        assigned_name = module.reserve_name(name, properties=get_name_properties(name))
+        compiler_env.function_renames[name] = assigned_name
+        module_globals[assigned_name] = func
 
     # Reserve names for function arguments, so that we always
     # know the name of these arguments without needing to do
@@ -678,7 +684,8 @@ def compile_expr_call_expression(expr, local_scope, parent_expr, compiler_env):
         args = [compile_expr(arg, local_scope, expr, compiler_env) for arg in args]
         kwargs = {kwarg.name.name: compile_expr(kwarg.val, local_scope, expr, compiler_env) for kwarg in kwargs}
         if args_match(args, kwargs, compiler_env.functions_arg_spec[function_name]):
-            return codegen.FunctionCall(function_name, args, kwargs, local_scope)
+            function_name_in_module = compiler_env.function_renames[function_name]
+            return codegen.FunctionCall(function_name_in_module, args, kwargs, local_scope)
         else:
             add_static_msg_error(local_scope,
                                  TypeError("function {0} called with incorrect parameters".format(function_name)))

@@ -24,7 +24,8 @@ ftl_file = os.path.join(this_dir, "benchmark.ftl")
 def gettext_translations():
     pot_file = os.path.join(this_dir, "benchmark.pot")
     po_file = os.path.join(messages_dir, "benchmark.po")
-    os.makedirs(messages_dir, exist_ok=True)
+    if not os.path.exists(messages_dir):
+        os.makedirs(messages_dir)
     subprocess.check_call(["pybabel", "extract", "-o", pot_file, this_file])
     do_dummy_translation(pot_file, po_file)
 

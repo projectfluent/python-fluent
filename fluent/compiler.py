@@ -73,14 +73,20 @@ class CompilerEnvironment(object):
 def compile_messages(messages, locale, use_isolating=True, functions=None, debug=False):
     """
     Compile a dictionary of {id: Message/Term objects} to a Python module,
-    and return a dictionary mapping the message IDs to Python functions
+    and returns a tuple:
+       (dictionary mapping the message IDs to Python functions,
+        error list)
+
+    The error list is itself a list of two tuples:
+       (message id, exception object)
     """
     if functions is None:
         functions = {}
-    module, message_mapping, module_globals = messages_to_module(messages, locale,
-                                                                 use_isolating=use_isolating,
-                                                                 functions=functions,
-                                                                 debug=debug)
+    module, message_mapping, module_globals, errors = messages_to_module(
+        messages, locale,
+        use_isolating=use_isolating,
+        functions=functions,
+        debug=debug)
     # TODO - it would be nice to be able to get back to FTL source file lines,
     # if were knew what they were, and pass absolute filename that to 'compile'
     # builtin as the filepath. Instead of that just use 'exec' for now.
@@ -92,7 +98,7 @@ def compile_messages(messages, locale, use_isolating=True, functions=None, debug
             continue
         retval[six.text_type(key)] = module_globals[val]
 
-    return retval
+    return (retval, errors)
 
 
 def messages_to_module(messages, locale, use_isolating=True, functions=None, debug=False):
@@ -180,7 +186,7 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, deb
         module.add_function(function_name, function)
 
     module = codegen.simplify(module)
-    return (module, compiler_env.message_mapping, module_globals)
+    return (module, compiler_env.message_mapping, module_globals, compiler_env.errors)
 
 
 def get_message_functions(message_dict):

@@ -36,9 +36,10 @@ def compile_messages_to_python(source, locale, use_isolating=False, functions=No
     _functions = BUILTINS.copy()
     _functions.update(functions)
     messages = parse_ftl(dedent_ftl(source))
-    module, message_mapping, module_globals = messages_to_module(messages, locale,
-                                                                 use_isolating=use_isolating,
-                                                                 functions=_functions)
+    module, message_mapping, module_globals, errors = messages_to_module(
+        messages, locale,
+        use_isolating=use_isolating,
+        functions=_functions)
     return module.as_source_code()
 
 

@@ -3,6 +3,8 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
+from fluent.exceptions import FluentDuplicateMessageId, FluentJunkFound
+
 from . import all_message_context_implementations
 from .syntax import dedent_ftl
 
@@ -101,3 +103,20 @@ class TestMessageContext(unittest.TestCase):
         self.assertRaises(LookupError,
                           self.ctx.format,
                           '-term')
+
+    def test_check_messages_duplicate(self):
+        self.ctx.add_messages("foo = Foo\n"
+                              "foo = Bar\n")
+        checks = self.ctx.check_messages()
+        self.assertEqual(checks,
+                         [('foo', FluentDuplicateMessageId("Duplicate definition for 'foo' added."))])
+
+    def test_check_messages_junk(self):
+        self.ctx.add_messages("unfinished")
+        checks = self.ctx.check_messages()
+        self.assertEqual(len(checks), 1)
+        check1_name, check1_error = checks[0]
+        self.assertEqual(check1_name, None)
+        self.assertEqual(type(check1_error), FluentJunkFound)
+        self.assertEqual(check1_error.message, 'Junk found: Expected message "unfinished" to have a value or attributes')
+        self.assertEqual(check1_error.annotations[0].message, 'Expected message "unfinished" to have a value or attributes')

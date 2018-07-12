@@ -9,9 +9,10 @@ import six
 
 from .builtins import BUILTINS
 from .compiler import compile_messages
+from .exceptions import FluentDuplicateMessageId, FluentJunkFound
 from .resolver import resolve
 from .syntax import FluentParser
-from .syntax.ast import Message, Term
+from .syntax.ast import Junk, Message, Term
 from .utils import cachedproperty
 
 
@@ -38,16 +39,32 @@ class MessageContextBase(object):
         self._messages = OrderedDict()
         self._terms = OrderedDict()
         self._debug = debug
+        self._parsing_issues = []
 
     def add_messages(self, source):
         parser = FluentParser()
         resource = parser.parse(source)
         # TODO - warn if items get overwritten
         for item in resource.body:
+            store = None
+            name = None
             if isinstance(item, Message):
-                self._messages[item.id.name] = item
+                store = self._messages
+                name = item.id.name
             elif isinstance(item, Term):
-                self._terms[item.id.name] = item
+                store = self._terms
+                name = item.id.name
+            elif isinstance(item, Junk):
+                self._parsing_issues.append(
+                    (None, FluentJunkFound("Junk found: " +
+                                           '; '.join(a.message for a in item.annotations),
+                                           item.annotations)))
+
+            if store is not None:
+                if name in store:
+                    self._parsing_issues.append((name, FluentDuplicateMessageId(
+                        "Duplicate definition for '{0}' added.".format(name))))
+                store[name] = item
 
     def has_message(self, message_id):
         try:
@@ -94,6 +111,16 @@ class MessageContextBase(object):
         # TODO - log error
         return babel.Locale.default()
 
+    def format(self, message_id, args=None):
+        raise NotImplementedError()
+
+    def check_messages(self):
+        """
+        Check messages for errors and return as a list of two tuples:
+           (message ID or None, exception object)
+        """
+        raise NotImplementedError()
+
 
 class InterpretingMessageContext(MessageContextBase):
     def format(self, message_id, args=None):
@@ -104,15 +131,24 @@ class InterpretingMessageContext(MessageContextBase):
         resolved = resolve(self, message, args, errors=errors)
         return resolved, errors
 
+    def check_messages(self):
+        return self._parsing_issues[:]
+
 
 class CompilingMessageContext(MessageContextBase):
     def __init__(self, *args, **kwargs):
         super(CompilingMessageContext, self).__init__(*args, **kwargs)
+        self._mark_dirty()
+
+    def _mark_dirty(self):
         self._is_dirty = True
+        # Clear out old compilation errors, they might not apply if we
+        # re-compile:
+        self._compilation_errors = []
 
     def add_messages(self, source):
         super(CompilingMessageContext, self).add_messages(source)
-        self._is_dirty = True
+        self._mark_dirty()
 
     def _compile(self):
         all_messages = OrderedDict()
@@ -120,17 +156,21 @@ class CompilingMessageContext(MessageContextBase):
         all_messages.update(self._terms)
         # TODO errors occurring at this point should be collected/reported
         # somehow.
-        self._compiled_messages = compile_messages(all_messages,
-                                                   self._babel_locale,
-                                                   use_isolating=self._use_isolating,
-                                                   functions=self._functions,
-                                                   debug=self._debug)
+        self._compiled_messages, self._compilation_errors = compile_messages(
+            all_messages,
+            self._babel_locale,
+            use_isolating=self._use_isolating,
+            functions=self._functions,
+            debug=self._debug)
         self._is_dirty = False
 
     def format(self, message_id, args=None):
         if self._is_dirty:
             self._compile()
         return self._compiled_messages[message_id](args, [])
+
+    def check_messages(self):
+        return self._parsing_issues + self._compilation_errors
 
 
 MessageContext = CompilingMessageContext

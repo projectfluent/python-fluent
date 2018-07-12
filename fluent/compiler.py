@@ -69,6 +69,9 @@ class CompilerEnvironment(object):
     functions_arg_spec = attr.ib(factory=dict)
     msg_ids_to_ast = attr.ib(factory=dict)
 
+    def add_current_message_error(self, error):
+        self.errors.append((self._current_message_id, error))
+
 
 def compile_messages(messages, locale, use_isolating=True, functions=None, debug=False):
     """
@@ -181,8 +184,10 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, deb
 
     # Pass 2, actual compilation
     for msg_id, msg in msg_ids_to_ast.items():
+        compiler_env._current_message_id = msg_id
         function_name = compiler_env.message_mapping[msg_id]
         function = compile_message(msg, msg_id, function_name, module, compiler_env)
+        del compiler_env._current_message_id
         module.add_function(function_name, function)
 
     module = codegen.simplify(module)
@@ -230,7 +235,9 @@ def compile_message(msg, msg_id, function_name, module, compiler_env):
         raise AssertionError("Not expecting object of type {0}".format(type(start)))
 
     if contains_reference_cycle(msg, msg_id, compiler_env):
-        add_static_msg_error(msg_func, FluentCyclicReferenceError("Cyclic reference in {0}".format(msg_id)))
+        error = FluentCyclicReferenceError("Cyclic reference in {0}".format(msg_id))
+        add_static_msg_error(msg_func, error)
+        compiler_env.add_current_message_error(error)
         return_expression = finalize_expr_as_string(make_fluent_none(None, module), msg_func, compiler_env)
     else:
         return_expression = compile_expr(start, msg_func, None, compiler_env)
@@ -451,6 +458,7 @@ def do_message_call(name, local_scope, parent_expr, compiler_env, call_kwargs=No
         else:
             error = FluentReferenceError("Unknown message: {0}".format(name))
         add_static_msg_error(local_scope, error)
+        compiler_env.add_current_message_error(error)
         return make_fluent_none(name, local_scope)
 
 
@@ -471,8 +479,10 @@ def compile_expr_attribute_expression(attribute, local_scope, parent_expr, compi
     if msg_id in compiler_env.message_mapping:
         return do_message_call(msg_id, local_scope, attribute, compiler_env)
     else:
-        add_static_msg_error(local_scope, FluentReferenceError("Unknown attribute: {0}"
-                                                               .format(msg_id)))
+        error = FluentReferenceError("Unknown attribute: {0}"
+                                     .format(msg_id))
+        add_static_msg_error(local_scope, error)
+        compiler_env.add_current_message_error(error)
         # Fallback to parent
         return do_message_call(parent_id, local_scope, parent_expr, compiler_env)
 
@@ -635,8 +645,10 @@ def compile_expr_variant_expression(variant_expr, local_scope, parent_expr, comp
             msg_id, local_scope, parent_expr, compiler_env,
             call_kwargs={VARIANT_NAME: compile_expr(variant_expr.key, local_scope, variant_expr, compiler_env)})
     else:
-        add_static_msg_error(local_scope, FluentReferenceError("Unknown message: {0}"
-                                                               .format(msg_id)))
+        error = FluentReferenceError("Unknown message: {0}"
+                                     .format(msg_id))
+        add_static_msg_error(local_scope, error)
+        compiler_env.add_current_message_error(error)
         return make_fluent_none(msg_id, local_scope)
 
 
@@ -693,14 +705,16 @@ def compile_expr_call_expression(expr, local_scope, parent_expr, compiler_env):
             function_name_in_module = compiler_env.function_renames[function_name]
             return codegen.FunctionCall(function_name_in_module, args, kwargs, local_scope)
         else:
-            add_static_msg_error(local_scope,
-                                 TypeError("function {0} called with incorrect parameters".format(function_name)))
+            error = TypeError("function {0} called with incorrect parameters".format(function_name))
+            add_static_msg_error(local_scope, error)
+            compiler_env.add_current_message_error(error)
             return make_fluent_none(function_name + "()", local_scope)
 
     else:
-        # TODO report compile error
-        add_static_msg_error(local_scope, FluentReferenceError("Unknown function: {0}"
-                                                               .format(function_name)))
+        error = FluentReferenceError("Unknown function: {0}"
+                                     .format(function_name))
+        add_static_msg_error(local_scope, error)
+        compiler_env.add_current_message_error(error)
         return make_fluent_none(function_name + "()", local_scope)
 
 

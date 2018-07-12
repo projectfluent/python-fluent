@@ -7,6 +7,7 @@ import babel
 
 from fluent.builtins import BUILTINS
 from fluent.compiler import messages_to_module
+from fluent.exceptions import FluentCyclicReferenceError, FluentReferenceError
 from fluent.syntax import FluentParser
 from fluent.syntax.ast import Message, Term
 
@@ -40,7 +41,7 @@ def compile_messages_to_python(source, locale, use_isolating=False, functions=No
         messages, locale,
         use_isolating=use_isolating,
         functions=_functions)
-    return module.as_source_code()
+    return module.as_source_code(), errors
 
 
 class TestCompiler(unittest.TestCase):
@@ -53,43 +54,47 @@ class TestCompiler(unittest.TestCase):
                          normalize_python(code2))
 
     def test_single_string_literal(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = Foo
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 return ('Foo', errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_string_literal_in_placeable(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = { "Foo" }
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 return ('Foo', errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_number_literal(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = { 123 }
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 return (NUMBER(123).format(locale), errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_interpolated_number(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = x { 123 } y
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 return (''.join(['x ', NUMBER(123).format(locale), ' y']), errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_message_reference_plus_string_literal(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = Foo
             bar = X { foo }
         """, self.locale)
@@ -101,9 +106,10 @@ class TestCompiler(unittest.TestCase):
                 _tmp, errors = foo(message_args, errors)
                 return (''.join(['X ', _tmp]), errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_single_message_reference(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = Foo
             bar = { foo }
         """, self.locale)
@@ -114,9 +120,10 @@ class TestCompiler(unittest.TestCase):
             def bar(message_args, errors):
                 return foo(message_args, errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_message_attr_reference(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo
                .attr = Foo Attr
             bar = { foo.attr }
@@ -128,10 +135,11 @@ class TestCompiler(unittest.TestCase):
             def bar(message_args, errors):
                 return foo__attr(message_args, errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_single_message_reference_reversed_order(self):
         # We should cope with forward references
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             bar = { foo }
             foo = Foo
         """, self.locale)
@@ -142,41 +150,46 @@ class TestCompiler(unittest.TestCase):
             def foo(message_args, errors):
                 return ('Foo', errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_single_message_bad_reference(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             bar = { foo }
         """, self.locale)
         # We already know that foo does not exist, so we can hard code the error
-        # into the function.
+        # into the function for the runtime error.
         self.assertCodeEqual(code, """
             def bar(message_args, errors):
                 errors.append(FluentReferenceError('Unknown message: foo'))
                 return (FluentNone('foo').format(locale), errors)
         """)
+        # And we should get a compile time error:
+        self.assertEqual(errs, [('bar', FluentReferenceError("Unknown message: foo"))])
 
     def test_name_collision_function_args(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             errors = Errors
         """, self.locale)
         self.assertCodeEqual(code, """
             def errors2(message_args, errors):
                 return ('Errors', errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_name_collision_builtins(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             zip = Zip
         """, self.locale)
         self.assertCodeEqual(code, """
             def zip2(message_args, errors):
                 return ('Zip', errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_message_mapping_used(self):
         # Checking that we actually use message_mapping when looking up the name
         # of the message function to call.
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             zip = Foo
             str = { zip }
         """, self.locale)
@@ -187,9 +200,10 @@ class TestCompiler(unittest.TestCase):
             def str2(message_args, errors):
                 return zip2(message_args, errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_external_argument(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             with-arg = { $arg }
         """, self.locale)
         self.assertCodeEqual(code, """
@@ -204,18 +218,20 @@ class TestCompiler(unittest.TestCase):
 
                 return (handle_output(_tmp, locale, errors), errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_function_call(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = { NUMBER(12345) }
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 return (NUMBER(12345).format(locale), errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_function_call_external_arg(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = { NUMBER($arg) }
         """, self.locale)
         self.assertCodeEqual(code, """
@@ -230,18 +246,49 @@ class TestCompiler(unittest.TestCase):
 
                 return (NUMBER(_tmp).format(locale), errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_function_call_kwargs(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = { NUMBER(12345, useGrouping: 0) }
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 return (NUMBER(12345, useGrouping=0).format(locale), errors)
         """)
+        self.assertEqual(errs, [])
+
+    def test_missing_function_call(self):
+        code, errs = compile_messages_to_python("""
+            foo = { MISSING(123) }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                errors.append(FluentReferenceError('Unknown function: MISSING'))
+                return (FluentNone('MISSING()').format(locale), errors)
+        """),
+        self.assertEqual(errs, [('foo', FluentReferenceError('Unknown function: MISSING'))])
+
+    def test_function_call_with_bad_args(self):
+        def MYFUNC(arg, kw1=None, kw2=None):
+            return arg
+        # Disallow 'kw2' arg
+        MYFUNC.ftl_arg_spec = [1, 'kw1']
+        code, errs = compile_messages_to_python("""
+            foo = { MYFUNC(123, kw2: 1) }
+        """, self.locale, functions={'MYFUNC': MYFUNC})
+        # TODO - improve error message
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                errors.append(TypeError('function MYFUNC called with incorrect parameters'))
+                return (FluentNone('MYFUNC()').format(locale), errors)
+        """),
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(errs[0][0], 'foo')
+        self.assertEqual(type(errs[0][1]), TypeError)
 
     def test_message_with_attrs(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = Foo
                .attr-1 = Attr 1
                .attr-2 = Attr 2
@@ -256,9 +303,10 @@ class TestCompiler(unittest.TestCase):
             def foo__attr_2(message_args, errors):
                 return ('Attr 2', errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_variant(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             -my-term = {
                 [a] A
                *[b] B
@@ -279,6 +327,7 @@ class TestCompiler(unittest.TestCase):
 
                 return (_ret, errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_variant_select(self):
         term_ftl = """
@@ -290,17 +339,19 @@ class TestCompiler(unittest.TestCase):
         calling_ftl = """
             foo = { -my-term[a] }
         """
-        term_code = compile_messages_to_python(term_ftl,
-                                               self.locale)
-        combined_code = compile_messages_to_python(term_ftl + calling_ftl,
-                                                   self.locale)
+        term_code, term_errs = compile_messages_to_python(term_ftl,
+                                                          self.locale)
+        combined_code, combined_errs = compile_messages_to_python(term_ftl + calling_ftl,
+                                                                  self.locale)
         self.assertCodeEqual(combined_code, term_code + """
 def foo(message_args, errors):
     return _my_term(message_args, errors, variant='a')
         """.strip())
+        self.assertEqual(term_errs, [])
+        self.assertEqual(combined_errs, [])
 
     def test_select_string(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
            foo = { "a" ->
                 [a] A
                *[b] B
@@ -316,14 +367,18 @@ def foo(message_args, errors):
 
                 return (_ret, errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_select_number(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
            foo = { 1 ->
                 [1] One
                *[2] { 2 }
              }
         """, self.locale)
+        # We should not get 'NUMBER' calls in the select expression or
+        # or the key comparisons, but we should get them for the select value
+        # for { 2 }.
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 _key = 1
@@ -334,9 +389,10 @@ def foo(message_args, errors):
 
                 return (_ret, errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_select_plural_category_with_literal(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
            foo = { 1 ->
                 [one] One
                *[other] Other
@@ -353,9 +409,10 @@ def foo(message_args, errors):
 
                 return (_ret, errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_select_plural_category_with_arg(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
            foo = { $count ->
                 [0] You have nothing
                 [one] You have one thing
@@ -381,27 +438,31 @@ def foo(message_args, errors):
 
                 return (_ret, errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_combine_strings(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = Start { "Middle" } End
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 return ('Start Middle End', errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_single_string_literal_isolating(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = Foo
         """, self.locale, use_isolating=True)
+        # No isolating chars, because we have no placeables.
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 return ('Foo', errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_interpolation_isolating(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = Foo { $arg } Bar
         """, self.locale, use_isolating=True)
         self.assertCodeEqual(code, """
@@ -416,9 +477,10 @@ def foo(message_args, errors):
 
                 return (''.join(['Foo \\u2068', handle_output(_tmp, locale, errors), '\\u2069 Bar']), errors)
         """)
+        self.assertEqual(errs, [])
 
     def test_cycle_detection(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = { foo }
         """, self.locale)
         self.assertCodeEqual(code, """
@@ -426,9 +488,10 @@ def foo(message_args, errors):
                 errors.append(FluentCyclicReferenceError('Cyclic reference in foo'))
                 return (FluentNone().format(locale), errors)
         """)
+        self.assertEqual(errs, [('foo', FluentCyclicReferenceError("Cyclic reference in foo"))])
 
     def test_cycle_detection_with_attrs(self):
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo
                .attr1 = { bar.attr2 }
 
@@ -444,11 +507,14 @@ def foo(message_args, errors):
                 errors.append(FluentCyclicReferenceError('Cyclic reference in bar.attr2'))
                 return (FluentNone().format(locale), errors)
         """)
+        self.assertEqual(errs, [('foo.attr1', FluentCyclicReferenceError("Cyclic reference in foo.attr1")),
+                                ('bar.attr2', FluentCyclicReferenceError("Cyclic reference in bar.attr2")),
+                                ])
 
     def test_cycle_detection_with_unknown_attr(self):
         # unknown attributes fall back to main message, which brings
         # another option for a cycle.
-        code = compile_messages_to_python("""
+        code, errs = compile_messages_to_python("""
             foo = { bar.bad-attr }
 
             bar = { foo }
@@ -462,3 +528,6 @@ def foo(message_args, errors):
                 errors.append(FluentCyclicReferenceError('Cyclic reference in bar'))
                 return (FluentNone().format(locale), errors)
         """)
+        self.assertEqual(errs, [('foo', FluentCyclicReferenceError("Cyclic reference in foo")),
+                                ('bar', FluentCyclicReferenceError("Cyclic reference in bar")),
+                                ])

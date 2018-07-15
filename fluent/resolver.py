@@ -80,8 +80,8 @@ def fully_resolve(expr, env):
 
 @singledispatch
 def handle(expr, env):
-    raise NotImplementedError("Cannot handle object of type {0}"
-                              .format(type(expr).__name__))
+    raise TypeError("Cannot handle object {0} of type {1}"
+                    .format(expr, type(expr).__name__))
 
 
 @handle.register(Message)

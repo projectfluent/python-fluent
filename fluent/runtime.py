@@ -40,7 +40,7 @@ def handle_output(val, locale, errors):
     elif isinstance(val, FluentType):
         return val.format(locale)
     else:
-        # TODO - tests for this branch, check it is the same
-        # as for interpreter
-        errors.append(TypeError("Cannot output object {0} of type {1}"
-                                .format(val, type(val))))
+        # The only way for this branch to run is whem functions return
+        # objects of the wrong type.
+        raise TypeError("Cannot handle object {0} of type {1}"
+                        .format(val, type(val).__name__))

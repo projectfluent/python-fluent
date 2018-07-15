@@ -29,6 +29,11 @@ class TestFunctionCalls(unittest.TestCase):
         def RESTRICTED(allowed=None, notAllowed=None):
             return allowed
 
+        def BAD_OUTPUT():
+            class Unsupported(object):
+                pass
+            return Unsupported()
+
         RESTRICTED.ftl_arg_spec = (0, ['allowed'])
 
         self.ctx = self.message_context_cls(['en-US'], use_isolating=False,
@@ -37,6 +42,7 @@ class TestFunctionCalls(unittest.TestCase):
                                                        'RUNTIME_ERROR': RUNTIME_ERROR,
                                                        'ANY_ARGS': ANY_ARGS,
                                                        'RESTRICTED': RESTRICTED,
+                                                       'BAD_OUTPUT': BAD_OUTPUT,
                                                        })
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo
@@ -54,6 +60,7 @@ class TestFunctionCalls(unittest.TestCase):
             use-any-args       = { ANY_ARGS(1, 2, 3, x:1) }
             use-restricted-ok  = { RESTRICTED(allowed: 1) }
             use-restricted-bad = { RESTRICTED(notAllowed: 1) }
+            bad-output         = { BAD_OUTPUT() }
         """))
 
     def test_accepts_strings(self):
@@ -123,6 +130,13 @@ class TestFunctionCalls(unittest.TestCase):
         self.assertEqual(val, "RESTRICTED()")
         self.assertEqual(len(errs), 1)
         self.assertEqual(type(errs[0]), TypeError)
+
+    def test_bad_output(self):
+        # This is a developer error, so should raise an exception
+        with self.assertRaises(TypeError) as cm:
+            self.ctx.format('bad-output')
+        self.assertTrue(cm.exception.args[0].startswith("Cannot handle object"))
+        self.assertTrue(cm.exception.args[0].endswith("of type Unsupported"))
 
 
 @all_message_context_implementations

@@ -3,6 +3,8 @@ Utilities for doing Python code generation
 """
 from __future__ import absolute_import, unicode_literals
 
+import re
+
 from six import text_type
 
 # This module provides simple utilities for building up Python source code. It
@@ -182,9 +184,16 @@ class Scope(PythonAst):
         return self
 
 
+_IDENTIFIER_SANITIZER_RE = re.compile('[^a-zA-Z0-9_]')
+_IDENTIFIER_START_RE = re.compile('^[a-zA-Z_]')
+
+
 def cleanup_name(name):
-    # TODO - a lot more sanitising required
-    return name.replace(".", "_").replace("-", "_")
+    # See https://docs.python.org/2/reference/lexical_analysis.html#grammar-token-identifier
+    name = _IDENTIFIER_SANITIZER_RE.sub('', name)
+    if not _IDENTIFIER_START_RE.match(name):
+        name = "n" + name
+    return name
 
 
 class Module(Scope):

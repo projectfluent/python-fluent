@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, unicode_literals
 
 import textwrap
@@ -313,3 +315,11 @@ class TestCodeGen(unittest.TestCase):
                                     ])
         join1 = codegen.simplify(join1)
         self.assertCodeEqual(join1.as_source_code(), "''.join(['hello there ', tmp, ' how are you?'])")
+
+    def test_cleanup_name(self):
+        for n, c in [('abc-def()[]ghi,.<>¡!?¿', 'abcdefghi'),  # illegal chars
+                     ('1abc', 'n1abc'),  # leading digit
+                     ('_allowed', '_allowed'),  # leading _ (which is allowed)
+                     ('-', 'n')  # empty after removing illegals
+                     ]:
+            self.assertEqual(codegen.cleanup_name(n), c)

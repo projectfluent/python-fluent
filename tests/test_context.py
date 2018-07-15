@@ -110,6 +110,8 @@ class TestMessageContext(unittest.TestCase):
         checks = self.ctx.check_messages()
         self.assertEqual(checks,
                          [('foo', FluentDuplicateMessageId("Duplicate definition for 'foo' added."))])
+        # Later takes precedence
+        self.assertEqual(self.ctx.format('foo')[0], 'Bar')
 
     def test_check_messages_junk(self):
         self.ctx.add_messages("unfinished")

@@ -44,7 +44,7 @@ class MessageContextBase(object):
     def add_messages(self, source):
         parser = FluentParser()
         resource = parser.parse(source)
-        # TODO - warn if items get overwritten
+
         for item in resource.body:
             store = None
             name = None
@@ -154,8 +154,6 @@ class CompilingMessageContext(MessageContextBase):
         all_messages = OrderedDict()
         all_messages.update(self._messages)
         all_messages.update(self._terms)
-        # TODO errors occurring at this point should be collected/reported
-        # somehow.
         self._compiled_messages, self._compilation_errors = compile_messages(
             all_messages,
             self._babel_locale,

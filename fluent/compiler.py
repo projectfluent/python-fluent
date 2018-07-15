@@ -177,7 +177,6 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, deb
     # Pass one, find all the names, so that we can populate message_mapping,
     # which is needed for compilation.
     for msg_id, msg in msg_ids_to_ast.items():
-        # TODO - handle duplicate names correctly
         function_name = module.reserve_name(
             message_function_name_for_msg_id(msg_id))
         compiler_env.message_mapping[msg_id] = function_name

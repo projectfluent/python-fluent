@@ -181,7 +181,7 @@ class Term(Entry):
 
 class VariantList(SyntaxNode):
     def __init__(self, variants, **kwargs):
-        super(VariantList, self).__init(**kwargs)
+        super(VariantList, self).__init__(**kwargs)
         self.variants = variants
 
 
@@ -190,9 +190,8 @@ class Pattern(SyntaxNode):
         super(Pattern, self).__init__(**kwargs)
         self.elements = elements
 
-# An abstract base class for elements of Patterns.
 class PatternElement(SyntaxNode):
-    pass
+    """An abstract base class for elements of Patterns."""
 
 
 class TextElement(PatternElement):
@@ -206,11 +205,8 @@ class Placeable(PatternElement):
         super(Placeable, self).__init__(**kwargs)
         self.expression = expression
 
-# An abstract base class for expressions.
-# Implementation removed from syntax.js
 class Expression(SyntaxNode):
-    def __init__(self, **kwargs):
-        super(Expression, self).__init__(**kwargs)
+    """An abstract base class for expressions."""
 
 
 class StringLiteral(Expression):

@@ -700,11 +700,11 @@ def compile_expr_call_expression(expr, local_scope, parent_expr, compiler_env):
                                  lambda i: isinstance(i, NamedArgument))
         args = [compile_expr(arg, local_scope, expr, compiler_env) for arg in args]
         kwargs = {kwarg.name.name: compile_expr(kwarg.val, local_scope, expr, compiler_env) for kwarg in kwargs}
-        if args_match(args, kwargs, compiler_env.functions_arg_spec[function_name]):
+        match, error = args_match(function_name, args, kwargs, compiler_env.functions_arg_spec[function_name])
+        if match:
             function_name_in_module = compiler_env.function_renames[function_name]
             return codegen.FunctionCall(function_name_in_module, args, kwargs, local_scope)
         else:
-            error = TypeError("function {0} called with incorrect parameters".format(function_name))
             add_static_msg_error(local_scope, error)
             compiler_env.add_current_message_error(error)
             return make_fluent_none(function_name + "()", local_scope)

@@ -319,11 +319,11 @@ def handle_call_expression(expression, env):
                              lambda i: isinstance(i, NamedArgument))
     args = [handle(arg, env) for arg in args]
     kwargs = {kwarg.name.name: handle(kwarg.val, env) for kwarg in kwargs}
-    if args_match(args, kwargs, env.functions_arg_spec[function_name]):
+    match, error = args_match(function_name, args, kwargs, env.functions_arg_spec[function_name])
+    if match:
         return function(*args, **kwargs)
     else:
-        env.errors.append(TypeError("function {0} called with incorrect parameters: {1}, {2}"
-                                    .format(function_name, args, kwargs)))
+        env.errors.append(error)
         return FluentNone(function_name + "()")
 
 

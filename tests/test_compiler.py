@@ -269,7 +269,7 @@ class TestCompiler(unittest.TestCase):
         """),
         self.assertEqual(errs, [('foo', FluentReferenceError('Unknown function: MISSING'))])
 
-    def test_function_call_with_bad_args(self):
+    def test_function_call_with_bad_keyword_arg(self):
         def MYFUNC(arg, kw1=None, kw2=None):
             return arg
         # Disallow 'kw2' arg
@@ -277,10 +277,24 @@ class TestCompiler(unittest.TestCase):
         code, errs = compile_messages_to_python("""
             foo = { MYFUNC(123, kw2: 1) }
         """, self.locale, functions={'MYFUNC': MYFUNC})
-        # TODO - improve error message
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                errors.append(TypeError('function MYFUNC called with incorrect parameters'))
+                errors.append(TypeError("MYFUNC() got an unexpected keyword argument 'kw2'"))
+                return (FluentNone('MYFUNC()').format(locale), errors)
+        """),
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(errs[0][0], 'foo')
+        self.assertEqual(type(errs[0][1]), TypeError)
+
+    def test_function_call_with_bad_positional_arg(self):
+        def MYFUNC():
+            return ''
+        code, errs = compile_messages_to_python("""
+            foo = { MYFUNC(123) }
+        """, self.locale, functions={'MYFUNC': MYFUNC})
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                errors.append(TypeError('MYFUNC() takes 0 positional arguments but 1 was given'))
                 return (FluentNone('MYFUNC()').format(locale), errors)
         """),
         self.assertEqual(len(errs), 1)

@@ -1,4 +1,8 @@
+from __future__ import absolute_import, unicode_literals
+
 import inspect
+
+import six
 
 
 class cachedproperty(object):
@@ -124,8 +128,38 @@ else:
         return (positional, keywords)
 
 
-def args_match(args, kwargs, arg_spec):
-    return ((arg_spec[0] is Any
-             or arg_spec[0] == len(args)) and
-            (arg_spec[1] is Any
-             or all(kw in arg_spec[1] for kw in kwargs.keys())))
+def args_match(function_name, args, kwargs, arg_spec):
+    """
+    Returns a tuple indicating whether the passed in args tuple and kwargs dict
+    match the `arg_spec` provided.
+
+    For a match, returns a tuple
+       (True, None)
+
+    For a non-match, returns a tuple
+       (False, TypeError instance)
+
+    """
+    # We try to match the TypeError raised by Python when calling functions with
+    # wrong arguments.
+
+    # TypeError: foo() got an unexpected keyword argument 'bar'
+    # TypeError: foo() takes 0 positional arguments but 1 was given
+
+    positional_args, allowed_kwargs = arg_spec
+    if (allowed_kwargs is not Any and not all(kw in allowed_kwargs
+                                              for kw in kwargs)):
+        return (False,
+                TypeError("{0}() got an unexpected keyword argument '{1}'"
+                          .format(function_name, six.next(kw for kw in kwargs
+                                                          if kw not in allowed_kwargs))
+                          )
+                )
+    if (positional_args is not Any and not positional_args == len(args)):
+        return (False,
+                TypeError("{0}() takes {1} positional arguments but {2} was given"
+                          .format(function_name, positional_args, len(args))
+                          )
+                )
+
+    return (True, None)

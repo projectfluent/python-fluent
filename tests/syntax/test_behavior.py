@@ -12,7 +12,7 @@ sys.path.append('.')
 from fluent.syntax import parse
 
 
-sigil = r'^\/\/~ '
+sigil = r'^# ~'
 re_directive = re.compile(r'{}(.*)[\n$]'.format(sigil), re.MULTILINE)
 
 

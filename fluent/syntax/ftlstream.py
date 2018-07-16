@@ -24,15 +24,21 @@ class FTLParserStream(ParserStream):
             ch = self.peek()
 
     def skip_blank_lines(self):
+        # Many Parser methods leave the cursor at the line break without going
+        # into the next line. We want to count fully blank lines in the case.
+        # Starting the count at -1 will give the right number.
+        line_count = -1 if self.current_is("\n") else 0
+
         while True:
             self.peek_inline_ws()
 
             if self.current_peek_is('\n'):
                 self.skip_to_peek()
                 self.next()
+                line_count += 1
             else:
                 self.reset_peek()
-                break
+                return line_count
 
     def peek_blank_lines(self):
         while True:
@@ -67,12 +73,6 @@ class FTLParserStream(ParserStream):
         self.expect_char(' ')
         self.skip_inline_ws()
 
-    def take_char_if(self, ch):
-        if self.ch == ch:
-            self.next()
-            return True
-        return False
-
     def take_char(self, f):
         ch = self.ch
         if ch is not None and f(ch):
@@ -88,10 +88,7 @@ class FTLParserStream(ParserStream):
         return (cc >= 97 and cc <= 122) or \
                (cc >= 65 and cc <= 90)
 
-    def is_entry_id_start(self):
-        if self.current_is('-'):
-            self.peek()
-
+    def is_identifier_start(self):
         ch = self.current_peek()
         is_id = self.is_char_id_start(ch)
         self.reset_peek()
@@ -112,7 +109,7 @@ class FTLParserStream(ParserStream):
 
         return ch not in SPECIAL_LINE_START_CHARS
 
-    def is_peek_pattern_start(self):
+    def is_peek_value_start(self):
         self.peek_inline_ws()
         ch = self.current_peek()
 
@@ -120,7 +117,7 @@ class FTLParserStream(ParserStream):
         if ch is not None and ch != '\n':
             return True
 
-        return self.is_peek_next_line_pattern_start()
+        return self.is_peek_next_line_value()
 
     def is_peek_next_line_zero_four_style_comment(self):
         if not self.current_peek_is('\n'):
@@ -150,7 +147,7 @@ class FTLParserStream(ParserStream):
         while (i <= level or (level == -1 and i < 3)):
             self.peek()
             if not self.current_peek_is('#'):
-                if i != level and level != -1:
+                if i <= level and level != -1:
                     self.reset_peek()
                     return False
                 break
@@ -214,7 +211,7 @@ class FTLParserStream(ParserStream):
         self.reset_peek()
         return False
 
-    def is_peek_next_line_pattern_start(self):
+    def is_peek_next_line_value(self):
         if not self.current_peek_is('\n'):
             return False
 
@@ -243,25 +240,21 @@ class FTLParserStream(ParserStream):
                 self.next()
 
                 if self.ch is None or \
-                   self.is_entry_id_start() or \
+                   self.is_identifier_start() or \
+                   self.current_is('-') or \
                    self.current_is('#') or \
                    (self.current_is('/') and self.peek_char_is('/')) or \
                    (self.current_is('[') and self.peek_char_is('[')):
                     break
             self.next()
 
-    def take_id_start(self, allow_term):
-        if allow_term and self.current_is('-'):
-            self.next()
-            return '-'
-
+    def take_id_start(self):
         if self.is_char_id_start(self.ch):
             ret = self.ch
             self.next()
             return ret
 
-        allowed_range = 'a-zA-Z-' if allow_term else 'a-zA-Z'
-        raise ParseError('E0004', allowed_range)
+        raise ParseError('E0004', 'a-zA-Z')
 
     def take_id_char(self):
         def closure(ch):
@@ -287,4 +280,13 @@ class FTLParserStream(ParserStream):
         def closure(ch):
             cc = ord(ch)
             return (cc >= 48 and cc <= 57)
+        return self.take_char(closure)
+
+    def take_hex_digit(self):
+        def closure(ch):
+            cc = ord(ch)
+            return (
+                (cc >= 48 and cc <= 57) # 0-9
+                or (cc >= 65 and cc <= 70) # A-F
+                or (cc >= 97 and cc <= 102)) # a-f
         return self.take_char(closure)

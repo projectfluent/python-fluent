@@ -11,8 +11,8 @@ notifications:
   irc:
     channels:
       - "irc.mozilla.org#l20n"
-    on_success: never
-    on_failure: never
+    on_success: always
+    on_failure: always
     use_notice: true
     template:
       - "#%{build_number} %{message} %{build_url}"

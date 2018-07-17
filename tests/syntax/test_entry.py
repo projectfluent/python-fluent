@@ -64,7 +64,7 @@ class TestParseEntry(unittest.TestCase):
                 ],
                 'span': {'end': 28, 'start': 25, 'type': 'Span'},
                 'type': 'Pattern'
-            }
+            },
             "annotations": [],
             "attributes": [],
             "type": "Message",

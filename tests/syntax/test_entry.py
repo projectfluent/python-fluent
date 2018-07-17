@@ -97,7 +97,7 @@ class TestParseEntry(unittest.TestCase):
         message = self.parser.parse_entry(dedent_ftl(input))
         self.assertEqual(message.to_json(), output)
 
-    def test_ignore_all_valid_comments(self)
+    def test_ignore_all_valid_comments(self):
         input = """\
             # Attached Comment
             ## Group Comment
@@ -128,7 +128,7 @@ class TestParseEntry(unittest.TestCase):
         self.assertEqual(message.to_json(), output)
 
 
-    def test_do_not_ignore_invalid_comments(self)
+    def test_do_not_ignore_invalid_comments(self):
         input = """\
         # Attached Comment
         ##Invalid Comment

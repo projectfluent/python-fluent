@@ -54,22 +54,27 @@ class TestParseEntry(unittest.TestCase):
         """
         output = {
             "comment": None,
-            "value": {
-                "elements": [
+            'value': {
+                'elements': [
                     {
-                        "type": "TextElement",
-                        "value": "Foo"
+                        'span': {'end': 28, 'start': 25, 'type': 'Span'},
+                        'type': 'TextElement',
+                        'value': 'Foo'
                     }
                 ],
-                "type": "Pattern"
-            },
+                'span': {'end': 28, 'start': 25, 'type': 'Span'},
+                'type': 'Pattern'
+            }
             "annotations": [],
             "attributes": [],
             "type": "Message",
-            "id": {
-                "type": "Identifier",
-                "name": "foo"
-            }
+            'id': {
+                'name': 'foo',
+                'span': {'end': 22, 'start': 19, 'type': 'Span'},
+                'type': 'Identifier'
+            },
+            'span': {'end': 29, 'start': 19, 'type': 'Span'},
+            'type': 'Message'
         }
 
         message = self.parser.parse_entry(dedent_ftl(input))
@@ -111,21 +116,25 @@ class TestParseEntry(unittest.TestCase):
         """
         output = {
             "comment": None,
-            "value": {
-                "elements": [
+            'value': {
+                'elements': [
                     {
-                        "type": "TextElement",
-                        "value": "Foo"
+                        'span': {'end': 66, 'start': 63, 'type': 'Span'},
+                        'type': 'TextElement',
+                        'value': 'Foo'
                     }
                 ],
-                "type": "Pattern"
+                'span': {'end': 66, 'start': 63, 'type': 'Span'},
+                'type': 'Pattern'
             },
             "annotations": [],
             "attributes": [],
+            'span': {'end': 67, 'start': 57, 'type': 'Span'},
             "type": "Message",
-            "id": {
-                "type": "Identifier",
-                "name": "foo"
+            'id': {
+                'name': 'foo',
+                'span': {'end': 60, 'start': 57, 'type': 'Span'},
+                'type': 'Identifier'
             }
         }
 
@@ -153,6 +162,7 @@ class TestParseEntry(unittest.TestCase):
                     "type": "Annotation"
                 }
             ],
+            'span': {'end': 37, 'start': 19, 'type': 'Span'},
             "type": "Junk"
         }
 

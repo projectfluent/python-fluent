@@ -229,9 +229,7 @@ class FluentParser(object):
         ps.expect_char(']')
         ps.expect_char(']')
 
-        if ps.current() is not None:
-            # Skip the terminal line break as well.
-            ps.expect_char('\n')
+        ps.expect_line_end()
 
         # A Section without a comment is like an empty Group Comment.
         # Semantically it ends the previous group and starts a new one.
@@ -262,6 +260,7 @@ class FluentParser(object):
         if pattern is None and attrs is None:
             raise ParseError('E0005', id.name)
 
+        ps.expect_line_end()
         return ast.Message(id, pattern, attrs)
 
     @with_span
@@ -282,6 +281,7 @@ class FluentParser(object):
         else:
             attrs = None
 
+        ps.expect_line_end()
         return ast.Term(id, value, attrs)
 
     @with_span

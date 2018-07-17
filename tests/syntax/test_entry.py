@@ -24,7 +24,7 @@ class TestParseEntry(unittest.TestCase):
             "comment": None,
             "span": {
                 "start": 0,
-                "end": 9,
+                "end": 10,
                 "type": "Span"
             },
             "value": {
@@ -71,11 +71,6 @@ class TestSerializeEntry(unittest.TestCase):
     def test_simple_message(self):
         input = {
             "comment": None,
-            "span": {
-                "start": 0,
-                "end": 9,
-                "type": "Span"
-            },
             "value": {
                 "elements": [
                     {

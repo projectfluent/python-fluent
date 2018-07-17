@@ -69,6 +69,13 @@ class FTLParserStream(ParserStream):
         self.expect_char(' ')
         self.skip_inline_ws()
 
+    def expect_line_end(self):
+        if self.ch is not None:
+            self.expect_char('\n')
+
+        # EOF is a valid line end in Fluent.
+        return True
+
     def take_char(self, f):
         ch = self.ch
         if ch is not None and f(ch):

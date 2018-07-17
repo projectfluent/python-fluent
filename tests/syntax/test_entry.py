@@ -25,16 +25,20 @@ class TestParseEntry(unittest.TestCase):
             "value": {
                 "elements": [
                     {
+                        'span': {'end': 9, 'start': 6, 'type': 'Span'},
                         "type": "TextElement",
                         "value": "Foo"
                     }
                 ],
+                'span': {'end': 9, 'start': 6, 'type': 'Span'},
                 "type": "Pattern"
             },
             "annotations": [],
             "attributes": [],
             "type": "Message",
+            'span': {'end': 10, 'start': 0, 'type': 'Span'},
             "id": {
+                'span': {'end': 3, 'start': 0, 'type': 'Span'},
                 "type": "Identifier",
                 "name": "foo"
             }
@@ -84,9 +88,9 @@ class TestParseEntry(unittest.TestCase):
                     "code": "E0003",
                     "message": "Expected token: \"=\"",
                     "span": {
-                    "end": 23,
-                    "start": 23,
-                    "type": "Span"
+                        "end": 23,
+                        "start": 23,
+                        "type": "Span"
                     },
                     "type": "Annotation"
                 }

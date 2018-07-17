@@ -151,8 +151,9 @@ class FluentParser(object):
                 content += ch
                 ch = ps.take_char(lambda x: x != '\n')
 
+
             if ps.is_peek_next_line_zero_four_style_comment():
-                content += '\n'
+                content += ps.current()
                 ps.next()
                 ps.expect_char('/')
                 ps.expect_char('/')
@@ -160,7 +161,10 @@ class FluentParser(object):
             else:
                 break
 
-        ps.next()
+        # Add the terminal line break.
+        if not ps.current_is(None):
+            content += ps.current()
+            ps.next()
 
         if ps.current_is('['):
             # Skip the section
@@ -194,15 +198,16 @@ class FluentParser(object):
                     content += ch
                     ch = ps.take_char(lambda x: x != '\n')
 
-            if not ps.current_is(None):
-                content += '\n'
-            else:
-                break
-
             if ps.is_peek_next_line_comment(level):
+                content += ps.current()
                 ps.next()
             else:
                 break
+
+        # Add the terminal line break.
+        if not ps.current_is(None):
+            content += ps.current()
+            ps.next()
 
         if level == 0:
             return ast.Comment(content)

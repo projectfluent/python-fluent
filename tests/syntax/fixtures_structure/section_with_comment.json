@@ -4,7 +4,7 @@
     {
       "type": "GroupComment",
       "annotations": [],
-      "content": "Comment",
+      "content": "Comment\n",
       "span": {
         "type": "Span",
         "start": 0,

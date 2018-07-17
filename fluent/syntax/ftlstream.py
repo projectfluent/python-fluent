@@ -24,11 +24,7 @@ class FTLParserStream(ParserStream):
             ch = self.peek()
 
     def skip_blank_lines(self):
-        # Many Parser methods leave the cursor at the line break without going
-        # into the next line. We want to count fully blank lines in the case.
-        # Starting the count at -1 will give the right number.
-        line_count = -1 if self.current_is("\n") else 0
-
+        line_count = 0
         while True:
             self.peek_inline_ws()
 

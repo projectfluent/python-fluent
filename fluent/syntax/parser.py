@@ -18,11 +18,6 @@ def with_span(fn):
         if node.span is not None:
             return node
 
-        # Spans of Messages should include the attached Comment.
-        if isinstance(node, ast.Message):
-            if node.comment is not None:
-                start = node.comment.span.start
-
         end = ps.get_index()
         node.add_span(start, end)
         return node
@@ -58,6 +53,8 @@ class FluentParser(object):
             if last_comment is not None:
                 if isinstance(entry, (ast.Message, ast.Term)):
                     entry.comment = last_comment
+                    if self.with_spans:
+                        entry.span.start = entry.comment.span.start
                 else:
                     entries.append(last_comment)
                 # In either case, the stashed comment has been dealt with; clear it.

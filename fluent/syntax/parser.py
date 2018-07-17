@@ -151,7 +151,6 @@ class FluentParser(object):
                 content += ch
                 ch = ps.take_char(lambda x: x != '\n')
 
-
             if ps.is_peek_next_line_zero_four_style_comment():
                 content += ps.current()
                 ps.next()
@@ -229,6 +228,10 @@ class FluentParser(object):
 
         ps.expect_char(']')
         ps.expect_char(']')
+
+        if ps.current() is not None:
+            # Skip the terminal line break as well.
+            ps.expect_char('\n')
 
         # A Section without a comment is like an empty Group Comment.
         # Semantically it ends the previous group and starts a new one.

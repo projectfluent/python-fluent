@@ -86,7 +86,7 @@ class TestParseEntry(unittest.TestCase):
                 {
                     "args": ["junk"],
                     "code": "E0005",
-                    'message': 'Expected message "junk" to have a value or attributes',,
+                    'message': 'Expected message "junk" to have a value or attributes',
                     "span": {
                         "end": 23,
                         "start": 23,

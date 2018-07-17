@@ -22,42 +22,133 @@ class TestParseEntry(unittest.TestCase):
         """
         output = {
             "comment": None,
-            "span": {
-                "start": 0,
-                "end": 10,
-                "type": "Span"
-            },
             "value": {
                 "elements": [
                     {
                         "type": "TextElement",
-                        "value": "Foo",
-                        "span": {
-                            "start": 6,
-                            "end": 9,
-                            "type": "Span"
-                        }
+                        "value": "Foo"
                     }
                 ],
-                "type": "Pattern",
-                "span": {
-                    "start": 6,
-                    "end": 9,
-                    "type": "Span"
-                }
+                "type": "Pattern"
             },
             "annotations": [],
             "attributes": [],
             "type": "Message",
             "id": {
                 "type": "Identifier",
-                "name": "foo",
-                "span": {
-                    "start": 0,
-                    "end": 3,
-                    "type": "Span"
-                }
+                "name": "foo"
             }
+        }
+
+        message = self.parser.parse_entry(dedent_ftl(input))
+        self.assertEqual(message.to_json(), output)
+
+    def test_ignore_attached_comment(self):
+        input = """\
+            # Attached Comment
+            foo = Foo
+        """
+        output = {
+            "comment": None,
+            "value": {
+                "elements": [
+                    {
+                        "type": "TextElement",
+                        "value": "Foo"
+                    }
+                ],
+                "type": "Pattern"
+            },
+            "annotations": [],
+            "attributes": [],
+            "type": "Message",
+            "id": {
+                "type": "Identifier",
+                "name": "foo"
+            }
+        }
+
+        message = self.parser.parse_entry(dedent_ftl(input))
+        self.assertEqual(message.to_json(), output)
+
+    def test_return_junk(self):
+        input = """\
+            # Attached Comment
+            junk
+        """
+        output = {
+            "content": "junk\n",
+            "annotations": [
+                {
+                    "args": ["="],
+                    "code": "E0003",
+                    "message": "Expected token: \"=\"",
+                    "span": {
+                    "end": 23,
+                    "start": 23,
+                    "type": "Span"
+                    },
+                    "type": "Annotation"
+                }
+            ],
+            "type": "Junk"
+        }
+
+        message = self.parser.parse_entry(dedent_ftl(input))
+        self.assertEqual(message.to_json(), output)
+
+    def test_ignore_all_valid_comments(self)
+        input = """\
+            # Attached Comment
+            ## Group Comment
+            ### Resource Comment
+            foo = Foo
+        """
+        output = {
+            "comment": None,
+            "value": {
+                "elements": [
+                    {
+                        "type": "TextElement",
+                        "value": "Foo"
+                    }
+                ],
+                "type": "Pattern"
+            },
+            "annotations": [],
+            "attributes": [],
+            "type": "Message",
+            "id": {
+                "type": "Identifier",
+                "name": "foo"
+            }
+        }
+
+        message = self.parser.parse_entry(dedent_ftl(input))
+        self.assertEqual(message.to_json(), output)
+
+
+    def test_do_not_ignore_invalid_comments(self)
+        input = """\
+        # Attached Comment
+        ##Invalid Comment
+        """
+        output = {
+            "content": "##Invalid Comment\n",
+            "annotations": [
+                {
+                    "args": [" "],
+                    "code": "E0003",
+                    "message": "Expected token: \" \"",
+                    "span": {
+                        "end": 21,
+                        "start": 21,
+                        "type": "Span"
+                    },
+                    "type": "Annotation"
+                }
+            ],
+            "type": "Junk"
         }
 
         message = self.parser.parse_entry(dedent_ftl(input))

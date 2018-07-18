@@ -14,7 +14,7 @@ class TestParseEntry(unittest.TestCase):
     maxDiff = None
 
     def setUp(self):
-        self.parser = FluentParser()
+        self.parser = FluentParser(with_spans=False)
 
     def test_simple_message(self):
         input = """\
@@ -25,20 +25,19 @@ class TestParseEntry(unittest.TestCase):
             "value": {
                 "elements": [
                     {
-                        'span': {'end': 9, 'start': 6, 'type': 'Span'},
+                        'span': None,
                         "type": "TextElement",
                         "value": "Foo"
                     }
                 ],
-                'span': {'end': 9, 'start': 6, 'type': 'Span'},
+                'span': None,
                 "type": "Pattern"
             },
-            "annotations": [],
             "attributes": [],
             "type": "Message",
-            'span': {'end': 10, 'start': 0, 'type': 'Span'},
+            'span': None,
             "id": {
-                'span': {'end': 3, 'start': 0, 'type': 'Span'},
+                'span': None,
                 "type": "Identifier",
                 "name": "foo"
             }
@@ -57,23 +56,22 @@ class TestParseEntry(unittest.TestCase):
             'value': {
                 'elements': [
                     {
-                        'span': {'end': 28, 'start': 25, 'type': 'Span'},
+                        'span': None,
                         'type': 'TextElement',
                         'value': 'Foo'
                     }
                 ],
-                'span': {'end': 28, 'start': 25, 'type': 'Span'},
+                'span': None,
                 'type': 'Pattern'
             },
-            "annotations": [],
             "attributes": [],
             "type": "Message",
             'id': {
                 'name': 'foo',
-                'span': {'end': 22, 'start': 19, 'type': 'Span'},
+                'span': None,
                 'type': 'Identifier'
             },
-            'span': {'end': 29, 'start': 19, 'type': 'Span'},
+            'span': None,
             'type': 'Message'
         }
 
@@ -100,7 +98,7 @@ class TestParseEntry(unittest.TestCase):
                     "type": "Annotation"
                 }
             ],
-            'span': {'end': 24, 'start': 19, 'type': 'Span'},
+            'span': None,
             "type": "Junk"
         }
 
@@ -119,21 +117,20 @@ class TestParseEntry(unittest.TestCase):
             'value': {
                 'elements': [
                     {
-                        'span': {'end': 66, 'start': 63, 'type': 'Span'},
+                        'span': None,
                         'type': 'TextElement',
                         'value': 'Foo'
                     }
                 ],
-                'span': {'end': 66, 'start': 63, 'type': 'Span'},
+                'span': None,
                 'type': 'Pattern'
             },
-            "annotations": [],
             "attributes": [],
-            'span': {'end': 67, 'start': 57, 'type': 'Span'},
+            "span": None,
             "type": "Message",
             'id': {
                 'name': 'foo',
-                'span': {'end': 60, 'start': 57, 'type': 'Span'},
+                'span': None,
                 'type': 'Identifier'
             }
         }
@@ -162,7 +159,7 @@ class TestParseEntry(unittest.TestCase):
                     "type": "Annotation"
                 }
             ],
-            'span': {'end': 37, 'start': 19, 'type': 'Span'},
+            "span": None,
             "type": "Junk"
         }
 
@@ -186,7 +183,6 @@ class TestSerializeEntry(unittest.TestCase):
                 ],
                 "type": "Pattern"
             },
-            "annotations": [],
             "attributes": [],
             "type": "Message",
             "id": {

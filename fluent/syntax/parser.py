@@ -103,7 +103,9 @@ class FluentParser(object):
         entry_start_pos = ps.get_index()
 
         try:
-            return self.get_entry(ps)
+            entry = self.get_entry(ps)
+            ps.expect_line_end()
+            return entry
         except ParseError as err:
             error_index = ps.get_index()
             ps.skip_to_next_entry_start()
@@ -160,16 +162,14 @@ class FluentParser(object):
             else:
                 break
 
-        # Add the terminal line break.
-        if not ps.current_is(None):
-            content += ps.current()
-            ps.next()
-
-        if ps.current_is('['):
-            # Skip the section
+        # Comments followed by Sections become GroupComments.
+        ps.peek()
+        if ps.current_peek_is('['):
+            ps.skip_to_peek()
             self.get_group_comment_from_section(ps)
             return ast.GroupComment(content)
 
+        ps.reset_peek()
         ps.last_comment_zero_four_syntax = True
         return ast.Comment(content)
 
@@ -203,11 +203,6 @@ class FluentParser(object):
             else:
                 break
 
-        # Add the terminal line break.
-        if not ps.current_is(None):
-            content += ps.current()
-            ps.next()
-
         if level == 0:
             return ast.Comment(content)
         elif level == 1:
@@ -228,8 +223,6 @@ class FluentParser(object):
 
         ps.expect_char(']')
         ps.expect_char(']')
-
-        ps.expect_line_end()
 
         # A Section without a comment is like an empty Group Comment.
         # Semantically it ends the previous group and starts a new one.
@@ -260,7 +253,6 @@ class FluentParser(object):
         if pattern is None and attrs is None:
             raise ParseError('E0005', id.name)
 
-        ps.expect_line_end()
         return ast.Message(id, pattern, attrs)
 
     @with_span
@@ -281,7 +273,6 @@ class FluentParser(object):
         else:
             attrs = None
 
-        ps.expect_line_end()
         return ast.Term(id, value, attrs)
 
     @with_span

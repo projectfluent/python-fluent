@@ -3,12 +3,11 @@
   "body": [
     {
       "type": "GroupComment",
-      "annotations": [],
       "content": "",
       "span": {
         "type": "Span",
         "start": 1,
-        "end": 25
+        "end": 24
       }
     }
   ],

@@ -65,12 +65,11 @@ class FluentSerializer(object):
 
 
 def serialize_comment(comment, prefix="#"):
-    # splitlines ignores the terminal line break.
     prefixed = "\n".join([
         prefix if len(line) == 0 else "{} {}".format(prefix, line)
         for line in comment.content.splitlines(False)
     ])
-    # Re-add the trailing line break.
+    # Add the trailing line break.
     return '{}\n'.format(prefixed)
 
 

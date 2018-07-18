@@ -3,7 +3,6 @@
   "body": [
     {
       "type": "Message",
-      "annotations": [],
       "id": {
         "type": "Identifier",
         "name": "key1",
@@ -56,12 +55,11 @@
       "span": {
         "type": "Span",
         "start": 0,
-        "end": 25
+        "end": 24
       }
     },
     {
       "type": "Message",
-      "annotations": [],
       "id": {
         "type": "Identifier",
         "name": "key2",
@@ -150,7 +148,7 @@
       "span": {
         "type": "Span",
         "start": 26,
-        "end": 71
+        "end": 70
       }
     }
   ],

@@ -151,12 +151,7 @@ class Resource(SyntaxNode):
 
 
 class Entry(SyntaxNode):
-    def __init__(self, annotations=None, **kwargs):
-        super(Entry, self).__init__(**kwargs)
-        self.annotations = annotations or []
-
-    def add_annotation(self, annot):
-        self.annotations.append(annot)
+    """An abstract base class for useful elements of Resource.body."""
 
 
 class Message(Entry):
@@ -337,10 +332,14 @@ class Function(Identifier):
         super(Function, self).__init__(name, **kwargs)
 
 
-class Junk(Entry):
-    def __init__(self, content=None, **kwargs):
+class Junk(SyntaxNode):
+    def __init__(self, content=None, annotations=None, **kwargs):
         super(Junk, self).__init__(**kwargs)
         self.content = content
+        self.annotations = annotations or []
+
+    def add_annotation(self, annot):
+        self.annotations.append(annot)
 
 
 class Span(BaseNode):

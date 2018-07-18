@@ -9,7 +9,7 @@ import unittest
 
 sys.path.append('.')
 
-from fluent.syntax import parse
+from fluent.syntax import ast as ftl, parse
 
 
 sigil = r'^# ~'
@@ -81,6 +81,7 @@ class TestBehaviorMeta(type):
                 actual_directives = [
                     serialize_annotation(annot)
                     for entry in ast.body
+                    if isinstance(entry, ftl.Junk)
                     for annot in entry.annotations
                 ]
                 actual = '{}\n'.format('\n'.join(actual_directives))

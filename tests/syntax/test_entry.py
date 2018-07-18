@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import unittest
 import sys
 
-sys.path.append('.')
+sys.path.append(".")
 
 from tests.syntax import dedent_ftl
 from fluent.syntax.ast import from_json
@@ -25,19 +25,19 @@ class TestParseEntry(unittest.TestCase):
             "value": {
                 "elements": [
                     {
-                        'span': None,
+                        "span": None,
                         "type": "TextElement",
                         "value": "Foo"
                     }
                 ],
-                'span': None,
+                "span": None,
                 "type": "Pattern"
             },
             "attributes": [],
             "type": "Message",
-            'span': None,
+            "span": None,
             "id": {
-                'span': None,
+                "span": None,
                 "type": "Identifier",
                 "name": "foo"
             }
@@ -53,26 +53,26 @@ class TestParseEntry(unittest.TestCase):
         """
         output = {
             "comment": None,
-            'value': {
-                'elements': [
+            "value": {
+                "elements": [
                     {
-                        'span': None,
-                        'type': 'TextElement',
-                        'value': 'Foo'
+                        "span": None,
+                        "type": "TextElement",
+                        "value": "Foo"
                     }
                 ],
-                'span': None,
-                'type': 'Pattern'
+                "span": None,
+                "type": "Pattern"
             },
             "attributes": [],
             "type": "Message",
-            'id': {
-                'name': 'foo',
-                'span': None,
-                'type': 'Identifier'
+            "id": {
+                "name": "foo",
+                "span": None,
+                "type": "Identifier"
             },
-            'span': None,
-            'type': 'Message'
+            "span": None,
+            "type": "Message"
         }
 
         message = self.parser.parse_entry(dedent_ftl(input))
@@ -89,7 +89,7 @@ class TestParseEntry(unittest.TestCase):
                 {
                     "args": ["junk"],
                     "code": "E0005",
-                    'message': 'Expected message "junk" to have a value or attributes',
+                    "message": "Expected message \"junk\" to have a value or attributes",
                     "span": {
                         "end": 23,
                         "start": 23,
@@ -98,7 +98,7 @@ class TestParseEntry(unittest.TestCase):
                     "type": "Annotation"
                 }
             ],
-            'span': None,
+            "span": None,
             "type": "Junk"
         }
 
@@ -114,24 +114,24 @@ class TestParseEntry(unittest.TestCase):
         """
         output = {
             "comment": None,
-            'value': {
-                'elements': [
+            "value": {
+                "elements": [
                     {
-                        'span': None,
-                        'type': 'TextElement',
-                        'value': 'Foo'
+                        "span": None,
+                        "type": "TextElement",
+                        "value": "Foo"
                     }
                 ],
-                'span': None,
-                'type': 'Pattern'
+                "span": None,
+                "type": "Pattern"
             },
             "attributes": [],
             "span": None,
             "type": "Message",
-            'id': {
-                'name': 'foo',
-                'span': None,
-                'type': 'Identifier'
+            "id": {
+                "name": "foo",
+                "span": None,
+                "type": "Identifier"
             }
         }
 

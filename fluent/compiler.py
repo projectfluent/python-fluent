@@ -161,18 +161,20 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, deb
         # We should have chosen all our module_globals to avoid name conflicts:
         assert name == k
 
-    # functions from context
-    for name, func in functions.items():
-        # These might clash, because we can't control what the user passed in.
-        assigned_name = module.reserve_name(name, properties=get_name_properties(name))
-        compiler_env.function_renames[name] = assigned_name
-        module_globals[assigned_name] = func
-
     # Reserve names for function arguments, so that we always
     # know the name of these arguments without needing to do
     # lookups etc.
     for arg in (list(MESSAGE_FUNCTION_ARGS) + list(VARIANT_FUNCTION_KWARGS.keys())):
         module.reserve_function_arg_name(arg)
+
+    # -- User defined names
+    # functions from context
+    for name, func in functions.items():
+        # These might clash, because we can't control what the user passed in,
+        # so we make a record in 'function_renames'
+        assigned_name = module.reserve_name(name, properties=get_name_properties(name))
+        compiler_env.function_renames[name] = assigned_name
+        module_globals[assigned_name] = func
 
     # Pass one, find all the names, so that we can populate message_mapping,
     # which is needed for compilation.
@@ -399,7 +401,7 @@ def compile_expr_text(text, local_scope, parent_expr, compiler_env):
 
 @compile_expr.register(StringExpression)
 def compile_expr_string_expression(expr, local_scope, parent_expr, compiler_env):
-        return codegen.String(expr.value)
+    return codegen.String(expr.value)
 
 
 @compile_expr.register(NumberExpression)

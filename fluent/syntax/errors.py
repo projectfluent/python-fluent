@@ -52,15 +52,15 @@ def get_error_message(code, args):
     if code == 'E0020':
         return 'Unterminated string expression'
     if code == 'E0021':
-      return 'Positional arguments must not follow named arguments'
+        return 'Positional arguments must not follow named arguments'
     if code == 'E0022':
-      return 'Named arguments must be unique'
+        return 'Named arguments must be unique'
     if code == 'E0023':
-      return 'VariantLists are only allowed inside of other VariantLists.'
+        return 'VariantLists are only allowed inside of other VariantLists.'
     if code == 'E0024':
-      return 'Cannot access variants of a message.'
+        return 'Cannot access variants of a message.'
     if code == 'E0025':
-      return 'Unknown escape sequence: {}'.format(args[0])
+        return 'Unknown escape sequence: {}'.format(args[0])
     if code == 'E0026':
-      return 'Invalid Unicode escape sequence: {}'.format(args[0])
+        return 'Invalid Unicode escape sequence: {}'.format(args[0])
     return code

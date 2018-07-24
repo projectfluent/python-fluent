@@ -288,7 +288,7 @@ class FTLParserStream(ParserStream):
         def closure(ch):
             cc = ord(ch)
             return (
-                (cc >= 48 and cc <= 57) # 0-9
-                or (cc >= 65 and cc <= 70) # A-F
-                or (cc >= 97 and cc <= 102)) # a-f
+                (cc >= 48 and cc <= 57)   # 0-9
+                or (cc >= 65 and cc <= 70)  # A-F
+                or (cc >= 97 and cc <= 102))  # a-f
         return self.take_char(closure)

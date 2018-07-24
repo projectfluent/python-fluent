@@ -45,8 +45,12 @@ class FluentParser(object):
             # However they should parse as standalone when they're followed by
             # Junk. Consequently, we only attach Comments once we know that the
             # Message or the Term parsed successfully.
-            if isinstance(entry, ast.Comment) and blank_lines == 0 and ps.current():
-                # Stash the comment and decide what to do with it in the next pass.
+            if (
+                isinstance(entry, ast.Comment)
+                and blank_lines == 0 and ps.current()
+            ):
+                # Stash the comment and decide what to do with it
+                # in the next pass.
                 last_comment = entry
                 continue
 
@@ -57,7 +61,8 @@ class FluentParser(object):
                         entry.span.start = entry.comment.span.start
                 else:
                     entries.append(last_comment)
-                # In either case, the stashed comment has been dealt with; clear it.
+                # In either case, the stashed comment has been dealt with;
+                # clear it.
                 last_comment = None
 
             if isinstance(entry, ast.Comment) \
@@ -492,7 +497,7 @@ class FluentParser(object):
 
         return ast.TextElement(buf)
 
-    def get_escape_sequence(self, ps, specials = ('{', '\\')):
+    def get_escape_sequence(self, ps, specials=('{', '\\')):
         next = ps.current()
 
         if next in specials:
@@ -562,8 +567,10 @@ class FluentParser(object):
             ps.expect_indent()
 
             return ast.SelectExpression(selector, variants)
-        elif isinstance(selector, ast.AttributeExpression) \
-            and isinstance(selector.ref, ast.TermReference):
+        elif (
+            isinstance(selector, ast.AttributeExpression)
+            and isinstance(selector.ref, ast.TermReference)
+        ):
             raise ParseError('E0019')
 
         return selector

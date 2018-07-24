@@ -185,6 +185,7 @@ class Pattern(SyntaxNode):
         super(Pattern, self).__init__(**kwargs)
         self.elements = elements
 
+
 class PatternElement(SyntaxNode):
     """An abstract base class for elements of Patterns."""
 
@@ -199,6 +200,7 @@ class Placeable(PatternElement):
     def __init__(self, expression, **kwargs):
         super(Placeable, self).__init__(**kwargs)
         self.expression = expression
+
 
 class Expression(SyntaxNode):
     """An abstract base class for expressions."""

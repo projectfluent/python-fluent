@@ -186,6 +186,16 @@ class TestCompiler(unittest.TestCase):
         """)
         self.assertEqual(errs, [])
 
+    def test_name_collision_keyword(self):
+        code, errs = compile_messages_to_python("""
+            class = Class
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def class2(message_args, errors):
+                return ('Class', errors)
+        """)
+        self.assertEqual(errs, [])
+
     def test_message_mapping_used(self):
         # Checking that we actually use message_mapping when looking up the name
         # of the message function to call.

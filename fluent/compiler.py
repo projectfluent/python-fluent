@@ -179,9 +179,12 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, deb
 
     module = codegen.Module()
     for k in module_globals:
-        name = module.reserve_name(k, properties=get_name_properties(k))
+        name = module.reserve_name(k,
+                                   properties=get_name_properties(k),
+                                   is_builtin=k in six.moves.builtins.__dict__
+                                   )
         # We should have chosen all our module_globals to avoid name conflicts:
-        assert name == k
+        assert name == k, "Expected {0}=={1}".format(name, k)
 
     # Reserve names for function arguments, so that we always
     # know the name of these arguments without needing to do

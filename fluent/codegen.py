@@ -3,6 +3,7 @@ Utilities for doing Python code generation
 """
 from __future__ import absolute_import, unicode_literals
 
+import keyword
 import re
 
 from six import text_type
@@ -77,7 +78,7 @@ class Scope(PythonAst):
     def all_reserved_names(self):
         return self.names_in_use() | self.function_arg_reserved_names()
 
-    def reserve_name(self, requested, function_arg=False, properties=None):
+    def reserve_name(self, requested, function_arg=False, is_builtin=False, properties=None):
         """
         Reserve a name as being in use in a scope.
 
@@ -105,7 +106,13 @@ class Scope(PythonAst):
         count = 2  # instance without suffix is regarded as 1
         # To avoid shadowing of global names in local scope, we
         # take into account parent scope when assigning names.
+
         used = self.all_reserved_names()
+        # We need to also protect against using keywords ('class', 'def' etc.)
+        # However, some builtins are also keywords (e.g. 'None'), and so
+        # if a builtin is being reserved, don't check against the keyword list
+        if not is_builtin:
+            used = used | set(keyword.kwlist)
         while attempt in used:
             attempt = cleaned + str(count)
             count += 1

@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import contextlib
 from collections import OrderedDict
 
 import attr
@@ -58,6 +59,13 @@ CLDR_PLURAL_FORMS = set([
 
 
 @attr.s
+class CurrentEnvironment(object):
+    # The parts of CompilerEnvironment that we want to mutate (and restore)
+    # temporarily for some parts of a call chain.
+    message_id = attr.ib(default=None)
+
+
+@attr.s
 class CompilerEnvironment(object):
     locale = attr.ib()
     use_isolating = attr.ib()
@@ -68,9 +76,27 @@ class CompilerEnvironment(object):
     debug = attr.ib(default=False)
     functions_arg_spec = attr.ib(factory=dict)
     msg_ids_to_ast = attr.ib(factory=dict)
+    current = attr.ib(factory=CurrentEnvironment)
 
     def add_current_message_error(self, error):
-        self.errors.append((self._current_message_id, error))
+        self.errors.append((self.current.message_id, error))
+
+    @contextlib.contextmanager
+    def modified(self, **replacements):
+        """
+        Context manager that modifies the 'current' attribute of the
+        environment, restoring the old data at the end.
+        """
+        # CurrentEnvironment only has immutable args at the moment,
+        # so we can avoid deep copies.
+        old_current = self.current
+        new_attrs = {}
+        new_attrs.update(old_current.__dict__)
+        new_attrs.update(replacements)
+        new_current = CurrentEnvironment(**new_attrs)
+        self.current = new_current
+        yield self
+        self.current = old_current
 
 
 def compile_messages(messages, locale, use_isolating=True, functions=None, debug=False):
@@ -185,11 +211,10 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, deb
 
     # Pass 2, actual compilation
     for msg_id, msg in msg_ids_to_ast.items():
-        compiler_env._current_message_id = msg_id
-        function_name = compiler_env.message_mapping[msg_id]
-        function = compile_message(msg, msg_id, function_name, module, compiler_env)
-        del compiler_env._current_message_id
-        module.add_function(function_name, function)
+        with compiler_env.modified(message_id=msg_id):
+            function_name = compiler_env.message_mapping[msg_id]
+            function = compile_message(msg, msg_id, function_name, module, compiler_env)
+            module.add_function(function_name, function)
 
     module = codegen.simplify(module)
     return (module, compiler_env.message_mapping, module_globals, compiler_env.errors)

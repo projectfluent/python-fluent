@@ -30,7 +30,7 @@ class MessageContext(object):
         _functions = BUILTINS.copy()
         if functions:
             _functions.update(functions)
-        self.functions = _functions
+        self._functions = _functions
         self._use_isolating = use_isolating
         self._messages = {}
         self._terms = {}

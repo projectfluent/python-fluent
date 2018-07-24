@@ -304,7 +304,7 @@ def handle_variant_expression(expression, env):
 def handle_call_expression(expression, env):
     function_name = expression.callee.name
     try:
-        function = env.context.functions[function_name]
+        function = env.context._functions[function_name]
     except LookupError:
         env.errors.append(FluentReferenceError("Unknown function: {0}"
                                                .format(function_name)))

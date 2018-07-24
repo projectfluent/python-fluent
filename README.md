@@ -290,10 +290,10 @@ Security
 --------
 
 You should not pass untrusted FTL code to `MessageContext.add_messages`. This is
-because carefully constructed messages could potentially large resource usage
-(CPU time and memory). However, the `InterpretingMessageContext` implementation
-(see below) does have some protection against these attacks, although it may not
-be foolproof.
+because carefully constructed messages could potentially cause large resource
+usage (CPU time and memory). However, the `InterpretingMessageContext`
+implementation (see below) does have some protection against these attacks,
+although it may not be foolproof.
 
 CompilingMessageContext and InterpretingMessageContext
 ------------------------------------------------------
@@ -301,12 +301,13 @@ CompilingMessageContext and InterpretingMessageContext
 python-fluent comes with two implementations of `MessageContext`. The default is
 `fluent.context.CompilingMessageContext`, which is what you get under the alias
 as `fluent.context.MessageContext`. This works by compiling a set of FTL
-messages to a set of Python functions, which results in very good performance (see below for more).
+messages to a set of Python functions, which results in very good performance
+(see below for more info).
 
 The alternative is `fluent.context.InterpretingMessageContext`, which implements
 an interpreter for the FTL Abstract Syntax Tree.
 
-While the two implementations have the same API, and the return the same values
+While the two implementations have the same API, and return the same values
 under most situations, there are some differences, as follows:
 
 * `InterpretingMessageContext` has some protection against malicious FTL input
@@ -350,9 +351,9 @@ equivalent implementation using GNU gettext and Python `%` interpolation.
 
 For message where plural rules are involved, currently `CompilingMessageContext`
 can be significantly slower than using GNU gettext, partly because fluent uses
-plural rules from CLDR than can be much more complex than the ones that gettext
-normally does. Further work could be done to optimize some of these cases
-though.
+plural rules from CLDR that can be much more complex (and correct) than the ones
+that gettext normally does. Further work could be done to optimize some of these
+cases though.
 
 For more complex operations (for example, using locale-aware date and number
 formatting), formatting messages can take a lot longer. Comparisons to GNU
@@ -363,9 +364,9 @@ of the number of internationalized strings in an application.
 `InterpretingMessageContext` is, as you would expect, much slower that
 `CompilingMessageContext`, often by a factor of 10, which is why it is not the
 default. If you have a large set of messages, most likely
-`CompilingMessageContext` is a lot slower to format the first message because it
-first compiles all the messages, whereas `InterpretingMessageContext` does not
-have this compilation step.
+`CompilingMessageContext` will be a lot slower to format the first message
+because it first compiles all the messages, whereas `InterpretingMessageContext`
+does not have this compilation step.
 
 
 Known limitations and bugs

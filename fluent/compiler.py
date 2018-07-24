@@ -87,14 +87,10 @@ class CompilerEnvironment(object):
         Context manager that modifies the 'current' attribute of the
         environment, restoring the old data at the end.
         """
-        # CurrentEnvironment only has immutable args at the moment,
-        # so we can avoid deep copies.
+        # CurrentEnvironment only has immutable args at the moment, so the
+        # shallow copy returned by attr.evolve is fine.
         old_current = self.current
-        new_attrs = {}
-        new_attrs.update(old_current.__dict__)
-        new_attrs.update(replacements)
-        new_current = CurrentEnvironment(**new_attrs)
-        self.current = new_current
+        self.current = attr.evolve(old_current, **replacements)
         yield self
         self.current = old_current
 

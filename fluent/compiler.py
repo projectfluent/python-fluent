@@ -9,11 +9,11 @@ import six
 
 from . import codegen, runtime
 from .exceptions import FluentCyclicReferenceError, FluentReferenceError
-from .syntax.ast import (AttributeExpression, BaseNode, CallExpression, ExternalArgument, MessageReference,
-                         NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression,
-                         TextElement, VariantExpression, VariantName)
+from .syntax.ast import (AttributeExpression, BaseNode, CallExpression, Message, MessageReference, NumberLiteral,
+                         Pattern, Placeable, SelectExpression, StringLiteral, Term, TermReference, TextElement,
+                         VariableReference, VariantExpression, VariantList, VariantName)
 from .types import FluentDateType, FluentNumber, FluentType
-from .utils import args_match, inspect_function_args, numeric_to_native, partition
+from .utils import args_match, inspect_function_args, numeric_to_native
 
 try:
     from functools import singledispatch
@@ -235,7 +235,7 @@ def message_id_for_attr(parent_msg_id, attr_name):
 
 
 def message_id_for_attr_expression(attr_expr):
-    return message_id_for_attr(attr_expr.id.name, attr_expr.name.name)
+    return message_id_for_attr(attr_expr.ref.id.name, attr_expr.name.name)
 
 
 def message_function_name_for_msg_id(msg_id):
@@ -256,7 +256,7 @@ def compile_message(msg, msg_id, function_name, module, compiler_env):
                                 kwargs=func_kwargs,
                                 debug=compiler_env.debug)
 
-    if not isinstance(start, Pattern):
+    if not isinstance(start, (Pattern, VariantList)):
         raise AssertionError("Not expecting object of type {0}".format(type(start)))
 
     if contains_reference_cycle(msg, msg_id, compiler_env):
@@ -291,12 +291,15 @@ def traverse_ast(node, fun, exclude_attributes=None):
 
     Traverse this node depth-first applying `fun` to subnodes and leaves.
     Children are processed before parents (postorder traversal).
+
+    exclude_attributes is a list of (node type, attribute name) tuples
+    that should not be recursed into.
     """
 
     def visit(value):
         """Call `fun` on `value` and its descendants."""
         if isinstance(value, BaseNode):
-            return traverse_ast(value, fun)
+            return traverse_ast(value, fun, exclude_attributes=exclude_attributes)
         if isinstance(value, list):
             return fun(list(map(visit, value)))
         else:
@@ -305,7 +308,7 @@ def traverse_ast(node, fun, exclude_attributes=None):
     # Use all attributes found on the node
     parts = vars(node).items()
     for name, value in parts:
-        if exclude_attributes is not None and name in exclude_attributes:
+        if exclude_attributes is not None and (type(node), name) in exclude_attributes:
             continue
         visit(value)
 
@@ -313,8 +316,7 @@ def traverse_ast(node, fun, exclude_attributes=None):
 
 
 def is_variant_definition_expression(expr):
-    return (isinstance(expr, SelectExpression) and
-            expr.expression is None)
+    return isinstance(expr, VariantList)
 
 
 def contains_reference_cycle(msg, msg_id, compiler_env):
@@ -324,28 +326,40 @@ def contains_reference_cycle(msg, msg_id, compiler_env):
         lambda node: (
             (isinstance(node, MessageReference) and
              node.id.name == msg_id) or
+            (isinstance(node, TermReference) and
+             node.id.name == msg_id) or
             (isinstance(node, AttributeExpression) and
              message_id_for_attr_expression(node) == msg_id) or
             (isinstance(node, AttributeExpression) and
              message_id_for_attr_expression(node) not in msg_ids_to_ast
-             and node.id.name == msg_id)
+             and node.ref.id.name == msg_id)
         ),
-        msg_ids_to_ast)
+        msg_ids_to_ast,
+        )
 
 
 def contains_matching_node_deep(start_node, predicate, msg_ids_to_ast):
+    # We exclude recursing into certain attributes, because we already cover
+    # these recursions explicitly by jumping to a subnode for the case of
+    # references.
+    exclude_attributes = [
+        # Message and Term attributes have already been loaded into the msg_ids_to_ast dict,
+        # and we get to their contents via AttributeExpression
+        (Message, 'attributes'),
+        (Term, 'attributes'),
+
+        # We don't recurse into AttributeExpression.ref, which is a
+        # MessageReference, because we have handled the contents of this ref via
+        # the parent AttributeExpression, and we don't want it to be handled as
+        # a standalone MessageReference which would mean something different.
+        (AttributeExpression, 'ref'),
+
+        # for speed
+        (Message, 'comment'),
+        (Term, 'comment'),
+    ]
     checks = []
-
     checked_nodes = set([])
-
-    # We don't recurse into message attributes, because a message and its
-    # attributes are considered distinct. For example, the following is fine,
-    # there is cycle, foo.attr is not reached from foo
-    #
-    #  foo = Foo
-    #     .attr = { foo } Attribute
-
-    exclude_attributes = ['attributes']
 
     def checker(node):
         node_id = id(node)
@@ -363,6 +377,10 @@ def contains_matching_node_deep(start_node, predicate, msg_ids_to_ast):
             ref = node.id.name
             if ref in msg_ids_to_ast:
                 sub_node = msg_ids_to_ast[ref]
+        elif isinstance(node, TermReference):
+            ref = node.id.name
+            if ref in msg_ids_to_ast:
+                sub_node = msg_ids_to_ast[ref]
         elif isinstance(node, AttributeExpression):
             ref = message_id_for_attr_expression(node)
             if ref in msg_ids_to_ast:
@@ -370,7 +388,7 @@ def contains_matching_node_deep(start_node, predicate, msg_ids_to_ast):
             else:
                 # Compiler falls back to parent ref in this situation,
                 # so we have to as well to check for cycles
-                parent_ref = node.id.name
+                parent_ref = node.ref.id.name
                 if parent_ref in msg_ids_to_ast:
                     sub_node = msg_ids_to_ast[parent_ref]
 
@@ -423,12 +441,12 @@ def compile_expr_text(text, local_scope, parent_expr, compiler_env):
     return codegen.String(text.value)
 
 
-@compile_expr.register(StringExpression)
+@compile_expr.register(StringLiteral)
 def compile_expr_string_expression(expr, local_scope, parent_expr, compiler_env):
     return codegen.String(expr.value)
 
 
-@compile_expr.register(NumberExpression)
+@compile_expr.register(NumberLiteral)
 def compile_expr_number_expression(expr, local_scope, parent_expr, compiler_env):
     number_expr = codegen.Number(numeric_to_native(expr.value))
     if is_NUMBER_call_expr(parent_expr):
@@ -453,6 +471,12 @@ def compile_expr_placeable(placeable, local_scope, parent_expr, compiler_env):
 
 @compile_expr.register(MessageReference)
 def compile_expr_message_reference(reference, local_scope, parent_expr, compiler_env):
+    name = reference.id.name
+    return do_message_call(name, local_scope, parent_expr, compiler_env)
+
+
+@compile_expr.register(TermReference)
+def compile_expr_term_reference(reference, local_scope, parent_expr, compiler_env):
     name = reference.id.name
     return do_message_call(name, local_scope, parent_expr, compiler_env)
 
@@ -499,7 +523,7 @@ def make_fluent_none(name, local_scope):
 
 @compile_expr.register(AttributeExpression)
 def compile_expr_attribute_expression(attribute, local_scope, parent_expr, compiler_env):
-    parent_id = attribute.id.name
+    parent_id = attribute.ref.id.name
     msg_id = message_id_for_attr_expression(attribute)
     if msg_id in compiler_env.message_mapping:
         return do_message_call(msg_id, local_scope, attribute, compiler_env)
@@ -512,19 +536,12 @@ def compile_expr_attribute_expression(attribute, local_scope, parent_expr, compi
         return do_message_call(parent_id, local_scope, parent_expr, compiler_env)
 
 
-@compile_expr.register(SelectExpression)
-def compile_expr_select_expression(select_expr, local_scope, parent_expr, compiler_env):
-    if is_variant_definition_expression(select_expr):
-        return compile_expr_variant_definition(select_expr, local_scope, parent_expr, compiler_env)
-    else:
-        return compile_expr_select_definition(select_expr, local_scope, parent_expr, compiler_env)
-
-
-def compile_expr_variant_definition(variant_expr, local_scope, parent_expr, compiler_env):
+@compile_expr.register(VariantList)
+def compile_expr_variant_list(variant_list, local_scope, parent_expr, compiler_env):
     if_statement = codegen.If(local_scope)
     return_name = local_scope.reserve_name('_ret')
     assigned_types = []
-    for variant in variant_expr.variants:
+    for variant in variant_list.variants:
         if variant.default:
             # This is default, so gets chosen if nothing else matches, or there
             # was no requested variant. Therefore we use the final 'else' block
@@ -545,7 +562,7 @@ def compile_expr_variant_definition(variant_expr, local_scope, parent_expr, comp
                     ),
                     codegen.NotEquals(
                         codegen.VariableReference(VARIANT_NAME, local_scope),
-                        compile_expr(variant.key, local_scope, variant_expr, compiler_env)
+                        compile_expr(variant.key, local_scope, variant_list, compiler_env)
                     )
                 )
             )
@@ -571,9 +588,9 @@ def compile_expr_variant_definition(variant_expr, local_scope, parent_expr, comp
 
             # > if variant == $variant.key
             condition = codegen.Equals(codegen.VariableReference(VARIANT_NAME, local_scope),
-                                       compile_expr(variant.key, local_scope, variant_expr, compiler_env))
+                                       compile_expr(variant.key, local_scope, variant_list, compiler_env))
             block = if_statement.add_if(condition)
-        assigned_value = compile_expr(variant.value, block, variant_expr, compiler_env)
+        assigned_value = compile_expr(variant.value, block, variant_list, compiler_env)
         block.add_assignment(return_name, assigned_value)
         assigned_types.append(assigned_value.type)
 
@@ -592,12 +609,13 @@ def is_cldr_plural_form_key(key_expr):
             key_expr.name in CLDR_PLURAL_FORMS)
 
 
-def compile_expr_select_definition(select_expr, local_scope, parent_expr, compiler_env):
-    # This is very similar to compile_expr_variant_definition, but it is different
+@compile_expr.register(SelectExpression)
+def compile_expr_select_expression(select_expr, local_scope, parent_expr, compiler_env):
+    # This is very similar to compile_expr_variant_list, but it is different
     # enough that implementing them together makes the code rather hard to understand
     if_statement = codegen.If(local_scope)
     key_tmp_name = local_scope.reserve_name('_key')
-    key_value = compile_expr(select_expr.expression, local_scope, select_expr, compiler_env)
+    key_value = compile_expr(select_expr.selector, local_scope, select_expr, compiler_env)
     local_scope.add_assignment(key_tmp_name, key_value)
 
     return_tmp_name = local_scope.reserve_name('_ret')
@@ -670,14 +688,16 @@ def compile_expr_variant_expression(variant_expr, local_scope, parent_expr, comp
             msg_id, local_scope, parent_expr, compiler_env,
             call_kwargs={VARIANT_NAME: compile_expr(variant_expr.key, local_scope, variant_expr, compiler_env)})
     else:
-        error = FluentReferenceError("Unknown message: {0}"
-                                     .format(msg_id))
+        if msg_id.startswith('-'):
+            error = FluentReferenceError("Unknown term: {0}".format(msg_id))
+        else:
+            error = FluentReferenceError("Unknown message: {0}".format(msg_id))
         add_static_msg_error(local_scope, error)
         compiler_env.add_current_message_error(error)
         return make_fluent_none(msg_id, local_scope)
 
 
-@compile_expr.register(ExternalArgument)
+@compile_expr.register(VariableReference)
 def compile_expr_external_argument(argument, local_scope, parent_expr, compiler_env):
     name = argument.id.name
     tmp_name = local_scope.reserve_name('_tmp')
@@ -722,10 +742,8 @@ def compile_expr_call_expression(expr, local_scope, parent_expr, compiler_env):
     function_name = expr.callee.name
 
     if function_name in compiler_env.functions:
-        kwargs, args = partition(expr.args,
-                                 lambda i: isinstance(i, NamedArgument))
-        args = [compile_expr(arg, local_scope, expr, compiler_env) for arg in args]
-        kwargs = {kwarg.name.name: compile_expr(kwarg.val, local_scope, expr, compiler_env) for kwarg in kwargs}
+        args = [compile_expr(arg, local_scope, expr, compiler_env) for arg in expr.positional]
+        kwargs = {kwarg.name.name: compile_expr(kwarg.value, local_scope, expr, compiler_env) for kwarg in expr.named}
         match, error = args_match(function_name, args, kwargs, compiler_env.functions_arg_spec[function_name])
         if match:
             function_name_in_module = compiler_env.function_renames[function_name]

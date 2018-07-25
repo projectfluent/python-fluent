@@ -48,10 +48,10 @@ class TestVariants(unittest.TestCase):
             errs,
             [FluentReferenceError("Unknown variant: c")])
 
-    def test_choose_missing_message(self):
+    def test_choose_missing_term(self):
         val, errs = self.ctx.format('goo', {})
-        self.assertEqual(val, 'missing')
+        self.assertEqual(val, '-missing')
         self.assertEqual(len(errs), 1)
         self.assertEqual(
             errs,
-            [FluentReferenceError("Unknown message: missing")])
+            [FluentReferenceError("Unknown term: -missing")])

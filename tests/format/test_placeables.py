@@ -41,6 +41,8 @@ class TestPlaceables(unittest.TestCase):
                                   .attr = Attribute
             self-parent-ref-ok = Parent
                                .attr =  Attribute { self-parent-ref-ok }
+            -cyclic-term = { -cyclic-term }
+            cyclic-term-message = { -cyclic-term }
         """))
 
     def test_placeable_message(self):
@@ -95,6 +97,12 @@ class TestPlaceables(unittest.TestCase):
 
     def test_mutual_cycle_detection(self):
         val, errs = self.ctx.format('cyclic-msg1', {})
+        self.assertIn('???', val)
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(type(errs[0]), FluentCyclicReferenceError)
+
+    def test_term_cycle_detection(self):
+        val, errs = self.ctx.format('cyclic-term-message', {})
         self.assertIn('???', val)
         self.assertEqual(len(errs), 1)
         self.assertEqual(type(errs[0]), FluentCyclicReferenceError)

@@ -76,7 +76,7 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_external_argument(self):
+    def test_variable_reference(self):
         input = """\
             foo = Foo { $bar }
         """
@@ -336,7 +336,7 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_selector_external_argument(self):
+    def test_selector_variable_reference(self):
         input = """\
             foo =
                 { $bar ->
@@ -396,7 +396,7 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_call_expression_with_external_argument(self):
+    def test_call_expression_with_variable_reference(self):
         input = """\
             foo = { FOO($bar) }
         """
@@ -493,7 +493,7 @@ class TestSerializeExpression(unittest.TestCase):
         """
         self.assertEqual(self.pretty_expr(input), 'msg')
 
-    def test_external_argument(self):
+    def test_variable_reference(self):
         input = """\
             foo = { $ext }
         """

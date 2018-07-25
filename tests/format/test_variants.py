@@ -13,20 +13,15 @@ class TestVariants(unittest.TestCase):
     def setUp(self):
         self.ctx = MessageContext(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
-            variant = {
+            -variant = {
                 [a] A
                *[b] B
              }
-            foo = { variant }
-            bar = { variant[a] }
-            baz = { variant[b] }
-            qux = { variant[c] }
+            foo = { -variant }
+            bar = { -variant[a] }
+            baz = { -variant[b] }
+            qux = { -variant[c] }
         """))
-
-    def test_format_directly_returns_the_default_variant(self):
-        val, errs = self.ctx.format('variant', {})
-        self.assertEqual(val, 'B')
-        self.assertEqual(len(errs), 0)
 
     def test_returns_the_default_variant(self):
         val, errs = self.ctx.format('foo', {})

@@ -7,11 +7,11 @@ import attr
 import six
 
 from .exceptions import FluentCyclicReferenceError, FluentReferenceError
-from .syntax.ast import (AttributeExpression, CallExpression, ExternalArgument, Message, MessageReference,
-                         NamedArgument, NumberExpression, Pattern, Placeable, SelectExpression, StringExpression, Term,
-                         TextElement, VariantExpression, VariantName)
+from .syntax.ast import (AttributeExpression, CallExpression, Message, MessageReference, NumberLiteral,
+                         Pattern, Placeable, SelectExpression, StringLiteral, Term, TermReference, TextElement,
+                         VariableReference, VariantExpression, VariantList, VariantName)
 from .types import FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
-from .utils import numeric_to_native, partition
+from .utils import numeric_to_native
 
 try:
     from functools import singledispatch
@@ -142,12 +142,12 @@ def handle_placeable(placeable, env):
     return handle(placeable.expression, env)
 
 
-@handle.register(StringExpression)
+@handle.register(StringLiteral)
 def handle_string_expression(string_expression, env):
     return string_expression.value
 
 
-@handle.register(NumberExpression)
+@handle.register(NumberLiteral)
 def handle_number_expression(number_expression, env):
     return numeric_to_native(number_expression.value)
 
@@ -155,6 +155,16 @@ def handle_number_expression(number_expression, env):
 @handle.register(MessageReference)
 def handle_message_reference(message_reference, env):
     name = message_reference.id.name
+    return handle(lookup_reference(name, env), env)
+
+
+@handle.register(TermReference)
+def handle_term_reference(term_reference, env):
+    name = term_reference.id.name
+    return handle(lookup_reference(name, env), env)
+
+
+def lookup_reference(name, env):
     message = None
     if name.startswith("-"):
         try:
@@ -187,8 +197,8 @@ def handle_none(none, env):
     raise LookupError("Message body not defined")
 
 
-@handle.register(ExternalArgument)
-def handle_external_argument(argument, env):
+@handle.register(VariableReference)
+def handle_variable_reference(argument, env):
     name = argument.id.name
     try:
         arg_val = env.args[name]
@@ -202,9 +212,9 @@ def handle_external_argument(argument, env):
 
 @handle.register(AttributeExpression)
 def handle_attribute_expression(attribute, env):
-    parent_id = attribute.id
+    parent_id = attribute.ref.id.name
     attr_name = attribute.name.name
-    message = handle(MessageReference(parent_id), env)
+    message = lookup_reference(parent_id, env)
     if isinstance(message, FluentNone):
         return message
 
@@ -214,24 +224,18 @@ def handle_attribute_expression(attribute, env):
 
     env.errors.append(
         FluentReferenceError("Unknown attribute: {0}.{1}"
-                             .format(parent_id.name, attr_name)))
+                             .format(parent_id, attr_name)))
     return handle(message, env)
 
 
-@handle.register(SelectExpression)
-def handle_select_expression(expression, env):
-    if expression.expression is None:
-        key = None
-    else:
-        key = handle(expression.expression, env)
-    return select_from_select_expression(expression, env,
-                                         key=key)
+@handle.register(VariantList)
+def handle_variant_list(variant_list, env):
+    return select_from_variant_list(variant_list, env, None)
 
 
-def select_from_select_expression(expression, env, key=None):
-    default = None
+def select_from_variant_list(variant_list, env, key):
     found = None
-    for variant in expression.variants:
+    for variant in variant_list.variants:
         if variant.default:
             default = variant
             if key is None:
@@ -244,11 +248,36 @@ def select_from_select_expression(expression, env, key=None):
             break
 
     if found is None:
-        if (expression.expression is None and key is not None and
-                not isinstance(key, FluentNone)):
-            # Variants, not full select expressions
+        if (key is not None and not isinstance(key, FluentNone)):
             env.errors.append(FluentReferenceError("Unknown variant: {0}"
                                                    .format(key)))
+        found = default
+    if found is None:
+        return FluentNone()
+    else:
+        return handle(found.value, env)
+
+
+@handle.register(SelectExpression)
+def handle_select_expression(expression, env):
+    key = handle(expression.selector, env)
+    return select_from_select_expression(expression, env,
+                                         key=key)
+
+
+def select_from_select_expression(expression, env, key):
+    default = None
+    found = None
+    for variant in expression.variants:
+        if variant.default:
+            default = variant
+
+        compare_value = handle(variant.key, env)
+        if match(key, compare_value, env):
+            found = variant
+            break
+
+    if found is None:
         found = default
     if found is None:
         return FluentNone()
@@ -283,21 +312,18 @@ def handle_variant_name(name, env):
 
 @handle.register(VariantExpression)
 def handle_variant_expression(expression, env):
-    message = handle(MessageReference(expression.ref.id), env)
+    message = lookup_reference(expression.ref.id.name, env)
     if isinstance(message, FluentNone):
         return message
 
-    # TODO How exactly should we handle the case where 'message'
-    # is not simply a SelectExpression but has other stuff?
-    assert len(message.value.elements) == 1
-    select_expression = message.value.elements[0].expression
-    assert isinstance(select_expression, SelectExpression)
-    assert select_expression.expression is None
+    # TODO What to do if message is not a VariantList?
+    # Need test at least.
+    assert isinstance(message.value, VariantList)
 
     variant_name = expression.key.name
-    return select_from_select_expression(select_expression,
-                                         env,
-                                         key=variant_name)
+    return select_from_variant_list(message.value,
+                                    env,
+                                    variant_name)
 
 
 @handle.register(CallExpression)
@@ -310,10 +336,8 @@ def handle_call_expression(expression, env):
                                                .format(function_name)))
         return FluentNone(function_name + "()")
 
-    kwargs, args = partition(expression.args,
-                             lambda i: isinstance(i, NamedArgument))
-    args = [handle(arg, env) for arg in args]
-    kwargs = {kwarg.name.name: handle(kwarg.val, env) for kwarg in kwargs}
+    args = [handle(arg, env) for arg in expression.positional]
+    kwargs = {kwarg.name.name: handle(kwarg.value, env) for kwarg in expression.named}
     try:
         return function(*args, **kwargs)
     except Exception as e:

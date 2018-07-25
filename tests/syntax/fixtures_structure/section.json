@@ -3,7 +3,6 @@
   "body": [
     {
       "type": "GroupComment",
-      "annotations": [],
       "content": "",
       "span": {
         "type": "Span",

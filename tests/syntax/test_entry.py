@@ -11,7 +11,7 @@ class TestParseEntry(unittest.TestCase):
     maxDiff = None
 
     def setUp(self):
-        self.parser = FluentParser()
+        self.parser = FluentParser(with_spans=False)
 
     def test_simple_message(self):
         input = """\
@@ -19,42 +19,145 @@ class TestParseEntry(unittest.TestCase):
         """
         output = {
             "comment": None,
-            "span": {
-                "start": 0,
-                "end": 9,
-                "type": "Span"
-            },
             "value": {
                 "elements": [
                     {
+                        "span": None,
                         "type": "TextElement",
-                        "value": "Foo",
-                        "span": {
-                            "start": 6,
-                            "end": 9,
-                            "type": "Span"
-                        }
+                        "value": "Foo"
                     }
                 ],
-                "type": "Pattern",
-                "span": {
-                    "start": 6,
-                    "end": 9,
-                    "type": "Span"
-                }
+                "span": None,
+                "type": "Pattern"
             },
-            "annotations": [],
+            "attributes": [],
+            "type": "Message",
+            "span": None,
+            "id": {
+                "span": None,
+                "type": "Identifier",
+                "name": "foo"
+            }
+        }
+
+        message = self.parser.parse_entry(dedent_ftl(input))
+        self.assertEqual(message.to_json(), output)
+
+    def test_ignore_attached_comment(self):
+        input = """\
+            # Attached Comment
+            foo = Foo
+        """
+        output = {
+            "comment": None,
+            "value": {
+                "elements": [
+                    {
+                        "span": None,
+                        "type": "TextElement",
+                        "value": "Foo"
+                    }
+                ],
+                "span": None,
+                "type": "Pattern"
+            },
             "attributes": [],
             "type": "Message",
             "id": {
-                "type": "Identifier",
                 "name": "foo",
-                "span": {
-                    "start": 0,
-                    "end": 3,
-                    "type": "Span"
+                "span": None,
+                "type": "Identifier"
+            },
+            "span": None,
+            "type": "Message"
+        }
+
+        message = self.parser.parse_entry(dedent_ftl(input))
+        self.assertEqual(message.to_json(), output)
+
+    def test_return_junk(self):
+        input = """\
+            # Attached Comment
+            junk
+        """
+        output = {
+            "content": "junk\n",
+            "annotations": [
+                {
+                    "args": ["junk"],
+                    "code": "E0005",
+                    "message": "Expected message \"junk\" to have a value or attributes",
+                    "span": {
+                        "end": 23,
+                        "start": 23,
+                        "type": "Span"
+                    },
+                    "type": "Annotation"
                 }
+            ],
+            "span": None,
+            "type": "Junk"
+        }
+
+        message = self.parser.parse_entry(dedent_ftl(input))
+        self.assertEqual(message.to_json(), output)
+
+    def test_ignore_all_valid_comments(self):
+        input = """\
+            # Attached Comment
+            ## Group Comment
+            ### Resource Comment
+            foo = Foo
+        """
+        output = {
+            "comment": None,
+            "value": {
+                "elements": [
+                    {
+                        "span": None,
+                        "type": "TextElement",
+                        "value": "Foo"
+                    }
+                ],
+                "span": None,
+                "type": "Pattern"
+            },
+            "attributes": [],
+            "span": None,
+            "type": "Message",
+            "id": {
+                "name": "foo",
+                "span": None,
+                "type": "Identifier"
             }
+        }
+
+        message = self.parser.parse_entry(dedent_ftl(input))
+        self.assertEqual(message.to_json(), output)
+
+
+    def test_do_not_ignore_invalid_comments(self):
+        input = """\
+        # Attached Comment
+        ##Invalid Comment
+        """
+        output = {
+            "content": "##Invalid Comment\n",
+            "annotations": [
+                {
+                    "args": [" "],
+                    "code": "E0003",
+                    "message": "Expected token: \" \"",
+                    "span": {
+                        "end": 21,
+                        "start": 21,
+                        "type": "Span"
+                    },
+                    "type": "Annotation"
+                }
+            ],
+            "span": None,
+            "type": "Junk"
         }
 
         message = self.parser.parse_entry(dedent_ftl(input))
@@ -68,11 +171,6 @@ class TestSerializeEntry(unittest.TestCase):
     def test_simple_message(self):
         input = {
             "comment": None,
-            "span": {
-                "start": 0,
-                "end": 9,
-                "type": "Span"
-            },
             "value": {
                 "elements": [
                     {
@@ -82,7 +180,6 @@ class TestSerializeEntry(unittest.TestCase):
                 ],
                 "type": "Pattern"
             },
-            "annotations": [],
             "attributes": [],
             "type": "Message",
             "id": {

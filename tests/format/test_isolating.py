@@ -27,12 +27,12 @@ class TestUseIsolating(unittest.TestCase):
         self.assertEqual(val, FSI + "Foo" + PDI + " Bar")
         self.assertEqual(len(errs), 0)
 
-    def test_isolates_interpolated_string_typed_external_arguments(self):
+    def test_isolates_interpolated_string_typed_variable_references(self):
         val, errs = self.ctx.format('baz', {'arg': 'Arg'})
         self.assertEqual(val, FSI + "Arg" + PDI + " Baz")
         self.assertEqual(len(errs), 0)
 
-    def test_isolates_interpolated_number_typed_external_arguments(self):
+    def test_isolates_interpolated_number_typed_variable_references(self):
         val, errs = self.ctx.format('baz', {'arg': 1})
         self.assertEqual(val, FSI + "1" + PDI + " Baz")
         self.assertEqual(len(errs), 0)

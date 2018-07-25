@@ -244,17 +244,18 @@ class TestIgnoredFields(unittest.TestCase):
 
     def test_ignore_comments(self):
         a = self.parse_ftl_entry("""\
-            // Comment A
+            # Comment A
             foo = Foo
         """)
         b = self.parse_ftl_entry("""\
-            // Comment B
+            # Comment B
             foo = Foo
         """)
         c = self.parse_ftl_entry("""\
-            // Comment CC
+            # Comment CC
             foo = Foo
         """)
 
         self.assertTrue(a.equals(b, ignored_fields=['comment']))
         self.assertFalse(a.equals(c, ignored_fields=['comment']))
+        self.assertTrue(a.equals(c, ignored_fields=['comment', 'span']))

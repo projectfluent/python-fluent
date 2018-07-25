@@ -73,7 +73,7 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_external_argument(self):
+    def test_variable_reference(self):
         input = """\
             foo = Foo { $bar }
         """
@@ -127,7 +127,7 @@ class TestSerializeResource(unittest.TestCase):
             ## Comment Header
             ##
             ## A multiline
-            ## section comment.
+            ## group comment.
 
             bar = Bar
         """
@@ -217,9 +217,9 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_select_expression_no_selector(self):
+    def test_variant_list(self):
         input = """\
-            foo =
+            -foo =
                 {
                    *[a] A
                     [b] B
@@ -240,7 +240,7 @@ class TestSerializeResource(unittest.TestCase):
     def test_variant_multiline(self):
         input = """\
             foo =
-                {
+                { $sel ->
                    *[a]
                         AAA
                         BBB
@@ -251,14 +251,14 @@ class TestSerializeResource(unittest.TestCase):
     def test_variant_multiline_first_inline(self):
         input = """\
             foo =
-                {
+                { $sel ->
                    *[a] AAA
                         BBB
                 }
         """
         output = """\
             foo =
-                {
+                { $sel ->
                    *[a]
                         AAA
                         BBB
@@ -269,7 +269,7 @@ class TestSerializeResource(unittest.TestCase):
     def test_variant_key_words(self):
         input = """\
             foo =
-                {
+                { $sel ->
                    *[a b c] A B C
                 }
         """
@@ -278,7 +278,7 @@ class TestSerializeResource(unittest.TestCase):
     def test_variant_key_number(self):
         input = """\
             foo =
-                {
+                { $sel ->
                    *[1] 1
                 }
         """
@@ -333,7 +333,7 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_selector_external_argument(self):
+    def test_selector_variable_reference(self):
         input = """\
             foo =
                 { $bar ->
@@ -393,7 +393,7 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_call_expression_with_external_argument(self):
+    def test_call_expression_with_variable_reference(self):
         input = """\
             foo = { FOO($bar) }
         """
@@ -425,7 +425,31 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_call_expression_with_positional_and_named_arguments(self):
         input = """\
-            foo = { FOO(bar, baz: "baz", 1) }
+            foo = { FOO(bar, 1, baz: "baz") }
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+
+    def test_nested_placeables(self):
+        input = """\
+            foo = {{ FOO() }}
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+
+    def test_escaped_special_in_text_element(self):
+        input = """\
+            foo = \\{Escaped}
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+
+    def test_escaped_special_in_string_literal(self):
+        input = """\
+            foo = { "Escaped \\" quote" }
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+
+    def test_escaped_unicode_sequence(self):
+        input = """\
+            foo = \\u0065
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
@@ -466,7 +490,7 @@ class TestSerializeExpression(unittest.TestCase):
         """
         self.assertEqual(self.pretty_expr(input), 'msg')
 
-    def test_external_argument(self):
+    def test_variable_reference(self):
         input = """\
             foo = { $ext }
         """

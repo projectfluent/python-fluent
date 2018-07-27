@@ -589,10 +589,6 @@ def infix_operator(operator, return_type):
 
 
 Equals = infix_operator("==", bool)
-NotEquals = infix_operator("!=", bool)
-And = infix_operator("and", bool)
-Is = infix_operator("is", bool)
-IsNot = infix_operator("is not", bool)
 Or = infix_operator("or", bool)
 
 

@@ -322,7 +322,11 @@ class If(Statement):
 
         for condition, if_block in zip(self._conditions, self.if_blocks):
             if_start = "if" if first else "elif"
-            output.append("{0} {1}:\n".format(if_start, condition.as_source_code()))
+            condition_rendered = condition.as_source_code()
+            if (condition_rendered.startswith('(') and
+                    condition_rendered.endswith(')')):
+                condition_rendered = condition_rendered[1:-1]
+            output.append("{0} {1}:\n".format(if_start, condition_rendered))
             output.append(indent(if_block.as_source_code()))
             first = False
         if self.else_block.statements:
@@ -572,9 +576,9 @@ def infix_operator(operator, return_type):
             self.right = right
 
         def as_source_code(self):
-            return "{0} {1} {2}".format(self.left.as_source_code(),
-                                        operator,
-                                        self.right.as_source_code())
+            return "({0} {1} {2})".format(self.left.as_source_code(),
+                                          operator,
+                                          self.right.as_source_code())
 
         def simplify(self, changes):
             self.left = self.left.simplify(changes)

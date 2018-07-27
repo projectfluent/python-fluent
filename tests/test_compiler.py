@@ -447,7 +447,7 @@ class TestCompiler(unittest.TestCase):
             def foo(message_args, errors):
                 _key = 1
                 _plural_form = plural_form_for_number(_key)
-                if _key == 'one' or _plural_form == 'one':
+                if (_key == 'one') or (_plural_form == 'one'):
                     _ret = 'One'
                 else:
                     _ret = 'Other'
@@ -476,7 +476,7 @@ class TestCompiler(unittest.TestCase):
                 _plural_form = plural_form_for_number(_key)
                 if _key == 0:
                     _ret = 'You have nothing'
-                elif _key == 'one' or _plural_form == 'one':
+                elif (_key == 'one') or (_plural_form == 'one'):
                     _ret = 'You have one thing'
                 else:
                     _ret = 'You have some things'

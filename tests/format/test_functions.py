@@ -4,7 +4,7 @@ import six
 import unittest
 
 from fluent.exceptions import FluentReferenceError
-from fluent.types import FluentNone, fluent_number
+from fluent.types import FluentNone
 
 from .. import all_message_context_implementations
 from ..syntax import dedent_ftl

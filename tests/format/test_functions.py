@@ -1,10 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
-import six
 import unittest
 
+import six
+
 from fluent.exceptions import FluentReferenceError
-from fluent.types import FluentNone
+from fluent.types import FluentNone, fluent_number
 
 from .. import all_message_context_implementations
 from ..syntax import dedent_ftl

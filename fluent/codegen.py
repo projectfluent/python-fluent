@@ -583,6 +583,7 @@ def infix_operator(operator, return_type):
 
     return Op
 
+
 Equals = infix_operator("==", bool)
 NotEquals = infix_operator("!=", bool)
 And = infix_operator("and", bool)

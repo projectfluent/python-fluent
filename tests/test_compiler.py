@@ -329,50 +329,71 @@ class TestCompiler(unittest.TestCase):
         """)
         self.assertEqual(errs, [])
 
-    def test_variant(self):
+    def test_term_inline(self):
+        code, errs = compile_messages_to_python("""
+           -term = Term
+           message = Message { -term }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def message(message_args, errors):
+                return ('Message Term', errors)
+        """)
+
+    def test_variant_select_inline(self):
         code, errs = compile_messages_to_python("""
             -my-term = {
                 [a] A
                *[b] B
-                [c] C
               }
+            foo = Before { -my-term[a] } After
         """, self.locale)
         self.assertCodeEqual(code, """
-            def _my_term(message_args, errors, variant=None):
-                if variant == 'a':
-                    _ret = 'A'
-                elif variant == 'c':
-                    _ret = 'C'
-                else:
-                    if variant is not None and variant != 'b':
-                        errors.append(FluentReferenceError('Unknown variant: {0}'.format(variant)))
-
-                    _ret = 'B'
-
-                return (_ret, errors)
+            def foo(message_args, errors):
+                return ('Before A After', errors)
         """)
         self.assertEqual(errs, [])
 
-    def test_variant_select(self):
-        term_ftl = """
+    def test_variant_select_default(self):
+        code, errs = compile_messages_to_python("""
             -my-term = {
                 [a] A
                *[b] B
               }
-        """
-        calling_ftl = """
+            foo = { -my-term }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                return ('B', errors)
+        """)
+        self.assertEqual(errs, [])
+
+    def test_variant_select_fallback(self):
+        code, errs = compile_messages_to_python("""
+            -my-term = {
+                [a] A
+               *[b] B
+              }
+            foo = { -my-term[c] }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                errors.append(FluentReferenceError('Unknown variant: -my-term[c]'))
+                return ('B', errors)
+        """)
+        self.assertEqual(errs,
+                         [('foo', FluentReferenceError('Unknown variant: -my-term[c]'))])
+
+    def test_variant_select_from_non_variant(self):
+        code, errs = compile_messages_to_python("""
+            -my-term = Term
             foo = { -my-term[a] }
-        """
-        term_code, term_errs = compile_messages_to_python(term_ftl,
-                                                          self.locale)
-        combined_code, combined_errs = compile_messages_to_python(term_ftl + calling_ftl,
-                                                                  self.locale)
-        self.assertCodeEqual(combined_code, term_code + """
-def foo(message_args, errors):
-    return _my_term(message_args, errors, variant='a')
-        """.strip())
-        self.assertEqual(term_errs, [])
-        self.assertEqual(combined_errs, [])
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def foo(message_args, errors):
+                errors.append(FluentReferenceError('Unknown variant: -my-term[a]'))
+                return ('Term', errors)
+        """)
+        self.assertEqual(len(errs), 1)
 
     def test_select_string(self):
         code, errs = compile_messages_to_python("""
@@ -533,6 +554,20 @@ def foo(message_args, errors):
         """)
         self.assertEqual(errs, [('foo.attr1', FluentCyclicReferenceError("Cyclic reference in foo.attr1")),
                                 ('bar.attr2', FluentCyclicReferenceError("Cyclic reference in bar.attr2")),
+                                ])
+
+    def test_term_cycle_detection(self):
+        code, errs = compile_messages_to_python("""
+            -cyclic-term = { -cyclic-term }
+            cyclic-term-message = { -cyclic-term }
+        """, self.locale)
+        self.assertCodeEqual(code, """
+            def cyclic_term_message(message_args, errors):
+                errors.append(FluentCyclicReferenceError('Cyclic reference in cyclic-term-message'))
+                return (FluentNone().format(locale), errors)
+        """)
+        self.assertEqual(errs, [('cyclic-term-message',
+                                 FluentCyclicReferenceError("Cyclic reference in cyclic-term-message")),
                                 ])
 
     def test_cycle_detection_with_unknown_attr(self):

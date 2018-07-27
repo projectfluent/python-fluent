@@ -44,9 +44,11 @@ class TestVariants(unittest.TestCase):
         val, errs = self.ctx.format('qux', {})
         self.assertEqual(val, 'B')
         self.assertEqual(len(errs), 1)
-        self.assertEqual(
-            errs,
-            [FluentReferenceError("Unknown variant: c")])
+        self.assertIn(
+            errs[0],
+            [FluentReferenceError("Unknown variant: c"),
+             FluentReferenceError("Unknown variant: -variant[c]")]
+        )
 
     def test_choose_missing_term(self):
         val, errs = self.ctx.format('goo', {})

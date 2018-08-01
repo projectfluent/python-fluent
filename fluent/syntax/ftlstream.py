@@ -97,10 +97,11 @@ class FTLParserStream(ParserStream):
         return is_id
 
     def is_number_start(self):
-        if self.current_is('-'):
-            self.peek()
+        ch = self.peek() if self.current_is('-') else self.current()
+        if ch is None:
+            return False
 
-        cc = ord(self.current_peek())
+        cc = ord(ch)
         is_digit = cc >= 48 and cc <= 57
         self.reset_peek()
         return is_digit

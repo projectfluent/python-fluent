@@ -1,26 +1,29 @@
 from __future__ import unicode_literals
 import re
-from .ftlstream import FTLParserStream
 from . import ast
 from .errors import ParseError
 
 
 def with_span(fn):
-    def decorated(self, ps, *args):
+    def decorated(self, cursor, *args):
         if not self.with_spans:
-            return fn(self, ps, *args)
+            return fn(self, cursor, *args)
 
-        start = ps.get_index()
-        node = fn(self, ps, *args)
+        start = cursor
+        node = fn(self, cursor, *args)
 
+        if node is None:
+            return node
+
+        node, cursor = node
         # Don't re-add the span if the node already has it.  This may happen
         # when one decorated function calls another decorated function.
         if node.span is not None:
-            return node
+            return node, cursor
 
-        end = ps.get_index()
+        end = cursor
         node.add_span(start, end)
-        return node
+        return node, cursor
 
     return decorated
 
@@ -30,56 +33,18 @@ class FluentParser(object):
         self.with_spans = with_spans
 
     def parse(self, source):
-        ps = FTLParserStream(source)
-        ps.skip_blank_lines()
-
+        self.source = source
         entries = []
-        last_comment = None
-
-        while ps.current():
-            entry = self.get_entry_or_junk(ps)
-            blank_lines = ps.skip_blank_lines()
-
-            # Regular Comments require special logic. Comments may be attached
-            # to Messages or Terms if they are followed immediately by them.
-            # However they should parse as standalone when they're followed by
-            # Junk. Consequently, we only attach Comments once we know that the
-            # Message or the Term parsed successfully.
-            if (
-                isinstance(entry, ast.Comment)
-                and blank_lines == 0 and ps.current()
-            ):
-                # Stash the comment and decide what to do with it
-                # in the next pass.
-                last_comment = entry
-                continue
-
-            if last_comment is not None:
-                if isinstance(entry, (ast.Message, ast.Term)):
-                    entry.comment = last_comment
-                    if self.with_spans:
-                        entry.span.start = entry.comment.span.start
-                else:
-                    entries.append(last_comment)
-                # In either case, the stashed comment has been dealt with;
-                # clear it.
-                last_comment = None
-
-            if isinstance(entry, ast.Comment) \
-               and ps.last_comment_zero_four_syntax \
-               and len(entries) == 0:
-                comment = ast.ResourceComment(entry.content)
-                comment.span = entry.span
-                entries.append(comment)
-            else:
+        cursor = 0
+        while cursor < len(self.source):
+            entry, cursor = self.get_entry_or_junk(cursor)
+            if entry is not None:
+                # Don't add top-level white-space
                 entries.append(entry)
-
-            ps.last_comment_zero_four_syntax = False
-
         res = ast.Resource(entries)
 
         if self.with_spans:
-            res.add_span(0, ps.get_index())
+            res.add_span(0, cursor)
 
         return res
 
@@ -92,57 +57,58 @@ class FluentParser(object):
         Preceding comments are ignored unless they contain syntax errors
         themselves, in which case Junk for the invalid comment is returned.
         """
-        ps = FTLParserStream(source)
-        ps.skip_blank_lines()
+        self.source = source
+        return None
 
-        while ps.current_is('#'):
-            skipped = self.get_entry_or_junk(ps)
-            if isinstance(skipped, ast.Junk):
-                # Don't skip Junk comments.
-                return skipped
-            ps.skip_blank_lines()
+    def get_entry_or_junk(self, cursor):
 
-        return self.get_entry_or_junk(ps)
+        rv = self.get_entry(cursor)
+        if rv is not None:
+            return rv
+        rv = self.get_blank_line(cursor)
+        if rv is not None:
+            return rv
+        # error_index = ps.get_index()
+        # ps.skip_to_next_entry_start()
+        # next_entry_start = ps.get_index()
 
-    def get_entry_or_junk(self, ps):
-        entry_start_pos = ps.get_index()
+        # # Create a Junk instance
+        # slice = ps.get_slice(entry_start_pos, next_entry_start)
+        # junk = ast.Junk(slice)
+        # if self.with_spans:
+        #     junk.add_span(entry_start_pos, next_entry_start)
+        # annot = ast.Annotation(err.code, err.args, err.message)
+        # annot.add_span(error_index, error_index)
+        # junk.add_annotation(annot)
+        # return junk
 
-        try:
-            entry = self.get_entry(ps)
-            ps.expect_line_end()
-            return entry
-        except ParseError as err:
-            error_index = ps.get_index()
-            ps.skip_to_next_entry_start()
-            next_entry_start = ps.get_index()
+    def get_entry(self, cursor):
+        rv = self.get_message(cursor)
+        if rv is not None:
+            entry, cursor = rv
+            line_end = RE.line_end.match(self.source, cursor)
+            if line_end is None:
+                return None
+            return (entry, line_end.end())
 
-            # Create a Junk instance
-            slice = ps.get_slice(entry_start_pos, next_entry_start)
-            junk = ast.Junk(slice)
-            if self.with_spans:
-                junk.add_span(entry_start_pos, next_entry_start)
-            annot = ast.Annotation(err.code, err.args, err.message)
-            annot.add_span(error_index, error_index)
-            junk.add_annotation(annot)
-            return junk
+        for comment in (
+                self.get_comment,
+                self.get_group_comment,
+                self.get_resource_comment
+        ):
+            rv = comment(cursor)
+            if rv is not None:
+                return rv
+        # raise ParseError('E0002')
 
-    def get_entry(self, ps):
-        if ps.current_is('#'):
-            return self.get_comment(ps)
+    def get_blank_line(self, cursor):
+        '''Parse top-level blank  lines.
 
-        if ps.current_is('/'):
-            return self.get_zero_four_style_comment(ps)
-
-        if ps.current_is('['):
-            return self.get_group_comment_from_section(ps)
-
-        if ps.current_is('-'):
-            return self.get_term(ps)
-
-        if ps.is_identifier_start():
-            return self.get_message(ps)
-
-        raise ParseError('E0002')
+        Returns None as AST node while we're not having a proper
+        AST node for top-level white-space.
+        '''
+        m = RE.blank_line.match(self.source, cursor)
+        return None if m is None else (None, m.end())
 
     @with_span
     def get_zero_four_style_comment(self, ps):
@@ -179,41 +145,37 @@ class FluentParser(object):
         return ast.Comment(content)
 
     @with_span
-    def get_comment(self, ps):
-        # 0 - comment
-        # 1 - group comment
-        # 2 - resource comment
-        level = -1
-        content = ''
+    def get_comment(self, cursor):
+        return self._get_generic_comment(cursor, RE.comment, ast.Comment)
 
-        while True:
-            i = -1
-            while ps.current_is('#') and (i < (2 if level == -1 else level)):
-                ps.next()
-                i += 1
+    @with_span
+    def get_group_comment(self, cursor):
+        return self._get_generic_comment(
+            cursor, RE.group_comment, ast.GroupComment
+        )
 
-            if level == -1:
-                level = i
+    @with_span
+    def get_resource_comment(self, cursor):
+        return self._get_generic_comment(
+            cursor, RE.resource_comment, ast.ResourceComment
+        )
 
-            if not ps.current_is('\n'):
-                ps.expect_char(' ')
-                ch = ps.take_char(lambda x: x != '\n')
-                while ch:
-                    content += ch
-                    ch = ps.take_char(lambda x: x != '\n')
+    def _get_generic_comment(self, cursor, comment_re, Node):
+        match = comment_re.match(self.source, cursor)
+        if match is None:
+            return None
 
-            if ps.is_peek_next_line_comment(level):
-                content += ps.current()
-                ps.next()
-            else:
-                break
+        content = []
+        while match:
+            content += match.groups()
+            cursor = match.end()
+            match = comment_re.match(self.source, cursor)
 
-        if level == 0:
-            return ast.Comment(content)
-        elif level == 1:
-            return ast.GroupComment(content)
-        elif level == 2:
-            return ast.ResourceComment(content)
+        # strip trailing whitespace from last comment
+        content.pop()
+        # Filter out None
+        content = [seg for seg in content if seg is not None]
+        return Node(''.join(content)), cursor
 
     @with_span
     def get_group_comment_from_section(self, ps):
@@ -234,31 +196,41 @@ class FluentParser(object):
         return ast.GroupComment('')
 
     @with_span
-    def get_message(self, ps):
-        id = self.get_identifier(ps)
+    def get_message(self, cursor):
+        rv = self.get_identifier(cursor)
+        if rv is None:
+            return rv
+        id, cursor = rv
 
-        ps.skip_inline_ws()
-        pattern = None
+        cursor = self.skip_inline_blank(cursor)
+        pattern = attrs = None
 
-        # XXX Syntax 0.4 compat
-        if ps.current_is('='):
-            ps.next()
+        cursor = self.expect_equals(cursor)
+        if cursor is None:
+            return None
 
-            if ps.is_peek_value_start():
-                ps.skip_indent()
-                pattern = self.get_pattern(ps)
-            else:
-                ps.skip_inline_ws()
+        rv = self.get_pattern(cursor)
+        if rv is not None:
+            pattern, cursor = rv
 
-        if ps.is_peek_next_line_attribute_start():
-            attrs = self.get_attributes(ps)
-        else:
-            attrs = None
+        # TODO: attributes
 
         if pattern is None and attrs is None:
-            raise ParseError('E0005', id.name)
+            return None
 
-        return ast.Message(id, pattern, attrs)
+        return ast.Message(id, pattern, attrs), cursor
+
+    def expect_equals(self, cursor):
+        '''Messages require an = after their ID.
+
+        Overwrite this to disable that requirement.
+        '''
+        if cursor == len(self.source):
+            return cursor
+        if self.source[cursor] != '=':
+            return None
+        cursor += 1  # eat =, skip inline blank
+        return self.skip_inline_blank(cursor)
 
     @with_span
     def get_term(self, ps):
@@ -309,20 +281,24 @@ class FluentParser(object):
         return attrs
 
     @with_span
-    def get_identifier(self, ps):
-        name = ps.take_id_start()
-        ch = ps.take_id_char()
-        while ch:
-            name += ch
-            ch = ps.take_id_char()
-
-        return ast.Identifier(name)
+    def get_identifier(self, cursor):
+        match = RE.identifier.match(self.source, cursor)
+        if match is None:
+            # TODO: ERROR
+            return None
+        name = match.group()
+        cursor = match.end()
+        return ast.Identifier(name), cursor
 
     @with_span
-    def get_term_identifier(self, ps):
-        ps.expect_char('-')
-        id = self.get_identifier(ps)
-        return ast.Identifier('-{}'.format(id.name))
+    def get_term_identifier(self, cursor):
+        match = RE.term_identifier.match(self.source, cursor)
+        if match is None:
+            # TODO: ERROR
+            return None
+        name = match.group()
+        cursor = match.end()
+        return ast.Identifier(name), cursor
 
     def get_variant_key(self, ps):
         ch = ps.current()
@@ -442,60 +418,42 @@ class FluentParser(object):
         return ast.VariantList(variants)
 
     @with_span
-    def get_pattern(self, ps):
+    def get_pattern(self, cursor):
         elements = []
-        ps.skip_inline_ws()
 
-        while ps.current():
-            ch = ps.current()
-
-            # The end condition for get_pattern's while loop is a newline
-            # which is not followed by a valid pattern continuation.
-            if ch == '\n' and not ps.is_peek_next_line_value():
+        while cursor < len(self.source):
+            rv = self.get_text_element(cursor)
+            if rv is None:
                 break
-
-            if ch == '{':
-                element = self.get_placeable(ps)
-            else:
-                element = self.get_text_element(ps)
+            element, cursor = rv
             elements.append(element)
+            break  # no placeables yet
 
         # Trim trailing whitespace.
         last_element = elements[-1]
         if isinstance(last_element, ast.TextElement):
             last_element.value = last_element.value.rstrip(' \t\n\r')
 
-        return ast.Pattern(elements)
+        return ast.Pattern(elements), cursor
 
     @with_span
-    def get_text_element(self, ps):
-        buf = ''
+    def get_text_element(self, cursor):
+        buf = []
 
-        while ps.current():
-            ch = ps.current()
+        while cursor < len(self.source):
+            match = RE.text_element_chunk.match(self.source, cursor)
+            if match is None:
+                if buf:
+                    break
+                else:
+                    return None
+            if match.group('text_char') is not None:
+                buf.append(match.group('text_char'))
+            cursor = match.end()
 
-            if ch == '{':
-                return ast.TextElement(buf)
-
-            if ch == '\n':
-                if not ps.is_peek_next_line_value():
-                    return ast.TextElement(buf)
-
-                ps.next()
-                ps.skip_inline_ws()
-
-                # Add the new line to the buffer
-                buf += ch
-                continue
-
-            if ch == '\\':
-                ps.next()
-                buf += self.get_escape_sequence(ps)
-            else:
-                buf += ch
-                ps.next()
-
-        return ast.TextElement(buf)
+        # The newline normalization here matches grammar.mjs'
+        # break_indent production.
+        return ast.TextElement('\n'.join(buf)), cursor
 
     def get_escape_sequence(self, ps, specials=('{', '\\')):
         next = ps.current()
@@ -729,3 +687,49 @@ class FluentParser(object):
             return self.get_string(ps)
 
         raise ParseError('E0014')
+
+    def skip_inline_blank(self, cursor):
+        m = RE.inline_blank.match(self.source, cursor)
+        return cursor if m is None else m.end()
+
+
+class PATTERNS(object):
+    INLINE_SPACE = '[ \t]+'
+    LINE_END = '(?:\r\n|\n|\Z)'
+    BLANK_LINE = '(?:{})?{}'.format(INLINE_SPACE, LINE_END)
+    BREAK_INDENT = '{}(?:{})*{}'.format(LINE_END, BLANK_LINE, INLINE_SPACE)
+    REGULAR_CHAR = '[!-\ud7ff\ue000-\ufffd]'
+    TEXT_CHAR = (
+        INLINE_SPACE +
+        r'|'
+        r'\\u[0-9a-fA-F]{4}'
+        r'|'
+        r'\\\\'
+        r'|'
+        r'\\{'
+        r'|'
+        r'(?![{\\])' + REGULAR_CHAR
+    )
+    COMMENT_LINE = '(?: (.*))?(' + LINE_END + ')'
+
+
+class RE(object):
+    comment = re.compile(r'#' + PATTERNS.COMMENT_LINE)
+    group_comment = re.compile(r'##' + PATTERNS.COMMENT_LINE)
+    resource_comment = re.compile(r'###' + PATTERNS.COMMENT_LINE)
+    identifier = re.compile(r'[a-zA-Z][a-zA-Z0-9_-]*')
+    term_identifier = re.compile(r'-[a-zA-Z][a-zA-Z0-9_-]*')
+    # text_cont needs to exclude INLINE_SPACE and EOF, as they're
+    # otherwise part of the negative lookahead.
+    # compared to the ebnf, this does not contain the first char of
+    # the new line.
+    text_element_chunk = re.compile(
+        r'(?P<text_char>(?:{})+)'.format(PATTERNS.TEXT_CHAR) +
+        r'|' +
+        r'(?P<text_cont>{}(?![\}}\[\*\. \t\Z]))'.format(
+            PATTERNS.BREAK_INDENT
+        )
+    )
+    inline_blank = re.compile(PATTERNS.INLINE_SPACE)
+    line_end = re.compile(PATTERNS.LINE_END)
+    blank_line = re.compile(PATTERNS.BLANK_LINE)

@@ -726,7 +726,7 @@ class RE(object):
     text_element_chunk = re.compile(
         r'(?P<text_char>(?:{})+)'.format(PATTERNS.TEXT_CHAR) +
         r'|' +
-        r'(?P<text_cont>{}(?![\}}\[\*\. \t\Z]))'.format(
+        r'(?P<text_cont>{}(?!\}}|\[|\*|\.| |\t|\Z))'.format(
             PATTERNS.BREAK_INDENT
         )
     )

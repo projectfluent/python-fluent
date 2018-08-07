@@ -213,7 +213,9 @@ class FluentParser(object):
         if rv is not None:
             pattern, cursor = rv
 
-        # TODO: attributes
+        rv = self.get_attributes(cursor)
+        if rv:
+            attrs, cursor = rv
 
         if pattern is None and attrs is None:
             return None
@@ -253,32 +255,57 @@ class FluentParser(object):
         return ast.Term(id, value, attrs)
 
     @with_span
-    def get_attribute(self, ps):
-        ps.expect_char('.')
+    def get_attribute(self, cursor):
+        cursor = self.require_break_indent(cursor)
+        if cursor is None or cursor >= len(self.source):
+            return None
 
-        key = self.get_identifier(ps)
+        if self.source[cursor] != '.':
+            return None
+        cursor += 1
+        if cursor >= len(self.source):
+            return None
 
-        ps.skip_inline_ws()
-        ps.expect_char('=')
+        rv = self.get_identifier(cursor)
+        if rv is None:
+            return None
+        key, cursor = rv
 
-        if ps.is_peek_value_start():
-            ps.skip_indent()
-            value = self.get_pattern(ps)
-            return ast.Attribute(key, value)
+        cursor = self.skip_inline_blank(cursor)
+        if cursor >= len(self.source):
+            return None
 
-        raise ParseError('E0012')
+        if self.source[cursor] != '=':
+            return None
+        cursor += 1
+        if cursor >= len(self.source):
+            return None
 
-    def get_attributes(self, ps):
+        cursor = self.skip_inline_blank(cursor)
+        if cursor >= len(self.source):
+            return None
+
+        rv = self.get_pattern(cursor)
+        if rv is None:
+            return None
+
+        value, cursor = rv
+
+        return ast.Attribute(key, value), cursor
+
+    def get_attributes(self, cursor):
         attrs = []
 
         while True:
-            ps.expect_indent()
-            attr = self.get_attribute(ps)
+            rv = self.get_attribute(cursor)
+            if rv is None:
+                break
+            attr, cursor = rv
             attrs.append(attr)
 
-            if not ps.is_peek_next_line_attribute_start():
-                break
-        return attrs
+        if not attrs:
+            return None
+        return attrs, cursor
 
     @with_span
     def get_identifier(self, cursor):
@@ -428,6 +455,9 @@ class FluentParser(object):
             element, cursor = rv
             elements.append(element)
             break  # no placeables yet
+
+        if not elements:
+            return None
 
         # Trim trailing whitespace.
         last_element = elements[-1]
@@ -692,6 +722,10 @@ class FluentParser(object):
         m = RE.inline_blank.match(self.source, cursor)
         return cursor if m is None else m.end()
 
+    def require_break_indent(self, cursor):
+        m = RE.break_indent.match(self.source, cursor)
+        return None if m is None else m.end()
+
 
 class PATTERNS(object):
     INLINE_SPACE = '[ \t]+'
@@ -733,3 +767,4 @@ class RE(object):
     inline_blank = re.compile(PATTERNS.INLINE_SPACE)
     line_end = re.compile(PATTERNS.LINE_END)
     blank_line = re.compile(PATTERNS.BLANK_LINE)
+    break_indent = re.compile(PATTERNS.BREAK_INDENT)

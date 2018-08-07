@@ -91,6 +91,16 @@ class IdentifierTest(unittest.TestCase):
         comment, cursor = rv
         self.assertEqual(comment.content, 'one')
 
+    def test_attribute(self):
+        p = FluentParser()
+        p.source = '\n .key = value'
+        rv = p.get_attribute(0)
+        self.assertIsNotNone(rv)
+        attr, cursor = rv
+        self.assertEqual(cursor, len(p.source))
+        self.assertEqual(attr.id.name, 'key')
+        self.assertEqual(attr.value.elements[0].value, 'value')
+
 
 class TestPattern(unittest.TestCase):
     def test_text_char(self):

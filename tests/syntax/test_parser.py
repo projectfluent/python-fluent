@@ -3,6 +3,7 @@ import unittest
 import re
 
 from fluent.syntax.parser import FluentParser, RE, PATTERNS
+from fluent.syntax import ast
 
 
 class IdentifierTest(unittest.TestCase):
@@ -34,6 +35,8 @@ class IdentifierTest(unittest.TestCase):
         self.assertEqual(id.span.end, 5)
         self.assertEqual(p.source[id.span.start:id.span.end], '-id')
 
+
+class MessageTest(unittest.TestCase):
     def test_text_element(self):
         p = FluentParser()
         p.source = 'something\n funky'
@@ -67,6 +70,18 @@ class IdentifierTest(unittest.TestCase):
         self.assertEqual(cursor, 18)
         self.assertEqual(msg.id.name, 'message')
 
+    def test_attribute(self):
+        p = FluentParser()
+        p.source = '\n .key = value'
+        rv = p.get_attribute(0)
+        self.assertIsNotNone(rv)
+        attr, cursor = rv
+        self.assertEqual(cursor, len(p.source))
+        self.assertEqual(attr.id.name, 'key')
+        self.assertEqual(attr.value.elements[0].value, 'value')
+
+
+class CommentTest(unittest.TestCase):
     def test_comment(self):
         p = FluentParser()
         p.source = '# one\n#\n# two\njunk'
@@ -91,15 +106,25 @@ class IdentifierTest(unittest.TestCase):
         comment, cursor = rv
         self.assertEqual(comment.content, 'one')
 
-    def test_attribute(self):
+
+class PlaceableTest(unittest.TestCase):
+    def test_term_reference(self):
         p = FluentParser()
-        p.source = '\n .key = value'
-        rv = p.get_attribute(0)
+        p.source = '-term'
+        rv = p.get_term_reference(0)
         self.assertIsNotNone(rv)
-        attr, cursor = rv
+        ref, cursor = rv
         self.assertEqual(cursor, len(p.source))
-        self.assertEqual(attr.id.name, 'key')
-        self.assertEqual(attr.value.elements[0].value, 'value')
+        self.assertEqual(ref.id.name, '-term')
+
+    def test_placeable(self):
+        p = FluentParser()
+        p.source = '{ -term }'
+        rv = p.get_placeable(0)
+        self.assertIsNotNone(rv)
+        placeable, cursor = rv
+        self.assertEqual(cursor, len(p.source))
+        self.assertIsInstance(placeable, ast.Placeable)
 
 
 class TestPattern(unittest.TestCase):
@@ -130,6 +155,12 @@ class TestPattern(unittest.TestCase):
         bi = re.compile(PATTERNS.BREAK_INDENT)
         self.assertEqual(bi.match('\n  \t ').group(), '\n  \t ')
         self.assertIsNone(bi.match('\n\n'))
+
+
+class TestIntegration(unittest.TestCase):
+    def test_message_with_term_reference(self):
+        p = FluentParser()
+        resource = p.parse('msg = some { -term } reference')
 
 
 class TestRE(unittest.TestCase):

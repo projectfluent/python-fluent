@@ -31,6 +31,7 @@ def with_span(fn):
 class FluentParser(object):
     def __init__(self, with_spans=True):
         self.with_spans = with_spans
+        self.source = None
 
     def parse(self, source):
         self.source = source
@@ -227,11 +228,9 @@ class FluentParser(object):
 
         Overwrite this to disable that requirement.
         '''
-        if cursor == len(self.source):
+        cursor = self.require_char(cursor, '=')
+        if cursor is None:
             return cursor
-        if self.source[cursor] != '=':
-            return None
-        cursor += 1  # eat =, skip inline blank
         return self.skip_inline_blank(cursor)
 
     @with_span
@@ -257,13 +256,11 @@ class FluentParser(object):
     @with_span
     def get_attribute(self, cursor):
         cursor = self.require_break_indent(cursor)
-        if cursor is None or cursor >= len(self.source):
+        if cursor is None:
             return None
 
-        if self.source[cursor] != '.':
-            return None
-        cursor += 1
-        if cursor >= len(self.source):
+        cursor = self.require_char(cursor, '.')
+        if cursor is None:
             return None
 
         rv = self.get_identifier(cursor)
@@ -272,13 +269,9 @@ class FluentParser(object):
         key, cursor = rv
 
         cursor = self.skip_inline_blank(cursor)
-        if cursor >= len(self.source):
-            return None
 
-        if self.source[cursor] != '=':
-            return None
-        cursor += 1
-        if cursor >= len(self.source):
+        cursor = self.require_char(cursor, '=')
+        if cursor is None:
             return None
 
         cursor = self.skip_inline_blank(cursor)
@@ -449,12 +442,11 @@ class FluentParser(object):
         elements = []
 
         while cursor < len(self.source):
-            rv = self.get_text_element(cursor)
+            rv = self.get_pattern_element(cursor)
             if rv is None:
                 break
             element, cursor = rv
             elements.append(element)
-            break  # no placeables yet
 
         if not elements:
             return None
@@ -465,6 +457,16 @@ class FluentParser(object):
             last_element.value = last_element.value.rstrip(' \t\n\r')
 
         return ast.Pattern(elements), cursor
+
+    def get_pattern_element(self, cursor):
+        for element in (
+                self.get_text_element,
+                self.get_placeable
+        ):
+            rv = element(cursor)
+            if rv is not None:
+                return rv
+        return None
 
     @with_span
     def get_text_element(self, cursor):
@@ -507,61 +509,41 @@ class FluentParser(object):
         raise ParseError('E0025', next)
 
     @with_span
-    def get_placeable(self, ps):
-        ps.expect_char('{')
-        expression = self.get_expression(ps)
-        ps.expect_char('}')
-        return ast.Placeable(expression)
+    def get_placeable(self, cursor):
+        cursor = self.require_char(cursor, '{')
+        if cursor is None:
+            return None
+        cursor = self.skip_inline_blank(cursor)
+        if cursor >= len(self.source):
+            return None
+        rv = self.get_expression(cursor)
+        if rv is None:
+            return None
+        expression, cursor = rv
+        cursor = self.skip_inline_blank(cursor)
+        if cursor >= len(self.source):
+            return None
+        cursor = self.require_char(cursor, '}')
+        if cursor is None:
+            return None
+        return ast.Placeable(expression), cursor
+
+    def get_expression(self, cursor):
+        for expression in (
+                self.get_term_reference,
+        ):
+            rv = expression(cursor)
+            if rv is not None:
+                return rv
+        return None
 
     @with_span
-    def get_expression(self, ps):
-        ps.skip_inline_ws()
-
-        selector = self.get_selector_expression(ps)
-
-        ps.skip_inline_ws()
-
-        if ps.current_is('-'):
-            ps.peek()
-
-            if not ps.current_peek_is('>'):
-                ps.reset_peek()
-                return selector
-
-            if isinstance(selector, ast.MessageReference):
-                raise ParseError('E0016')
-
-            if isinstance(selector, ast.AttributeExpression) \
-               and isinstance(selector.ref, ast.MessageReference):
-                raise ParseError('E0018')
-
-            if isinstance(selector, ast.VariantExpression):
-                raise ParseError('E0017')
-
-            ps.next()
-            ps.next()
-
-            ps.skip_inline_ws()
-
-            variants = self.get_variants(ps)
-
-            if len(variants) == 0:
-                raise ParseError('E0011')
-
-            # VariantLists are only allowed in other VariantLists.
-            if any(isinstance(v.value, ast.VariantList) for v in variants):
-                raise ParseError('E0023')
-
-            ps.expect_indent()
-
-            return ast.SelectExpression(selector, variants)
-        elif (
-            isinstance(selector, ast.AttributeExpression)
-            and isinstance(selector.ref, ast.TermReference)
-        ):
-            raise ParseError('E0019')
-
-        return selector
+    def get_term_reference(self, cursor):
+        rv = self.get_term_identifier(cursor)
+        if rv is None:
+            return None
+        term_ident, cursor = rv
+        return ast.TermReference(term_ident), cursor
 
     @with_span
     def get_selector_expression(self, ps):
@@ -725,6 +707,13 @@ class FluentParser(object):
     def require_break_indent(self, cursor):
         m = RE.break_indent.match(self.source, cursor)
         return None if m is None else m.end()
+
+    def require_char(self, cursor, char):
+        if cursor >= len(self.source):
+            return None
+        if self.source[cursor] != char:
+            return None
+        return cursor + 1
 
 
 class PATTERNS(object):

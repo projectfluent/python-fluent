@@ -1,16 +1,14 @@
 {
+  "body": [{
+    "annotations": [{"args": ["]"],
+      "code": "E0003",
+      "message": "Expected token: \"]\"",
+      "span": {"end": 9, "start": 9, "type": "Span"},
+      "type": "Annotation"}],
+    "content": "[[ This is a section ]]\n",
+    "span": {"end": 25, "start": 1, "type": "Span"},
+    "type": "Junk"}],
   "type": "Resource",
-  "body": [
-    {
-      "type": "GroupComment",
-      "content": "",
-      "span": {
-        "type": "Span",
-        "start": 1,
-        "end": 24
-      }
-    }
-  ],
   "span": {
     "type": "Span",
     "start": 0,

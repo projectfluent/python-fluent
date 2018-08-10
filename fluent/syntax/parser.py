@@ -222,7 +222,7 @@ class FluentParser(object):
 
         ps.skip_inline_ws()
 
-        self.get_variant_name(ps)
+        self.get_identifier(ps)
 
         ps.skip_inline_ws()
 
@@ -334,7 +334,7 @@ class FluentParser(object):
         if ((cc >= 48 and cc <= 57) or cc == 45):  # 0-9, -
             return self.get_number(ps)
 
-        return self.get_variant_name(ps)
+        return self.get_identifier(ps)
 
     @with_span
     def get_variant(self, ps, has_default):
@@ -380,17 +380,17 @@ class FluentParser(object):
 
         return variants
 
-    @with_span
-    def get_variant_name(self, ps):
-        name = ps.take_id_start()
-        while True:
-            ch = ps.take_variant_name_char()
-            if ch:
-                name += ch
-            else:
-                break
+    # @with_span
+    # def get_variant_name(self, ps):
+    #     name = ps.take_id_start()
+    #     while True:
+    #         ch = ps.take_variant_name_char()
+    #         if ch:
+    #             name += ch
+    #         else:
+    #             break
 
-        return ast.VariantName(name.rstrip(' \t\n\r'))
+    #     return ast.Identifier(name.rstrip(' \t\n\r'))
 
     def get_digits(self, ps):
         num = ''

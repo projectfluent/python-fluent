@@ -271,13 +271,13 @@ def serialize_identifier(identifier):
     return identifier.name
 
 
-def serialize_variant_name(symbol):
-    return symbol.name
+# def serialize_variant_name(symbol):
+#     return symbol.name
 
 
 def serialize_variant_key(key):
-    if isinstance(key, ast.VariantName):
-        return serialize_variant_name(key)
+    if isinstance(key, ast.Identifier):
+        return serialize_identifier(key)
     if isinstance(key, ast.NumberLiteral):
         return serialize_number_literal(key)
     raise Exception('Unknown variant key type: {}'.format(type(key)))

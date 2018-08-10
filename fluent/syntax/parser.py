@@ -390,7 +390,7 @@ class FluentParser(object):
     #         else:
     #             break
 
-    #     return ast.VariantName(name.rstrip(' \t\n\r'))
+    #     return ast.Identifier(name.rstrip(' \t\n\r'))
 
     def get_digits(self, ps):
         num = ''

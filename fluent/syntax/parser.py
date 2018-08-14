@@ -87,10 +87,10 @@ class FluentParser(object):
         rv = self.get_message(cursor)
         if rv is not None:
             entry, cursor = rv
-            line_end = RE.line_end.match(self.source, cursor)
+            line_end = self.require_line_end(cursor)
             if line_end is None:
                 return None
-            return (entry, line_end.end())
+            return (entry, line_end)
 
         for comment in (
                 self.get_comment,
@@ -703,6 +703,10 @@ class FluentParser(object):
     def skip_blank_inline(self, cursor):
         m = RE.blank_inline.match(self.source, cursor)
         return cursor if m is None else m.end()
+
+    def require_line_end(self, cursor):
+        m = RE.line_end.match(self.source, cursor)
+        return None if m is None else m.end()
 
     def require_break_indent(self, cursor):
         m = RE.break_indent.match(self.source, cursor)

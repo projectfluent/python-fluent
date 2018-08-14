@@ -203,7 +203,7 @@ class FluentParser(object):
             return rv
         id, cursor = rv
 
-        cursor = self.skip_inline_blank(cursor)
+        cursor = self.skip_blank_inline(cursor)
         pattern = attrs = None
 
         cursor = self.expect_equals(cursor)
@@ -231,7 +231,7 @@ class FluentParser(object):
         cursor = self.require_char(cursor, '=')
         if cursor is None:
             return cursor
-        return self.skip_inline_blank(cursor)
+        return self.skip_blank_inline(cursor)
 
     @with_span
     def get_term(self, ps):
@@ -268,13 +268,13 @@ class FluentParser(object):
             return None
         key, cursor = rv
 
-        cursor = self.skip_inline_blank(cursor)
+        cursor = self.skip_blank_inline(cursor)
 
         cursor = self.require_char(cursor, '=')
         if cursor is None:
             return None
 
-        cursor = self.skip_inline_blank(cursor)
+        cursor = self.skip_blank_inline(cursor)
         if cursor >= len(self.source):
             return None
 
@@ -513,14 +513,14 @@ class FluentParser(object):
         cursor = self.require_char(cursor, '{')
         if cursor is None:
             return None
-        cursor = self.skip_inline_blank(cursor)
+        cursor = self.skip_blank_inline(cursor)
         if cursor >= len(self.source):
             return None
         rv = self.get_expression(cursor)
         if rv is None:
             return None
         expression, cursor = rv
-        cursor = self.skip_inline_blank(cursor)
+        cursor = self.skip_blank_inline(cursor)
         if cursor >= len(self.source):
             return None
         cursor = self.require_char(cursor, '}')
@@ -700,8 +700,8 @@ class FluentParser(object):
 
         raise ParseError('E0014')
 
-    def skip_inline_blank(self, cursor):
-        m = RE.inline_blank.match(self.source, cursor)
+    def skip_blank_inline(self, cursor):
+        m = RE.blank_inline.match(self.source, cursor)
         return cursor if m is None else m.end()
 
     def require_break_indent(self, cursor):
@@ -717,13 +717,13 @@ class FluentParser(object):
 
 
 class PATTERNS(object):
-    INLINE_SPACE = '[ \t]+'
+    BLANK_INLINE = '[ \t]+'
     LINE_END = r'(?:\r\n|\n|\Z)'
-    BLANK_LINE = '(?:{})?{}'.format(INLINE_SPACE, LINE_END)
-    BREAK_INDENT = '{}(?:{})*{}'.format(LINE_END, BLANK_LINE, INLINE_SPACE)
+    BLANK_LINE = '(?:{})?{}'.format(BLANK_INLINE, LINE_END)
+    BREAK_INDENT = '{}(?:{})*{}'.format(LINE_END, BLANK_LINE, BLANK_INLINE)
     REGULAR_CHAR = '[!-\ud7ff\ue000-\ufffd]'
     TEXT_CHAR = (
-        INLINE_SPACE +
+        BLANK_INLINE +
         r'|'
         r'\\u[0-9a-fA-F]{4}'
         r'|'
@@ -742,7 +742,7 @@ class RE(object):
     resource_comment = re.compile(r'###' + PATTERNS.COMMENT_LINE)
     identifier = re.compile(r'[a-zA-Z][a-zA-Z0-9_-]*')
     term_identifier = re.compile(r'-[a-zA-Z][a-zA-Z0-9_-]*')
-    # text_cont needs to exclude INLINE_SPACE and EOF, as they're
+    # text_cont needs to exclude BLANK_INLINE and EOF, as they're
     # otherwise part of the negative lookahead.
     # compared to the ebnf, this does not contain the first char of
     # the new line.
@@ -753,7 +753,7 @@ class RE(object):
             PATTERNS.BREAK_INDENT
         )
     )
-    inline_blank = re.compile(PATTERNS.INLINE_SPACE)
+    blank_inline = re.compile(PATTERNS.BLANK_INLINE)
     line_end = re.compile(PATTERNS.LINE_END)
     blank_line = re.compile(PATTERNS.BLANK_LINE)
     break_indent = re.compile(PATTERNS.BREAK_INDENT)

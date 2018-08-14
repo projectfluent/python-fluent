@@ -255,9 +255,10 @@ class FluentParser(object):
 
     @with_span
     def get_attribute(self, cursor):
-        cursor = self.require_break_indent(cursor)
+        cursor = self.require_line_end(cursor)
         if cursor is None:
             return None
+        cursor = self.skip_blank(cursor)
 
         cursor = self.require_char(cursor, '.')
         if cursor is None:
@@ -704,12 +705,12 @@ class FluentParser(object):
         m = RE.blank_inline.match(self.source, cursor)
         return cursor if m is None else m.end()
 
+    def skip_blank(self, cursor):
+        m = RE.blank.match(self.source, cursor)
+        return cursor if m is None else m.end()
+
     def require_line_end(self, cursor):
         m = RE.line_end.match(self.source, cursor)
-        return None if m is None else m.end()
-
-    def require_break_indent(self, cursor):
-        m = RE.break_indent.match(self.source, cursor)
         return None if m is None else m.end()
 
     def require_char(self, cursor, char):

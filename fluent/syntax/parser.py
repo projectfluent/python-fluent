@@ -718,7 +718,7 @@ class FluentParser(object):
 
 class PATTERNS(object):
     INLINE_SPACE = '[ \t]+'
-    LINE_END = '(?:\r\n|\n|\Z)'
+    LINE_END = r'(?:\r\n|\n|\Z)'
     BLANK_LINE = '(?:{})?{}'.format(INLINE_SPACE, LINE_END)
     BREAK_INDENT = '{}(?:{})*{}'.format(LINE_END, BLANK_LINE, INLINE_SPACE)
     REGULAR_CHAR = '[!-\ud7ff\ue000-\ufffd]'

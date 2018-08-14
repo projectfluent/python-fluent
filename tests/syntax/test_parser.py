@@ -216,3 +216,10 @@ class TestRE(unittest.TestCase):
         self.assertEqual(match.groups(), ('joe', '\n'))
         match = comment.match('#joe')
         self.assertIsNone(match)
+
+    def test_blank(self):
+        blank = RE.blank
+        self.assertIsNotNone(blank.match(' '))
+        self.assertIsNotNone(blank.match('\n'))
+        self.assertIsNotNone(blank.match(''))
+        self.assertIsNone(blank.match('a\n'))

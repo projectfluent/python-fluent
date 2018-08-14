@@ -756,4 +756,7 @@ class RE(object):
     blank_inline = re.compile(PATTERNS.BLANK_INLINE)
     line_end = re.compile(PATTERNS.LINE_END)
     blank_line = re.compile(PATTERNS.BLANK_LINE)
+    blank = re.compile(r'(?:{})|(?:{})'.format(
+        PATTERNS.BLANK_INLINE, PATTERNS.LINE_END
+    ))
     break_indent = re.compile(PATTERNS.BREAK_INDENT)

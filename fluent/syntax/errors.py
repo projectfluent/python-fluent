@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 
 
 class ParseError(Exception):
-    def __init__(self, code, *args):
+    def __init__(self, position, code, *args):
+        self.position = position
         self.code = code
         self.args = args
         self.message = get_error_message(code, args)

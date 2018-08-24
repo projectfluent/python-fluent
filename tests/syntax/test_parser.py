@@ -4,17 +4,16 @@ import re
 
 from fluent.syntax.parser import FluentParser, RE, PATTERNS
 from fluent.syntax import ast
+from fluent.syntax.errors import ParseError
 
 
 class IdentifierTest(unittest.TestCase):
     def test_identifier(self):
         p = FluentParser()
         p.source = ' \nid = foo'
-        rv = p.get_identifier(0)
-        self.assertIsNone(rv)
-        rv = p.get_identifier(2)
-        self.assertIsNotNone(rv)
-        id, cursor = rv
+        with self.assertRaises(ParseError):
+            p.get_identifier(0)
+        id, cursor = p.get_identifier(2)
         self.assertEqual(cursor, 4)
         self.assertEqual(id.name, 'id')
         self.assertEqual(id.span.start, 2)
@@ -24,11 +23,9 @@ class IdentifierTest(unittest.TestCase):
     def test_term_identifier(self):
         p = FluentParser()
         p.source = ' \n-id = foo'
-        rv = p.get_term_identifier(0)
-        self.assertIsNone(rv)
-        rv = p.get_term_identifier(2)
-        self.assertIsNotNone(rv)
-        id, cursor = rv
+        with self.assertRaises(ParseError):
+            p.get_term_identifier(0)
+        id, cursor = p.get_term_identifier(2)
         self.assertEqual(cursor, 5)
         self.assertEqual(id.name, '-id')
         self.assertEqual(id.span.start, 2)
@@ -40,42 +37,31 @@ class MessageTest(unittest.TestCase):
     def test_text_element(self):
         p = FluentParser()
         p.source = 'something\n funky'
-        rv = p.get_text_element(0)
-        self.assertIsNotNone(rv)
-        te, cursor = rv
+        te, cursor = p.get_text_element(0)
         self.assertEqual(cursor, 16)
         self.assertEqual(te.value, 'something\nfunky')
         p.source = '{ "hi" }'
-        rv = p.get_text_element(0)
-        self.assertIsNone(rv)
+        with self.assertRaises(ParseError):
+            p.get_text_element(0)
 
     def test_pattern(self):
         p = FluentParser()
         p.source = 'something\n funky'
-        rv = p.get_pattern(0)
-        self.assertIsNotNone(rv)
-        te, cursor = rv
+        te, cursor = p.get_pattern(0)
         self.assertEqual(cursor, 16)
         self.assertEqual(te.elements[0].value, 'something\nfunky')
-        p.source = '{ "hi" }'
-        rv = p.get_text_element(0)
-        self.assertIsNone(rv)
 
     def test_message(self):
         p = FluentParser()
         p.source = 'message = is funky'
-        rv = p.get_message(0)
-        self.assertIsNotNone(rv)
-        msg, cursor = rv
+        msg, cursor = p.get_message(0)
         self.assertEqual(cursor, 18)
         self.assertEqual(msg.id.name, 'message')
 
     def test_attribute(self):
         p = FluentParser()
         p.source = '\n .key = value'
-        rv = p.get_attribute(0)
-        self.assertIsNotNone(rv)
-        attr, cursor = rv
+        attr, cursor = p.get_attribute(0)
         self.assertEqual(cursor, len(p.source))
         self.assertEqual(attr.id.name, 'key')
         self.assertEqual(attr.value.elements[0].value, 'value')
@@ -85,25 +71,19 @@ class CommentTest(unittest.TestCase):
     def test_comment(self):
         p = FluentParser()
         p.source = '# one\n#\n# two\njunk'
-        rv = p.get_comment(0)
-        self.assertIsNotNone(rv)
-        comment, cursor = rv
+        comment, _ = p.get_comment(0)
         self.assertEqual(comment.content, 'one\n\ntwo')
 
     def test_group_comment(self):
         p = FluentParser()
         p.source = '## one\n'
-        rv = p.get_group_comment(0)
-        self.assertIsNotNone(rv)
-        comment, cursor = rv
+        comment, _ = p.get_group_comment(0)
         self.assertEqual(comment.content, 'one')
 
     def test_resource_comment(self):
         p = FluentParser()
         p.source = '### one\n'
-        rv = p.get_resource_comment(0)
-        self.assertIsNotNone(rv)
-        comment, cursor = rv
+        comment, _ = p.get_resource_comment(0)
         self.assertEqual(comment.content, 'one')
 
 
@@ -111,23 +91,19 @@ class PlaceableTest(unittest.TestCase):
     def test_term_reference(self):
         p = FluentParser()
         p.source = '-term'
-        rv = p.get_term_reference(0)
-        self.assertIsNotNone(rv)
-        ref, cursor = rv
+        ref, cursor = p.get_term_reference(0)
         self.assertEqual(cursor, len(p.source))
         self.assertEqual(ref.id.name, '-term')
 
     def test_placeable(self):
         p = FluentParser()
         p.source = '{ -term }'
-        rv = p.get_placeable(0)
-        self.assertIsNotNone(rv)
-        placeable, cursor = rv
+        placeable, cursor = p.get_placeable(0)
         self.assertEqual(cursor, len(p.source))
         self.assertIsInstance(placeable, ast.Placeable)
 
 
-class TestPattern(unittest.TestCase):
+class PatternTest(unittest.TestCase):
     def test_text_char(self):
         c = re.compile(PATTERNS.TEXT_CHAR)
         self.assertIsNotNone(c.match(' '))
@@ -157,13 +133,13 @@ class TestPattern(unittest.TestCase):
         self.assertIsNone(bi.match('\n\n'))
 
 
-class TestIntegration(unittest.TestCase):
+class IntegrationTest(unittest.TestCase):
     def test_message_with_term_reference(self):
         p = FluentParser()
         resource = p.parse('msg = some { -term } reference')
 
 
-class TestRE(unittest.TestCase):
+class RETest(unittest.TestCase):
     def test_identifier(self):
         id = RE.identifier
         self.assertIsNone(id.match(' '))

@@ -10,12 +10,8 @@ def with_span(fn):
             return fn(self, cursor, *args)
 
         start = cursor
-        node = fn(self, cursor, *args)
+        node, cursor = fn(self, cursor, *args)
 
-        if node is None:
-            return node
-
-        node, cursor = node
         # Don't re-add the span if the node already has it.  This may happen
         # when one decorated function calls another decorated function.
         if node.span is not None:
@@ -26,6 +22,12 @@ def with_span(fn):
         return node, cursor
 
     return decorated
+
+
+def raise_last(exceptions):
+    '''Raise the exception with the furthest position.'''
+    exceptions.sort(key=lambda pe: pe.position)
+    raise exceptions[-1]
 
 
 class FluentParser(object):
@@ -71,23 +73,23 @@ class FluentParser(object):
             return rv
 
     def get_entry(self, cursor):
-        rv = self.get_message(cursor)
-        if rv is not None:
-            entry, cursor = rv
+        exceptions = []
+        try:
+            entry, cursor = self.get_message(cursor)
             line_end = self.require_line_end(cursor)
-            if line_end is None:
-                return None
             return (entry, line_end)
-
+        except ParseError as pe:
+            exceptions.append(pe)
         for comment in (
                 self.get_comment,
                 self.get_group_comment,
                 self.get_resource_comment
         ):
-            rv = comment(cursor)
-            if rv is not None:
-                return rv
-        # raise ParseError('E0002')
+            try:
+                return comment(cursor)
+            except ParseError as pe:
+                exceptions.append(pe)
+        raise_last(exceptions)
 
     def get_blank_line(self, cursor):
         '''Parse top-level blank  lines.
@@ -117,7 +119,7 @@ class FluentParser(object):
     def _get_generic_comment(self, cursor, comment_re, Node):
         match = comment_re.match(self.source, cursor)
         if match is None:
-            return None
+            raise ParseError(cursor, 'E0001')
 
         content = []
         while match:
@@ -133,17 +135,12 @@ class FluentParser(object):
 
     @with_span
     def get_message(self, cursor):
-        rv = self.get_identifier(cursor)
-        if rv is None:
-            return rv
-        id, cursor = rv
+        id, cursor = self.get_identifier(cursor)
 
         cursor = self.skip_blank_inline(cursor)
         pattern = attrs = None
 
         cursor = self.expect_equals(cursor)
-        if cursor is None:
-            return None
 
         rv = self.get_pattern(cursor)
         if rv is not None:
@@ -164,41 +161,21 @@ class FluentParser(object):
         Overwrite this to disable that requirement.
         '''
         cursor = self.require_char(cursor, '=')
-        if cursor is None:
-            return cursor
         return self.skip_blank_inline(cursor)
 
     @with_span
     def get_attribute(self, cursor):
         cursor = self.require_line_end(cursor)
-        if cursor is None:
-            return None
         cursor = self.skip_blank(cursor)
 
         cursor = self.require_char(cursor, '.')
-        if cursor is None:
-            return None
-
-        rv = self.get_identifier(cursor)
-        if rv is None:
-            return None
-        key, cursor = rv
+        key, cursor = self.get_identifier(cursor)
 
         cursor = self.skip_blank_inline(cursor)
-
         cursor = self.require_char(cursor, '=')
-        if cursor is None:
-            return None
-
         cursor = self.skip_blank_inline(cursor)
-        if cursor >= len(self.source):
-            return None
 
-        rv = self.get_pattern(cursor)
-        if rv is None:
-            return None
-
-        value, cursor = rv
+        value, cursor = self.get_pattern(cursor)
 
         return ast.Attribute(key, value), cursor
 
@@ -206,8 +183,9 @@ class FluentParser(object):
         attrs = []
 
         while True:
-            rv = self.get_attribute(cursor)
-            if rv is None:
+            try:
+                attr, cursor = self.get_attribute(cursor)
+            except ParseError:
                 break
             attr, cursor = rv
             attrs.append(attr)
@@ -220,8 +198,7 @@ class FluentParser(object):
     def get_identifier(self, cursor):
         match = RE.identifier.match(self.source, cursor)
         if match is None:
-            # TODO: ERROR
-            return None
+            raise ParseError(cursor, 'E0001')
         name = match.group()
         cursor = match.end()
         return ast.Identifier(name), cursor
@@ -230,8 +207,7 @@ class FluentParser(object):
     def get_term_identifier(self, cursor):
         match = RE.term_identifier.match(self.source, cursor)
         if match is None:
-            # TODO: ERROR
-            return None
+            raise ParseError(cursor, 'E0001')
         name = match.group()
         cursor = match.end()
         return ast.Identifier(name), cursor
@@ -241,14 +217,14 @@ class FluentParser(object):
         elements = []
 
         while cursor < len(self.source):
-            rv = self.get_pattern_element(cursor)
-            if rv is None:
+            try:
+                element, cursor = self.get_pattern_element(cursor)
+            except ParseError:
                 break
-            element, cursor = rv
             elements.append(element)
 
         if not elements:
-            return None
+            raise ParseError(cursor, 'E0001')
 
         # Trim trailing whitespace.
         last_element = elements[-1]
@@ -258,14 +234,16 @@ class FluentParser(object):
         return ast.Pattern(elements), cursor
 
     def get_pattern_element(self, cursor):
+        exceptions = []
         for element in (
                 self.get_text_element,
                 self.get_placeable
         ):
-            rv = element(cursor)
-            if rv is not None:
-                return rv
-        return None
+            try:
+                return element(cursor)
+            except ParseError as pe:
+                exceptions.append(pe)
+        raise_last(exceptions)
 
     @with_span
     def get_text_element(self, cursor):
@@ -277,7 +255,7 @@ class FluentParser(object):
                 if buf:
                     break
                 else:
-                    return None
+                    raise ParseError(cursor, 'E0001')
             if match.group('text_char') is not None:
                 buf.append(match.group('text_char'))
             cursor = match.end()
@@ -289,38 +267,28 @@ class FluentParser(object):
     @with_span
     def get_placeable(self, cursor):
         cursor = self.require_char(cursor, '{')
-        if cursor is None:
-            return None
         cursor = self.skip_blank_inline(cursor)
-        if cursor >= len(self.source):
-            return None
-        rv = self.get_expression(cursor)
-        if rv is None:
-            return None
-        expression, cursor = rv
+        expression, cursor = self.get_expression(cursor)
         cursor = self.skip_blank_inline(cursor)
-        if cursor >= len(self.source):
-            return None
         cursor = self.require_char(cursor, '}')
-        if cursor is None:
-            return None
         return ast.Placeable(expression), cursor
 
     def get_expression(self, cursor):
+        exceptions = []
         for expression in (
                 self.get_term_reference,
         ):
-            rv = expression(cursor)
-            if rv is not None:
-                return rv
-        return None
+            try:
+                return expression(cursor)
+            except ParseError as pe:
+                exceptions.append(pe)
+        # raise the exception with the furthest position
+        exceptions.sort(key=lambda pe: pe.position)
+        raise exceptions[-1]
 
     @with_span
     def get_term_reference(self, cursor):
-        rv = self.get_term_identifier(cursor)
-        if rv is None:
-            return None
-        term_ident, cursor = rv
+        term_ident, cursor = self.get_term_identifier(cursor)
         return ast.TermReference(term_ident), cursor
 
     def skip_blank_inline(self, cursor):
@@ -333,14 +301,17 @@ class FluentParser(object):
 
     def require_line_end(self, cursor):
         m = RE.line_end.match(self.source, cursor)
-        return None if m is None else m.end()
+        if m is None:
+            raise ParseError(cursor, 'E0001')
+        return m.end()
 
     def require_char(self, cursor, char):
-        if cursor >= len(self.source):
-            return None
-        if self.source[cursor] != char:
-            return None
-        return cursor + 1
+        if (
+                cursor < len(self.source)
+                and self.source[cursor] == char
+        ):
+            return cursor + 1
+        raise ParseError(cursor, 'E0001')
 
 
 class CompatFluentParser(FluentParser):

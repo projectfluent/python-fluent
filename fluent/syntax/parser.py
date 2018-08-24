@@ -212,8 +212,13 @@ class FluentParser(object):
         cursor = match.end()
         return ast.Identifier(name), cursor
 
-    @with_span
     def get_pattern(self, cursor):
+        '''Get a pattern.
+
+        Patterns have post-processing as well as white-space
+        stripping, thus we're doing the span manually,
+        if requested.
+        '''
         elements = []
 
         while cursor < len(self.source):
@@ -226,17 +231,54 @@ class FluentParser(object):
         if not elements:
             raise ParseError(cursor, 'E0001')
 
+        # Join adjacent TextElements
+        i = 0
+        while i + 1 < len(elements):
+            i += 1
+            if not isinstance(elements[i-1], ast.TextElement):
+                continue
+            if not isinstance(elements[i], ast.TextElement):
+                continue
+            elements[i-1].value += elements[i].value
+            if self.with_spans:
+                elements[i-1].span.end = elements[i].span.end
+            del elements[i]
+        # Trim leading whitespace. Should just be a \n?
+        if isinstance(elements[0], ast.TextElement):
+            m = RE.blank.match(elements[0].value)
+            if m is not None:
+                elements[0].value = elements[0].value[m.end():]
+                if self.with_spans:
+                    elements[0].span.start += m.end()
         # Trim trailing whitespace.
-        last_element = elements[-1]
-        if isinstance(last_element, ast.TextElement):
-            last_element.value = last_element.value.rstrip(' \t\n\r')
+        if isinstance(elements[-1], ast.TextElement):
+            m = RE.blank_end.search(elements[-1].value)
+            if m is not None:
+                elements[-1].value = elements[-1].value[:m.start()]
+                cursor -= m.end() - m.start()
+                if self.with_spans:
+                    elements[-1].span.end = cursor
+        # Remove empty TextElements
+        elements = [
+            e
+            for e in elements
+            if not isinstance(e, ast.TextElement)
+            or e.value
+        ]
 
-        return ast.Pattern(elements), cursor
+        pattern = ast.Pattern(elements)
+        if self.with_spans:
+            pattern.add_span(
+                elements[0].span.start,
+                elements[-1].span.end
+            )
+        return pattern, cursor
 
     def get_pattern_element(self, cursor):
         exceptions = []
         for element in (
-                self.get_text_element,
+                self.get_inline_text,
+                self.get_block_text,
                 self.get_placeable
         ):
             try:
@@ -246,23 +288,21 @@ class FluentParser(object):
         raise_last(exceptions)
 
     @with_span
-    def get_text_element(self, cursor):
-        buf = []
+    def get_inline_text(self, cursor):
+        match = RE.inline_text.match(self.source, cursor)
+        if match is None:
+            raise ParseError(cursor, 'E0001')
+        return ast.TextElement(match.group()), match.end()
 
-        while cursor < len(self.source):
-            match = RE.text_element_chunk.match(self.source, cursor)
-            if match is None:
-                if buf:
-                    break
-                else:
-                    raise ParseError(cursor, 'E0001')
-            if match.group('text_char') is not None:
-                buf.append(match.group('text_char'))
-            cursor = match.end()
-
-        # The newline normalization here matches grammar.mjs'
-        # break_indent production.
-        return ast.TextElement('\n'.join(buf)), cursor
+    @with_span
+    def get_block_text(self, cursor):
+        match = RE.block_text.match(self.source, cursor)
+        if match is None:
+            raise ParseError(cursor, 'E0001')
+        # normalize block to \n for each line
+        content = re.findall('\n', match.group('blank_block'))
+        content.append(match.group('text'))
+        return ast.TextElement(''.join(content)), match.end()
 
     @with_span
     def get_placeable(self, cursor):
@@ -396,6 +436,7 @@ class PATTERNS(object):
         r'|'
         r'(?![{\\])' + REGULAR_CHAR
     )
+    NO_INDENT = '}[*.'
     COMMENT_LINE = '(?: (.*))?(' + LINE_END + ')'
 
 
@@ -416,6 +457,20 @@ class RE(object):
             PATTERNS.BREAK_INDENT
         )
     )
+    inline_text = re.compile(r'(?:{})+'.format(PATTERNS.TEXT_CHAR))
+    block_text = re.compile(
+        (
+            r'(?P<blank_block>(?: *{})+)'
+            r'(?P<blank_inline> *)'
+            r'(?P<text>(?![{}])(?:{})*)'
+        ).format(
+            PATTERNS.LINE_END,
+            PATTERNS.NO_INDENT,  # negative lookahead for }[*.
+            PATTERNS.TEXT_CHAR,
+        )
+    )
+    blank_start = re.compile(r'(?:\r\n|\n| )*')
+    blank_end = re.compile(r'(?:\r\n|\n| )*\Z')
     blank_inline = re.compile(PATTERNS.BLANK_INLINE)
     line_end = re.compile(PATTERNS.LINE_END)
     blank_line = re.compile(PATTERNS.BLANK_LINE)

@@ -37,12 +37,12 @@ class MessageTest(unittest.TestCase):
     def test_text_element(self):
         p = FluentParser()
         p.source = 'something\n funky'
-        te, cursor = p.get_text_element(0)
-        self.assertEqual(cursor, 16)
-        self.assertEqual(te.value, 'something\nfunky')
+        te, cursor = p.get_inline_text(0)
+        self.assertEqual(cursor, 9)
+        self.assertEqual(te.value, 'something')
         p.source = '{ "hi" }'
         with self.assertRaises(ParseError):
-            p.get_text_element(0)
+            p.get_inline_text(0)
 
     def test_pattern(self):
         p = FluentParser()

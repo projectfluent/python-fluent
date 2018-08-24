@@ -129,7 +129,7 @@ class PatternTest(unittest.TestCase):
 
     def test_break_indent(self):
         bi = re.compile(PATTERNS.BREAK_INDENT)
-        self.assertEqual(bi.match('\n  \t ').group(), '\n  \t ')
+        self.assertEqual(bi.match('\n   ').group(), '\n   ')
         self.assertIsNone(bi.match('\n\n'))
 
 

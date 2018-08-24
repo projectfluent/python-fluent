@@ -380,13 +380,13 @@ class CompatFluentParser(FluentParser):
 
 
 class PATTERNS(object):
-    BLANK_INLINE = '[ \t]+'
+    BLANK_INLINE = ' +'
     LINE_END = r'(?:\r\n|\n|\Z)'
     BLANK_LINE = '(?:{})?{}'.format(BLANK_INLINE, LINE_END)
     BREAK_INDENT = '{}(?:{})*{}'.format(LINE_END, BLANK_LINE, BLANK_INLINE)
     REGULAR_CHAR = '[!-\ud7ff\ue000-\ufffd]'
     TEXT_CHAR = (
-        BLANK_INLINE +
+        BLANK_INLINE + r'|\t'
         r'|'
         r'\\u[0-9a-fA-F]{4}'
         r'|'

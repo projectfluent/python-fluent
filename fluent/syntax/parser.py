@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 import re
-from . import ast
+from . import ast as tooling_ast
 from .errors import ParseError
 
 
@@ -31,7 +31,8 @@ def raise_last(exceptions):
 
 
 class FluentParser(object):
-    def __init__(self, with_spans=True):
+    def __init__(self, with_spans=True, ast=None):
+        self.ast = tooling_ast if ast is None else ast
         self.with_spans = with_spans
         self.source = None
 
@@ -45,7 +46,7 @@ class FluentParser(object):
             if entry is None:
                 continue
             entries.append(entry)
-        res = ast.Resource(entries)
+        res = self.ast.Resource(entries)
 
         if self.with_spans:
             res.add_span(0, cursor)
@@ -76,7 +77,7 @@ class FluentParser(object):
                 exceptions.append(pe)
         exceptions.sort(key=lambda pe: pe.position)
         m = RE.line_end.search(self.source, exceptions[-1].position)
-        junk = ast.Junk(self.source[cursor:m.end()])
+        junk = self.ast.Junk(self.source[cursor:m.end()])
         # TODO: junk.set_annotation()
         return junk, m.end()
 
@@ -110,18 +111,18 @@ class FluentParser(object):
 
     @with_span
     def get_comment(self, cursor):
-        return self._get_generic_comment(cursor, RE.comment, ast.Comment)
+        return self._get_generic_comment(cursor, RE.comment, self.ast.Comment)
 
     @with_span
     def get_group_comment(self, cursor):
         return self._get_generic_comment(
-            cursor, RE.group_comment, ast.GroupComment
+            cursor, RE.group_comment, self.ast.GroupComment
         )
 
     @with_span
     def get_resource_comment(self, cursor):
         return self._get_generic_comment(
-            cursor, RE.resource_comment, ast.ResourceComment
+            cursor, RE.resource_comment, self.ast.ResourceComment
         )
 
     def _get_generic_comment(self, cursor, comment_re, Node):
@@ -161,7 +162,7 @@ class FluentParser(object):
         if pattern is None and attrs is None:
             raise_last(exceptions)
 
-        return ast.Message(id, pattern, attrs), cursor
+        return self.ast.Message(id, pattern, attrs), cursor
 
 
     @with_span
@@ -180,7 +181,7 @@ class FluentParser(object):
             # No attributes on Terms is OK
             attrs = None
 
-        return ast.Term(id, pattern, attrs), cursor
+        return self.ast.Term(id, pattern, attrs), cursor
 
     def expect_equals(self, cursor):
         '''Messages require an = after their ID.
@@ -204,7 +205,7 @@ class FluentParser(object):
 
         value, cursor = self.get_pattern(cursor)
 
-        return ast.Attribute(key, value), cursor
+        return self.ast.Attribute(key, value), cursor
 
     def get_attributes(self, cursor):
         attrs = []
@@ -227,7 +228,7 @@ class FluentParser(object):
             raise ParseError(cursor, 'E0001')
         name = match.group()
         cursor = match.end()
-        return ast.Identifier(name), cursor
+        return self.ast.Identifier(name), cursor
 
     @with_span
     def get_term_identifier(self, cursor):
@@ -236,7 +237,7 @@ class FluentParser(object):
             raise ParseError(cursor, 'E0001')
         name = match.group()
         cursor = match.end()
-        return ast.Identifier(name), cursor
+        return self.ast.Identifier(name), cursor
 
     def get_pattern(self, cursor):
         '''Get a pattern.
@@ -261,23 +262,23 @@ class FluentParser(object):
         i = 0
         while i + 1 < len(elements):
             i += 1
-            if not isinstance(elements[i-1], ast.TextElement):
+            if not isinstance(elements[i-1], self.ast.TextElement):
                 continue
-            if not isinstance(elements[i], ast.TextElement):
+            if not isinstance(elements[i], self.ast.TextElement):
                 continue
             elements[i-1].value += elements[i].value
             if self.with_spans:
                 elements[i-1].span.end = elements[i].span.end
             del elements[i]
         # Trim leading whitespace. Should just be a \n?
-        if isinstance(elements[0], ast.TextElement):
+        if isinstance(elements[0], self.ast.TextElement):
             m = RE.blank.match(elements[0].value)
             if m is not None:
                 elements[0].value = elements[0].value[m.end():]
                 if self.with_spans:
                     elements[0].span.start += m.end()
         # Trim trailing whitespace.
-        if isinstance(elements[-1], ast.TextElement):
+        if isinstance(elements[-1], self.ast.TextElement):
             m = RE.blank_end.search(elements[-1].value)
             if m is not None:
                 elements[-1].value = elements[-1].value[:m.start()]
@@ -288,11 +289,11 @@ class FluentParser(object):
         elements = [
             e
             for e in elements
-            if not isinstance(e, ast.TextElement)
+            if not isinstance(e, self.ast.TextElement)
             or e.value
         ]
 
-        pattern = ast.Pattern(elements)
+        pattern = self.ast.Pattern(elements)
         if self.with_spans:
             pattern.add_span(
                 elements[0].span.start,
@@ -318,7 +319,7 @@ class FluentParser(object):
         match = RE.inline_text.match(self.source, cursor)
         if match is None:
             raise ParseError(cursor, 'E0001')
-        return ast.TextElement(match.group()), match.end()
+        return self.ast.TextElement(match.group()), match.end()
 
     @with_span
     def get_block_text(self, cursor):
@@ -328,7 +329,7 @@ class FluentParser(object):
         # normalize block to \n for each line
         content = re.findall('\n', match.group('blank_block'))
         content.append(match.group('text'))
-        return ast.TextElement(''.join(content)), match.end()
+        return self.ast.TextElement(''.join(content)), match.end()
 
     @with_span
     def get_placeable(self, cursor):
@@ -337,7 +338,7 @@ class FluentParser(object):
         expression, cursor = self.get_expression(cursor)
         cursor = self.skip_blank_inline(cursor)
         cursor = self.require_char(cursor, '}')
-        return ast.Placeable(expression), cursor
+        return self.ast.Placeable(expression), cursor
 
     def get_expression(self, cursor):
         exceptions = []
@@ -355,7 +356,7 @@ class FluentParser(object):
     @with_span
     def get_term_reference(self, cursor):
         term_ident, cursor = self.get_term_identifier(cursor)
-        return ast.TermReference(term_ident), cursor
+        return self.ast.TermReference(term_ident), cursor
 
     def skip_blank_inline(self, cursor):
         m = RE.blank_inline.match(self.source, cursor)
@@ -408,7 +409,7 @@ class CompatFluentParser(FluentParser):
 
         # A Section without a comment is like an empty Group Comment.
         # Semantically it ends the previous group and starts a new one.
-        return ast.GroupComment('')
+        return self.ast.GroupComment('')
 
     @with_span
     def get_zero_four_style_comment(self, cursor):
@@ -438,11 +439,11 @@ class CompatFluentParser(FluentParser):
         if ps.current_peek_is('['):
             ps.skip_to_peek()
             self.get_group_comment_from_section(ps)
-            return ast.GroupComment(content)
+            return self.ast.GroupComment(content)
 
         ps.reset_peek()
         ps.last_comment_zero_four_syntax = True
-        return ast.Comment(content)
+        return self.ast.Comment(content)
 
 
 class PATTERNS(object):

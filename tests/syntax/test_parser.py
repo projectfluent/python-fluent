@@ -71,6 +71,42 @@ class MessageTest(unittest.TestCase):
         self.assertEqual(cursor, len(p.source))
         self.assertEqual(attr.id.name, 'key')
         self.assertEqual(attr.value.elements[0].value, 'value')
+        p.source = '\n    .key = value'
+        attr, cursor = p.get_attribute(0)
+        self.assertEqual(cursor, len(p.source))
+        self.assertEqual(attr.id.name, 'key')
+        self.assertEqual(attr.value.elements[0].value, 'value')
+
+    def test_just_attribute(self):
+        p = FluentParser()
+        p.source = 'msg = \n .key = value'
+        msg, cursor = p.get_message(0)
+        self.assertEqual(cursor, len(p.source))
+        self.assertEqual(msg.attributes[0].id.name, 'key')
+
+
+class TermTest(unittest.TestCase):
+
+    def test_value(self):
+        p = FluentParser()
+        p.source = '-term = is funky'
+        term, cursor = p.get_term(0)
+        self.assertEqual(cursor, len(p.source))
+        self.assertEqual(term.id.name, '-term')
+
+    def test_value_and_attribute(self):
+        p = FluentParser()
+        p.source = '-term = val\n     .key = value\n\n'
+        term, cursor = p.get_term(0)
+        self.assertEqual(cursor, len(p.source) - 2)
+        self.assertEqual(term.attributes[0].id.name, 'key')
+        self.assertEqual(term.value.elements[0].value, 'val')
+
+    def test_just_attribute(self):
+        p = FluentParser()
+        p.source = '-term = \n .key = value'
+        with self.assertRaises(ParseError):
+            p.get_term(0)
 
 
 class CommentTest(unittest.TestCase):

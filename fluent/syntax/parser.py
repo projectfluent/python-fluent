@@ -41,9 +41,10 @@ class FluentParser(object):
         cursor = 0
         while cursor < len(self.source):
             entry, cursor = self.get_entry_or_junk(cursor)
-            if entry is not None:
-                # Don't add top-level white-space
-                entries.append(entry)
+            # Don't add top-level white-space
+            if entry is None:
+                continue
+            entries.append(entry)
         res = ast.Resource(entries)
 
         if self.with_spans:
@@ -81,13 +82,9 @@ class FluentParser(object):
 
     def get_entry(self, cursor):
         exceptions = []
-        try:
-            entry, cursor = self.get_message(cursor)
-            line_end = self.require_line_end(cursor)
-            return (entry, line_end)
-        except ParseError as pe:
-            exceptions.append(pe)
         for comment in (
+                self.get_message,
+                self.get_term,
                 self.get_comment,
                 self.get_group_comment,
                 self.get_resource_comment
@@ -143,6 +140,7 @@ class FluentParser(object):
 
     @with_span
     def get_message(self, cursor):
+        exceptions = []
         id, cursor = self.get_identifier(cursor)
 
         cursor = self.skip_blank_inline(cursor)
@@ -150,18 +148,39 @@ class FluentParser(object):
 
         cursor = self.expect_equals(cursor)
 
-        rv = self.get_pattern(cursor)
-        if rv is not None:
-            pattern, cursor = rv
+        try:
+            pattern, cursor = self.get_pattern(cursor)
+        except ParseError as pe:
+            exceptions.append(pe)
 
-        rv = self.get_attributes(cursor)
-        if rv:
-            attrs, cursor = rv
+        try:
+            attrs, cursor = self.get_attributes(cursor)
+        except ParseError as pe:
+            exceptions.append(pe)
 
         if pattern is None and attrs is None:
-            return None
+            raise_last(exceptions)
 
         return ast.Message(id, pattern, attrs), cursor
+
+
+    @with_span
+    def get_term(self, cursor):
+        id, cursor = self.get_term_identifier(cursor)
+
+        cursor = self.skip_blank_inline(cursor)
+        cursor = self.require_char(cursor, '=')
+        cursor = self.skip_blank_inline(cursor)
+
+        pattern, cursor = self.get_pattern(cursor)
+
+        try:
+            attrs, cursor = self.get_attributes(cursor)
+        except ParseError as pe:
+            # No attributes on Terms is OK
+            attrs = None
+
+        return ast.Term(id, pattern, attrs), cursor
 
     def expect_equals(self, cursor):
         '''Messages require an = after their ID.
@@ -198,7 +217,7 @@ class FluentParser(object):
             attrs.append(attr)
 
         if not attrs:
-            return None
+            attrs = None
         return attrs, cursor
 
     @with_span
@@ -443,7 +462,7 @@ class PATTERNS(object):
         r'|'
         r'(?![{\\])' + REGULAR_CHAR
     )
-    NO_INDENT = '}[*.'
+    NO_INDENT = '}[*. '
     COMMENT_LINE = '((?: (.*))?)(?:' + LINE_END + ')'
 
 
@@ -472,7 +491,7 @@ class RE(object):
             r'(?P<text>(?![{}])(?:{})*)'
         ).format(
             PATTERNS.LINE_END,
-            PATTERNS.NO_INDENT,  # negative lookahead for }[*.
+            PATTERNS.NO_INDENT,  # negative lookahead for ` }[*.`
             PATTERNS.TEXT_CHAR,
         )
     )

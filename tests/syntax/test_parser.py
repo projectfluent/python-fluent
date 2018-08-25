@@ -274,6 +274,24 @@ class RETest(unittest.TestCase):
         self.assertIsNotNone(match)
         self.assertEqual(match.group(1), r'\"some')
 
+    def test_number_literal(self):
+        num = RE.number_literal
+        match = num.match('0')
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(), '0')
+        match = num.match('-0')
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(), '-0')
+        match = num.match('10.0')
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(), '10.0')
+        self.assertIsNone(num.match('.'))
+        self.assertIsNone(num.match('.0'))
+        self.assertIsNone(num.match('-'))
+        self.assertIsNone(num.match('a'))
+        self.assertIsNone(num.match('"'))
+
+
     def test_blank(self):
         blank = RE.blank
         self.assertIsNotNone(blank.match(' '))

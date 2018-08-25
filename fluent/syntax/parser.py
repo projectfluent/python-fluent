@@ -374,6 +374,7 @@ class FluentParser(object):
         exceptions = []
         for expression in (
                 self.get_string_literal,
+                self.get_number_literal,
                 self.get_term_reference,
         ):
             try:
@@ -390,6 +391,13 @@ class FluentParser(object):
         if m is None:
             raise ParseError(cursor, "E0001")
         return self.ast.StringLiteral(m.group(1)), m.end()
+
+    @with_span
+    def get_number_literal(self, cursor):
+        m = RE.number_literal.match(self.source, cursor)
+        if m is None:
+            raise ParseError(cursor, "E0001")
+        return self.ast.NumberLiteral(m.group()), m.end()
 
     @with_span
     def get_term_reference(self, cursor):
@@ -529,6 +537,7 @@ class RE(object):
     string_literal = re.compile(
         r'"((?:(?:\\")|(?!"){})*)"'.format(PATTERNS.TEXT_CHAR)
     )
+    number_literal = re.compile(r'-?[0-9]+(?:\.[0-9]+)?')
     blank_start = re.compile(r'(?:\r\n|\n| )*')
     blank_end = re.compile(r'(?:\r\n|\n| )*\Z')
     blank_inline = re.compile(PATTERNS.BLANK_INLINE)

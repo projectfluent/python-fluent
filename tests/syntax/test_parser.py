@@ -192,7 +192,6 @@ msg = val
         self.assertIsNone(resource.body[1].comment)
 
 
-
 class PatternTest(unittest.TestCase):
     def test_text_char(self):
         c = re.compile(PATTERNS.TEXT_CHAR)

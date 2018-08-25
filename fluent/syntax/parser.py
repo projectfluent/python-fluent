@@ -184,7 +184,6 @@ class FluentParser(object):
 
         return self.ast.Message(id, pattern, attrs), cursor
 
-
     @with_span
     def get_term(self, cursor):
         id, cursor = self.get_term_identifier(cursor)
@@ -197,7 +196,7 @@ class FluentParser(object):
 
         try:
             attrs, cursor = self.get_attributes(cursor)
-        except ParseError as pe:
+        except ParseError:
             # No attributes on Terms is OK
             attrs = None
 

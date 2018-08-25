@@ -375,6 +375,8 @@ class FluentParser(object):
         for expression in (
                 self.get_string_literal,
                 self.get_number_literal,
+                self.get_variable_reference,
+                self.get_message_reference,
                 self.get_term_reference,
         ):
             try:
@@ -404,6 +406,11 @@ class FluentParser(object):
         cursor = self.require_char(cursor, '$')
         var_ident, cursor = self.get_identifier(cursor)
         return self.ast.VariableReference(var_ident), cursor
+
+    @with_span
+    def get_message_reference(self, cursor):
+        msg_ident, cursor = self.get_identifier(cursor)
+        return self.ast.MessageReference(msg_ident), cursor
 
     @with_span
     def get_term_reference(self, cursor):

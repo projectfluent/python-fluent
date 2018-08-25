@@ -156,12 +156,26 @@ class PlaceableTest(unittest.TestCase):
         self.assertEqual(cursor, len(p.source) - 1)
         self.assertIsInstance(placeable, ast.Placeable)
 
+    def test_string_literal(self):
+        p = FluentParser()
+        p.source = '"foo"'
+        expr, cursor = p.get_expression(0)
+        self.assertEqual(cursor, len(p.source))
+        self.assertEqual(expr.value, 'foo')
+
+    def test_variable_reference(self):
+        p = FluentParser()
+        p.source = '321'
+        expr, cursor = p.get_expression(0)
+        self.assertEqual(cursor, len(p.source))
+        self.assertEqual(expr.value, '321')
+
     def test_variable_reference(self):
         p = FluentParser()
         p.source = '$num'
-        var, cursor = p.get_variable_reference(0)
+        expr, cursor = p.get_expression(0)
         self.assertEqual(cursor, len(p.source))
-        self.assertEqual(var.id.name, 'num')
+        self.assertEqual(expr.id.name, 'num')
 
 
 class IntegrationTest(unittest.TestCase):

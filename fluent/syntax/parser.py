@@ -378,6 +378,7 @@ class FluentParser(object):
                 self.get_variable_reference,
                 self.get_message_reference,
                 self.get_term_reference,
+                self.get_inline_placeable,
         ):
             try:
                 return expression(cursor)

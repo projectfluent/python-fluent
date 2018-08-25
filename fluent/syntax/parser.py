@@ -279,20 +279,21 @@ class FluentParser(object):
             raise ParseError(cursor, 'E0001')
 
         # Join adjacent TextElements
-        i = 0
-        while i + 1 < len(elements):
-            i += 1
-            if not isinstance(elements[i-1], self.ast.TextElement):
-                continue
-            if not isinstance(elements[i], self.ast.TextElement):
+        i = 1
+        while i < len(elements):
+            if (
+                    not isinstance(elements[i-1], self.ast.TextElement)
+                    or not isinstance(elements[i], self.ast.TextElement)
+            ):
+                i += 1
                 continue
             elements[i-1].value += elements[i].value
             if self.with_spans:
                 elements[i-1].span.end = elements[i].span.end
             del elements[i]
-        # Trim leading whitespace. Should just be a \n?
+        # Trim leading whitespace.
         if isinstance(elements[0], self.ast.TextElement):
-            m = RE.blank.match(elements[0].value)
+            m = RE.blank_block.match(elements[0].value)
             if m is not None:
                 elements[0].value = elements[0].value[m.end():]
                 if self.with_spans:

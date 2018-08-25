@@ -52,10 +52,15 @@ class MessageTest(unittest.TestCase):
 
     def test_pattern(self):
         p = FluentParser()
-        p.source = 'something\n funky'
-        te, cursor = p.get_pattern(0)
-        self.assertEqual(cursor, 16)
-        self.assertEqual(te.elements[0].value, 'something\nfunky')
+        p.source = '\n\n  something\n funky\n\n going on'
+        pat, cursor = p.get_pattern(0)
+        self.assertEqual(cursor, len(p.source))
+        self.assertEqual(
+            pat.elements[0].value,
+            'something\nfunky\n\ngoing on'
+        )
+        # TODO: Confirm start position of span
+        self.assertEqual(pat.span.start, 2)
 
     def test_message(self):
         p = FluentParser()

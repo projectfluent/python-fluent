@@ -145,6 +145,21 @@ class PlaceableTest(unittest.TestCase):
         self.assertIsInstance(placeable, ast.Placeable)
 
 
+class IntegrationTest(unittest.TestCase):
+    def test_message_with_term_reference(self):
+        p = FluentParser()
+        resource = p.parse('''
+msg = some { -term } reference
+
+-term = terminology
+   .with = metadata
+''')
+        self.assertEqual(len(resource.body), 2)
+        self.assertFalse(
+            any(isinstance(entry, ast.Junk) for entry in resource.body)
+        )
+
+
 class PatternTest(unittest.TestCase):
     def test_text_char(self):
         c = re.compile(PATTERNS.TEXT_CHAR)
@@ -163,12 +178,6 @@ class PatternTest(unittest.TestCase):
         self.assertIsNotNone(le.match('\r\n'))
         self.assertEqual(le.match('\r\n').group(), '\r\n')
         self.assertEqual(le.match('\n\n').group(), '\n')
-
-
-class IntegrationTest(unittest.TestCase):
-    def test_message_with_term_reference(self):
-        p = FluentParser()
-        resource = p.parse('msg = some { -term } reference')
 
 
 class RETest(unittest.TestCase):

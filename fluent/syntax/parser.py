@@ -500,7 +500,7 @@ class PATTERNS(object):
         r'|'
         r'(?![{\\])' + REGULAR_CHAR
     )
-    COMMENT_LINE = '((?: (.*))?)(?:' + LINE_END + ')'
+    COMMENT_LINE = '((?: (.*?))?)' + LINE_END
 
 
 class RE(object):

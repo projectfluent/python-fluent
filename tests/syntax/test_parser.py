@@ -257,6 +257,9 @@ class RETest(unittest.TestCase):
         match = comment.match('# joe\n')
         self.assertIsNotNone(match)
         self.assertEqual(match.group(2), 'joe')
+        match = comment.match('# joe\r\n')
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(2), 'joe')
         match = comment.match('#joe')
         self.assertIsNone(match)
 

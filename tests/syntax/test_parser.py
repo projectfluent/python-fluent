@@ -144,6 +144,13 @@ class PlaceableTest(unittest.TestCase):
         self.assertEqual(cursor, len(p.source))
         self.assertIsInstance(placeable, ast.Placeable)
 
+    def test_relaxed_whitespace(self):
+        p = FluentParser()
+        p.source = '{\n-term\n}\n'
+        placeable, cursor = p.get_placeable(0)
+        self.assertEqual(cursor, len(p.source) - 1)
+        self.assertIsInstance(placeable, ast.Placeable)
+
 
 class IntegrationTest(unittest.TestCase):
     def test_message_with_term_reference(self):

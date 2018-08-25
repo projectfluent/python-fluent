@@ -354,9 +354,9 @@ class FluentParser(object):
     @with_span
     def get_placeable(self, cursor):
         cursor = self.require_char(cursor, '{')
-        cursor = self.skip_blank_inline(cursor)
+        cursor = self.skip_blank(cursor)
         expression, cursor = self.get_expression(cursor)
-        cursor = self.skip_blank_inline(cursor)
+        cursor = self.skip_blank(cursor)
         cursor = self.require_char(cursor, '}')
         return self.ast.Placeable(expression), cursor
 

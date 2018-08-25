@@ -159,6 +159,27 @@ msg = some { -term } reference
             any(isinstance(entry, ast.Junk) for entry in resource.body)
         )
 
+    def test_attached_comment(self):
+        p = FluentParser()
+        resource = p.parse('''\
+# attached
+msg = val
+''')
+        self.assertEqual(len(resource.body), 1)
+        self.assertIsNotNone(resource.body[0].comment)
+
+    def test_standalone_comment(self):
+        p = FluentParser()
+        resource = p.parse('''\
+# attached
+
+msg = val
+''')
+        self.assertEqual(len(resource.body), 2)
+        self.assertIsInstance(resource.body[0], p.ast.Comment)
+        self.assertIsNone(resource.body[1].comment)
+
+
 
 class PatternTest(unittest.TestCase):
     def test_text_char(self):

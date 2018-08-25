@@ -35,9 +35,11 @@ class FluentParser(object):
         self.ast = tooling_ast if ast is None else ast
         self.with_spans = with_spans
         self.source = None
+        self.last_comment = None
 
     def parse(self, source):
         self.source = source
+        self.last_comment = None
         entries = []
         cursor = 0
         while cursor < len(self.source):
@@ -45,6 +47,21 @@ class FluentParser(object):
             # Don't add top-level white-space
             if entry is None:
                 continue
+            # Stick last comment to Term or Message
+            # get_blank_block unsets last_comment if it's standalone
+            if (
+                    isinstance(
+                        entry,
+                        (self.ast.Term, self.ast.Message)
+                    )
+                    and self.last_comment
+                    and hasattr(entry, 'comment')
+            ):
+                entries.remove(self.last_comment)
+                entry.comment = self.last_comment
+                self.last_comment = None
+            if isinstance(entry, self.ast.Comment):
+                self.last_comment = entry
             entries.append(entry)
         res = self.ast.Resource(entries)
 
@@ -104,6 +121,9 @@ class FluentParser(object):
         '''
         m = RE.blank_block.match(self.source, cursor)
         if m is not None:
+            if len(re.findall('\n', m.group())) > 1:
+                # we found an empty line, last_comment is standalone
+                self.last_comment = None
             return (None, m.end())
         # Raise ParseError for the logic of the caller.
         # Set position to -1 so that this one never reports.

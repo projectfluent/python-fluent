@@ -74,10 +74,10 @@ class FluentParser(object):
             except ParseError as pe:
                 exceptions.append(pe)
         exceptions.sort(key=lambda pe: pe.position)
-        m = PE.line_end.search(self.source, exceptions[-1].position)
-        junk = Junk(self.source[cursor:m.end()])
+        m = RE.line_end.search(self.source, exceptions[-1].position)
+        junk = ast.Junk(self.source[cursor:m.end()])
         # TODO: junk.set_annotation()
-        return junk
+        return junk, m.end()
 
     def get_entry(self, cursor):
         exceptions = []
@@ -109,7 +109,7 @@ class FluentParser(object):
             return (None, m.end())
         # Raise ParseError for the logic of the caller.
         # Set position to -1 so that this one never reports.
-        raise ParseError('E0001', -1)
+        raise ParseError(-1, 'E0001')
 
     @with_span
     def get_comment(self, cursor):
@@ -195,7 +195,6 @@ class FluentParser(object):
                 attr, cursor = self.get_attribute(cursor)
             except ParseError:
                 break
-            attr, cursor = rv
             attrs.append(attr)
 
         if not attrs:
@@ -469,7 +468,7 @@ class RE(object):
     block_text = re.compile(
         (
             r'(?P<blank_block>(?: *{})+)'
-            r'(?P<blank_inline> *)'
+            r'(?P<blank_inline> +)'
             r'(?P<text>(?![{}])(?:{})*)'
         ).format(
             PATTERNS.LINE_END,

@@ -43,6 +43,12 @@ class MessageTest(unittest.TestCase):
         p.source = '{ "hi" }'
         with self.assertRaises(ParseError):
             p.get_inline_text(0)
+        p.source = 'one\nidentifier'
+        te, cursor = p.get_inline_text(0)
+        self.assertEqual(cursor, 3)
+        self.assertEqual(te.value, 'one')
+        with self.assertRaises(ParseError):
+            te, cursor = p.get_block_text(3)
 
     def test_pattern(self):
         p = FluentParser()

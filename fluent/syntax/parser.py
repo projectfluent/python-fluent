@@ -62,6 +62,15 @@ class FluentParser(object):
                 self.last_comment = None
             if isinstance(entry, self.ast.Comment):
                 self.last_comment = entry
+            if (
+                    isinstance(entry, self.ast.Junk)
+                    and entries
+                    and isinstance(entries[-1], self.ast.Junk)
+            ):
+                entries[-1].content += entry.content
+                if self.with_spans:
+                    entries[-1].span.end = entry.span.end
+                continue
             entries.append(entry)
         res = self.ast.Resource(entries)
 
@@ -95,6 +104,7 @@ class FluentParser(object):
         exceptions.sort(key=lambda pe: pe.position)
         m = RE.line_end.search(self.source, exceptions[-1].position)
         junk = self.ast.Junk(self.source[cursor:m.end()])
+        junk.add_span(cursor, m.end())
         # TODO: junk.set_annotation()
         return junk, m.end()
 

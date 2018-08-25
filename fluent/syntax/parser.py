@@ -68,7 +68,7 @@ class FluentParser(object):
         exceptions = []
         for entry in (
                 self.get_entry,
-                self.get_blank_line
+                self.get_blank_block
         ):
             try:
                 return entry(cursor)
@@ -95,13 +95,13 @@ class FluentParser(object):
                 exceptions.append(pe)
         raise_last(exceptions)
 
-    def get_blank_line(self, cursor):
+    def get_blank_block(self, cursor):
         '''Parse top-level blank  lines.
 
         Returns None as AST node while we're not having a proper
         AST node for top-level white-space.
         '''
-        m = RE.blank_line.match(self.source, cursor)
+        m = RE.blank_block.match(self.source, cursor)
         if m is not None:
             return (None, m.end())
         # Raise ParseError for the logic of the caller.
@@ -448,8 +448,7 @@ class CompatFluentParser(FluentParser):
 class PATTERNS(object):
     BLANK_INLINE = ' +'
     LINE_END = r'(?:\r\n|\n|\Z)'
-    BLANK_LINE = '(?:{})?{}'.format(BLANK_INLINE, LINE_END)
-    BREAK_INDENT = '{}(?:{})*{}'.format(LINE_END, BLANK_LINE, BLANK_INLINE)
+    BLANK_BLOCK = '(?: *{})+'.format(LINE_END)
     REGULAR_CHAR = '[!-\ud7ff\ue000-\ufffd]'
     TEXT_CHAR = (
         BLANK_INLINE + r'|\t'
@@ -462,7 +461,6 @@ class PATTERNS(object):
         r'|'
         r'(?![{\\])' + REGULAR_CHAR
     )
-    NO_INDENT = '}[*. '
     COMMENT_LINE = '((?: (.*))?)(?:' + LINE_END + ')'
 
 
@@ -472,26 +470,19 @@ class RE(object):
     resource_comment = re.compile(r'###' + PATTERNS.COMMENT_LINE)
     identifier = re.compile(r'[a-zA-Z][a-zA-Z0-9_-]*')
     term_identifier = re.compile(r'-[a-zA-Z][a-zA-Z0-9_-]*')
-    # text_cont needs to exclude BLANK_INLINE and EOF, as they're
+    # block_text needs to exclude BLANK_INLINE and EOF, as they're
     # otherwise part of the negative lookahead.
     # compared to the ebnf, this does not contain the first char of
     # the new line.
-    text_element_chunk = re.compile(
-        r'(?P<text_char>(?:{})+)'.format(PATTERNS.TEXT_CHAR) +
-        r'|' +
-        r'(?P<text_cont>{}(?!\}}|\[|\*|\.| |\t|\Z))'.format(
-            PATTERNS.BREAK_INDENT
-        )
-    )
     inline_text = re.compile(r'(?:{})+'.format(PATTERNS.TEXT_CHAR))
     block_text = re.compile(
         (
-            r'(?P<blank_block>(?: *{})+)'
+            r'(?P<blank_block>{})'
             r'(?P<blank_inline> +)'
             r'(?P<text>(?![{}])(?:{})*)'
         ).format(
-            PATTERNS.LINE_END,
-            PATTERNS.NO_INDENT,  # negative lookahead for ` }[*.`
+            PATTERNS.BLANK_BLOCK,
+            ' }[*.',  # negative lookahead
             PATTERNS.TEXT_CHAR,
         )
     )
@@ -499,8 +490,7 @@ class RE(object):
     blank_end = re.compile(r'(?:\r\n|\n| )*\Z')
     blank_inline = re.compile(PATTERNS.BLANK_INLINE)
     line_end = re.compile(PATTERNS.LINE_END)
-    blank_line = re.compile(PATTERNS.BLANK_LINE)
+    blank_block = re.compile(PATTERNS.BLANK_BLOCK)
     blank = re.compile(r'(?:{})|(?:{})'.format(
         PATTERNS.BLANK_INLINE, PATTERNS.LINE_END
     ))
-    break_indent = re.compile(PATTERNS.BREAK_INDENT)

@@ -164,16 +164,6 @@ class PatternTest(unittest.TestCase):
         self.assertEqual(le.match('\r\n').group(), '\r\n')
         self.assertEqual(le.match('\n\n').group(), '\n')
 
-    def test_blank_line(self):
-        bl = re.compile(PATTERNS.BLANK_LINE)
-        self.assertEqual(bl.match(' \na').group(), ' \n')
-        self.assertIsNone(bl.match('a'))
-
-    def test_break_indent(self):
-        bi = re.compile(PATTERNS.BREAK_INDENT)
-        self.assertEqual(bi.match('\n   ').group(), '\n   ')
-        self.assertIsNone(bi.match('\n\n'))
-
 
 class IntegrationTest(unittest.TestCase):
     def test_message_with_term_reference(self):
@@ -205,19 +195,6 @@ class RETest(unittest.TestCase):
         self.assertIsNone(id.match(r'\\'))
         self.assertIsNone(id.match('a-_'))
         self.assertIsNotNone(id.match('-a_'))
-
-    def test_text_element_chunk(self):
-        tec = RE.text_element_chunk
-        match = tec.match('foo')
-        self.assertIsNotNone(match)
-        self.assertEqual(match.group('text_char'), 'foo')
-        self.assertIsNone(match.group('text_cont'))
-        match = tec.match('\n foo')
-        self.assertIsNotNone(match)
-        self.assertIsNone(match.group('text_char'))
-        self.assertEqual(match.group('text_cont'), '\n ')
-        match = tec.match('\n  .attr')
-        self.assertIsNone(match)
 
     def test_comment(self):
         comment = RE.comment

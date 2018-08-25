@@ -282,7 +282,11 @@ class FluentParser(object):
                 element, cursor = self.get_pattern_element(cursor)
             except ParseError:
                 break
-            elements.append(element)
+            # some pattern elements can return multiple nodes
+            if isinstance(element, (list, tuple)):
+                elements += element
+            else:
+                elements.append(element)
 
         if not elements:
             raise ParseError(cursor, 'E0001')
@@ -336,7 +340,8 @@ class FluentParser(object):
         for element in (
                 self.get_inline_text,
                 self.get_block_text,
-                self.get_inline_placeable
+                self.get_inline_placeable,
+                self.get_block_placeable,
         ):
             try:
                 return element(cursor)
@@ -369,6 +374,19 @@ class FluentParser(object):
         cursor = self.skip_blank(cursor)
         cursor = self.require_char(cursor, '}')
         return self.ast.Placeable(expression), cursor
+
+    def get_block_placeable(self, cursor):
+        match = RE.blank_block.match(self.source, cursor)
+        if match is None:
+            raise ParseError(cursor, 'E0001')
+        block_content = re.findall('\n', match.group())
+        text = self.ast.TextElement(''.join(block_content))
+        if self.with_spans:
+            text.add_span(cursor, match.end())
+        cursor = match.end()
+        cursor = self.skip_blank_inline(cursor)
+        block_placeable, cursor = self.get_inline_placeable(cursor)
+        return (text, block_placeable), cursor
 
     def get_expression(self, cursor):
         exceptions = []

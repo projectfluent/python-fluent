@@ -89,6 +89,17 @@ class MessageTest(unittest.TestCase):
         self.assertEqual(cursor, len(p.source))
         self.assertEqual(msg.attributes[0].id.name, 'key')
 
+    def test_block_placeable(self):
+        p = FluentParser()
+        p.source = '\n\n{-term}\n'
+        pe, cursor = p.get_pattern_element(0)
+        self.assertEqual(cursor, len(p.source) - 1)
+        self.assertIsInstance(pe, (tuple, list))
+        self.assertEqual(len(pe), 2)
+        text, placeable = pe
+        self.assertEqual(text.value, '\n\n')
+        self.assertIsInstance(placeable, ast.Placeable)
+
 
 class TermTest(unittest.TestCase):
 

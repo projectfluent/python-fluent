@@ -64,13 +64,20 @@ class FluentParser(object):
         return None
 
     def get_entry_or_junk(self, cursor):
-
-        rv = self.get_entry(cursor)
-        if rv is not None:
-            return rv
-        rv = self.get_blank_line(cursor)
-        if rv is not None:
-            return rv
+        exceptions = []
+        for entry in (
+                self.get_entry,
+                self.get_blank_line
+        ):
+            try:
+                return entry(cursor)
+            except ParseError as pe:
+                exceptions.append(pe)
+        exceptions.sort(key=lambda pe: pe.position)
+        m = PE.line_end.search(self.source, exceptions[-1].position)
+        junk = Junk(self.source[cursor:m.end()])
+        # TODO: junk.set_annotation()
+        return junk
 
     def get_entry(self, cursor):
         exceptions = []
@@ -98,7 +105,11 @@ class FluentParser(object):
         AST node for top-level white-space.
         '''
         m = RE.blank_line.match(self.source, cursor)
-        return None if m is None else (None, m.end())
+        if m is not None:
+            return (None, m.end())
+        # Raise ParseError for the logic of the caller.
+        # Set position to -1 so that this one never reports.
+        raise ParseError('E0001', -1)
 
     @with_span
     def get_comment(self, cursor):
@@ -123,15 +134,12 @@ class FluentParser(object):
 
         content = []
         while match:
-            content += match.groups()
+            content.append(match.group(2) or '')
             cursor = match.end()
+            return_cursor = match.end(1)
             match = comment_re.match(self.source, cursor)
 
-        # strip trailing whitespace from last comment
-        content.pop()
-        # Filter out None
-        content = [seg for seg in content if seg is not None]
-        return Node(''.join(content)), cursor
+        return Node('\n'.join(content)), return_cursor
 
     @with_span
     def get_message(self, cursor):
@@ -437,7 +445,7 @@ class PATTERNS(object):
         r'(?![{\\])' + REGULAR_CHAR
     )
     NO_INDENT = '}[*.'
-    COMMENT_LINE = '(?: (.*))?(' + LINE_END + ')'
+    COMMENT_LINE = '((?: (.*))?)(?:' + LINE_END + ')'
 
 
 class RE(object):

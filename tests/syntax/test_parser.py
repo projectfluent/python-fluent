@@ -156,6 +156,13 @@ class PlaceableTest(unittest.TestCase):
         self.assertEqual(cursor, len(p.source) - 1)
         self.assertIsInstance(placeable, ast.Placeable)
 
+    def test_variable_reference(self):
+        p = FluentParser()
+        p.source = '$num'
+        var, cursor = p.get_variable_reference(0)
+        self.assertEqual(cursor, len(p.source))
+        self.assertEqual(var.id.name, 'num')
+
 
 class IntegrationTest(unittest.TestCase):
     def test_message_with_term_reference(self):
@@ -210,7 +217,6 @@ class PatternTest(unittest.TestCase):
         self.assertIsNotNone(le.match('\r\n'))
         self.assertEqual(le.match('\r\n').group(), '\r\n')
         self.assertEqual(le.match('\n\n').group(), '\n')
-
 
 class RETest(unittest.TestCase):
     def test_identifier(self):

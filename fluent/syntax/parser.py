@@ -400,6 +400,12 @@ class FluentParser(object):
         return self.ast.NumberLiteral(m.group()), m.end()
 
     @with_span
+    def get_variable_reference(self, cursor):
+        cursor = self.require_char(cursor, '$')
+        var_ident, cursor = self.get_identifier(cursor)
+        return self.ast.VariableReference(var_ident), cursor
+
+    @with_span
     def get_term_reference(self, cursor):
         term_ident, cursor = self.get_term_identifier(cursor)
         return self.ast.TermReference(term_ident), cursor

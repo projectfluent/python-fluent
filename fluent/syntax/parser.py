@@ -363,6 +363,7 @@ class FluentParser(object):
     def get_expression(self, cursor):
         exceptions = []
         for expression in (
+                self.get_string_literal,
                 self.get_term_reference,
         ):
             try:
@@ -372,6 +373,13 @@ class FluentParser(object):
         # raise the exception with the furthest position
         exceptions.sort(key=lambda pe: pe.position)
         raise exceptions[-1]
+
+    @with_span
+    def get_string_literal(self, cursor):
+        m = RE.string_literal.match(self.source, cursor)
+        if m is None:
+            raise ParseError(cursor, "E0001")
+        return self.ast.StringLiteral(m.group(1)), m.end()
 
     @with_span
     def get_term_reference(self, cursor):
@@ -506,6 +514,10 @@ class RE(object):
             ' }[*.',  # negative lookahead
             PATTERNS.TEXT_CHAR,
         )
+    )
+    # take " out of TEXT_CHAR, and put \" in
+    string_literal = re.compile(
+        r'"((?:(?:\\")|(?!"){})*)"'.format(PATTERNS.TEXT_CHAR)
     )
     blank_start = re.compile(r'(?:\r\n|\n| )*')
     blank_end = re.compile(r'(?:\r\n|\n| )*\Z')

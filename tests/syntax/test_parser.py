@@ -256,6 +256,17 @@ class RETest(unittest.TestCase):
         match = comment.match('#joe')
         self.assertIsNone(match)
 
+    def test_string_literal(self):
+        sl = RE.string_literal
+        match = sl.match('""')
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(1), '')
+        match = sl.match('  ""')
+        self.assertIsNone(match)
+        match = sl.match(r'"\"some"')
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(1), r'\"some')
+
     def test_blank(self):
         blank = RE.blank
         self.assertIsNotNone(blank.match(' '))

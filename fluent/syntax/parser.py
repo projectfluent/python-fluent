@@ -336,7 +336,7 @@ class FluentParser(object):
         for element in (
                 self.get_inline_text,
                 self.get_block_text,
-                self.get_placeable
+                self.get_inline_placeable
         ):
             try:
                 return element(cursor)
@@ -362,7 +362,7 @@ class FluentParser(object):
         return self.ast.TextElement(''.join(content)), match.end()
 
     @with_span
-    def get_placeable(self, cursor):
+    def get_inline_placeable(self, cursor):
         cursor = self.require_char(cursor, '{')
         cursor = self.skip_blank(cursor)
         expression, cursor = self.get_expression(cursor)

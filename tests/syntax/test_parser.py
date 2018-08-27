@@ -174,7 +174,7 @@ class PlaceableTest(unittest.TestCase):
         self.assertEqual(cursor, len(p.source))
         self.assertEqual(expr.value, 'foo')
 
-    def test_variable_reference(self):
+    def test_number_literal(self):
         p = FluentParser()
         p.source = '321'
         expr, cursor = p.get_expression(0)
@@ -187,6 +187,19 @@ class PlaceableTest(unittest.TestCase):
         expr, cursor = p.get_expression(0)
         self.assertEqual(cursor, len(p.source))
         self.assertEqual(expr.id.name, 'num')
+
+
+class CallTest(unittest.TestCase):
+    def test_named_argument(self):
+        p = FluentParser()
+        p.source = 'foopy : 4'
+        named, cursor = p.get_named_call_argument(0)
+        self.assertEqual(cursor, len(p.source))
+        self.assertIsInstance(named, p.ast.NamedArgument)
+        p.source = 'format : "daytime"'
+        named, cursor = p.get_named_call_argument(0)
+        self.assertEqual(cursor, len(p.source))
+        self.assertIsInstance(named, p.ast.NamedArgument)
 
 
 class IntegrationTest(unittest.TestCase):
@@ -328,4 +341,6 @@ class RETest(unittest.TestCase):
         self.assertIsNotNone(blank.match(' '))
         self.assertIsNotNone(blank.match('\n'))
         self.assertIsNotNone(blank.match(''))
+        block = '\n  \r\n    '
+        self.assertEqual(blank.match(block).group(), block)
         self.assertIsNone(blank.match('a\n'))

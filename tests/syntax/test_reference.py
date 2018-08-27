@@ -33,7 +33,7 @@ class TestReferenceMeta(type):
                 source = read_file(ftl_path)
                 expected = read_file(ast_path)
 
-                actual = parse(source)
+                actual = parse(source, with_spans=False)
                 expected = ast.from_json(json.loads(expected))
 
                 for a, b in six.moves.zip_longest(actual.body, expected.body):

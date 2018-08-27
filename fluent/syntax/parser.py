@@ -394,6 +394,7 @@ class FluentParser(object):
                 self.get_string_literal,
                 self.get_number_literal,
                 self.get_variable_reference,
+                self.get_call_expression,
                 self.get_message_reference,
                 self.get_term_reference,
                 self.get_inline_placeable,
@@ -405,6 +406,8 @@ class FluentParser(object):
         # raise the exception with the furthest position
         exceptions.sort(key=lambda pe: pe.position)
         raise exceptions[-1]
+
+    get_inline_expression = get_expression
 
     @with_span
     def get_string_literal(self, cursor):
@@ -425,6 +428,67 @@ class FluentParser(object):
         cursor = self.require_char(cursor, '$')
         var_ident, cursor = self.get_identifier(cursor)
         return self.ast.VariableReference(var_ident), cursor
+
+    @with_span
+    def get_call_expression(self, cursor):
+        callee = RE.function.match(self.source, cursor)
+        if callee is None:
+            raise ParseError(cursor, 'E0001')
+        func = self.ast.Function(callee.group())
+        if self.with_spans:
+            func.add_span(cursor, callee.end())
+        cursor = callee.end()
+        cursor = self.skip_blank(cursor)
+        cursor = self.require_char(cursor, '(')
+        cursor = self.skip_blank(cursor)
+        positional_args = []
+        named_args = []
+        names = set()
+        while True:
+            try:
+                arg, cursor = self.get_call_argument(cursor)
+            except ParseError:
+                break
+            if isinstance(arg, self.ast.NamedArgument):
+                if arg.name.name in names:
+                    raise ParseError(cursor, 'E0001')
+                named_args.append(arg)
+                names.add(arg.name.name)
+            else:
+                if named_args:
+                    raise ParseError(cursor, 'E0001')
+                positional_args.append(arg)
+            cursor = self.skip_blank(cursor)
+            try:
+                cursor = self.require_char(cursor, ',')
+            except ParseError:
+                break
+            cursor = self.skip_blank(cursor)
+        cursor = self.require_char(cursor, ')')
+        return self.ast.CallExpression(
+            func,
+            positional=positional_args,
+            named=named_args
+        ), cursor
+
+    def get_call_argument(self, cursor):
+        try:
+            return self.get_named_call_argument(cursor)
+        except ParseError:
+            pass
+        return self.get_inline_expression(cursor)
+
+    @with_span
+    def get_named_call_argument(self, cursor):
+        name, cursor = self.get_identifier(cursor)
+        cursor = self.skip_blank(cursor)
+        cursor = self.require_char(cursor, ':')
+        cursor = self.skip_blank(cursor)
+        try:
+            val, cursor = self.get_string_literal(cursor)
+        except ParseError:
+            val, cursor = self.get_number_literal(cursor)
+        return self.ast.NamedArgument(name, val), cursor
 
     @with_span
     def get_message_reference(self, cursor):
@@ -567,14 +631,15 @@ class RE(object):
     )
     # take " out of TEXT_CHAR, and put \" in
     string_literal = re.compile(
-        r'"((?:(?:\\")|(?!"){})*)"'.format(PATTERNS.TEXT_CHAR)
+        r'"((?:(?:\\")|(?!"){})*?)"'.format(PATTERNS.TEXT_CHAR)
     )
     number_literal = re.compile(r'-?[0-9]+(?:\.[0-9]+)?')
+    function = re.compile(r'[A-Z][A-Z_\?-]*')
     blank_start = re.compile(r'(?:\r\n|\n| )*')
     blank_end = re.compile(r'(?:\r\n|\n| )*\Z')
     blank_inline = re.compile(PATTERNS.BLANK_INLINE)
     line_end = re.compile(PATTERNS.LINE_END)
     blank_block = re.compile(PATTERNS.BLANK_BLOCK)
-    blank = re.compile(r'(?:{})|(?:{})'.format(
+    blank = re.compile(r'(?:(?:{})|(?:{}))+'.format(
         PATTERNS.BLANK_INLINE, PATTERNS.LINE_END
     ))

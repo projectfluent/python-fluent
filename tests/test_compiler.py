@@ -59,7 +59,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return ('Foo', errors)
+                return 'Foo'
         """)
         self.assertEqual(errs, [])
 
@@ -69,7 +69,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return ('Foo', errors)
+                return 'Foo'
         """)
         self.assertEqual(errs, [])
 
@@ -79,7 +79,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return (NUMBER(123).format(locale), errors)
+                return NUMBER(123).format(locale)
         """)
         self.assertEqual(errs, [])
 
@@ -89,7 +89,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return (''.join(['x ', NUMBER(123).format(locale), ' y']), errors)
+                return ''.join(['x ', NUMBER(123).format(locale), ' y'])
         """)
         self.assertEqual(errs, [])
 
@@ -100,11 +100,11 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return ('Foo', errors)
+                return 'Foo'
 
             def bar(message_args, errors):
-                _tmp, errors = foo(message_args, errors)
-                return (''.join(['X ', _tmp]), errors)
+                _tmp = foo(message_args, errors)
+                return ''.join(['X ', _tmp])
         """)
         self.assertEqual(errs, [])
 
@@ -115,7 +115,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return ('Foo', errors)
+                return 'Foo'
 
             def bar(message_args, errors):
                 return foo(message_args, errors)
@@ -130,7 +130,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo__attr(message_args, errors):
-                return ('Foo Attr', errors)
+                return 'Foo Attr'
 
             def bar(message_args, errors):
                 return foo__attr(message_args, errors)
@@ -148,7 +148,7 @@ class TestCompiler(unittest.TestCase):
                 return foo(message_args, errors)
 
             def foo(message_args, errors):
-                return ('Foo', errors)
+                return 'Foo'
         """)
         self.assertEqual(errs, [])
 
@@ -161,7 +161,7 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def bar(message_args, errors):
                 errors.append(FluentReferenceError('Unknown message: foo'))
-                return (FluentNone('foo').format(locale), errors)
+                return FluentNone('foo').format(locale)
         """)
         # And we should get a compile time error:
         self.assertEqual(errs, [('bar', FluentReferenceError("Unknown message: foo"))])
@@ -172,7 +172,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def errors2(message_args, errors):
-                return ('Errors', errors)
+                return 'Errors'
         """)
         self.assertEqual(errs, [])
 
@@ -182,7 +182,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def zip2(message_args, errors):
-                return ('Zip', errors)
+                return 'Zip'
         """)
         self.assertEqual(errs, [])
 
@@ -192,7 +192,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def class2(message_args, errors):
-                return ('Class', errors)
+                return 'Class'
         """)
         self.assertEqual(errs, [])
 
@@ -205,7 +205,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def zip2(message_args, errors):
-                return ('Foo', errors)
+                return 'Foo'
 
             def str2(message_args, errors):
                 return zip2(message_args, errors)
@@ -226,7 +226,7 @@ class TestCompiler(unittest.TestCase):
                 else:
                     _tmp = handle_argument(_tmp, 'arg', locale, errors)
 
-                return (handle_output(_tmp, locale, errors), errors)
+                return handle_output(_tmp, locale, errors)
         """)
         self.assertEqual(errs, [])
 
@@ -236,7 +236,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return (NUMBER(12345).format(locale), errors)
+                return NUMBER(12345).format(locale)
         """)
         self.assertEqual(errs, [])
 
@@ -254,7 +254,7 @@ class TestCompiler(unittest.TestCase):
                 else:
                     _tmp = handle_argument(_tmp, 'arg', locale, errors)
 
-                return (NUMBER(_tmp).format(locale), errors)
+                return NUMBER(_tmp).format(locale)
         """)
         self.assertEqual(errs, [])
 
@@ -264,7 +264,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return (NUMBER(12345, useGrouping=0).format(locale), errors)
+                return NUMBER(12345, useGrouping=0).format(locale)
         """)
         self.assertEqual(errs, [])
 
@@ -275,7 +275,7 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 errors.append(FluentReferenceError('Unknown function: MISSING'))
-                return (FluentNone('MISSING()').format(locale), errors)
+                return FluentNone('MISSING()').format(locale)
         """),
         self.assertEqual(errs, [('foo', FluentReferenceError('Unknown function: MISSING'))])
 
@@ -290,7 +290,7 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 errors.append(TypeError("MYFUNC() got an unexpected keyword argument 'kw2'"))
-                return (FluentNone('MYFUNC()').format(locale), errors)
+                return FluentNone('MYFUNC()').format(locale)
         """),
         self.assertEqual(len(errs), 1)
         self.assertEqual(errs[0][0], 'foo')
@@ -305,7 +305,7 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 errors.append(TypeError('MYFUNC() takes 0 positional arguments but 1 was given'))
-                return (FluentNone('MYFUNC()').format(locale), errors)
+                return FluentNone('MYFUNC()').format(locale)
         """),
         self.assertEqual(len(errs), 1)
         self.assertEqual(errs[0][0], 'foo')
@@ -319,13 +319,13 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return ('Foo', errors)
+                return 'Foo'
 
             def foo__attr_1(message_args, errors):
-                return ('Attr 1', errors)
+                return 'Attr 1'
 
             def foo__attr_2(message_args, errors):
-                return ('Attr 2', errors)
+                return 'Attr 2'
         """)
         self.assertEqual(errs, [])
 
@@ -336,7 +336,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def message(message_args, errors):
-                return ('Message Term', errors)
+                return 'Message Term'
         """)
 
     def test_variant_select_inline(self):
@@ -349,7 +349,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return ('Before A After', errors)
+                return 'Before A After'
         """)
         self.assertEqual(errs, [])
 
@@ -363,7 +363,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return ('B', errors)
+                return 'B'
         """)
         self.assertEqual(errs, [])
 
@@ -378,7 +378,7 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 errors.append(FluentReferenceError('Unknown variant: -my-term[c]'))
-                return ('B', errors)
+                return 'B'
         """)
         self.assertEqual(errs,
                          [('foo', FluentReferenceError('Unknown variant: -my-term[c]'))])
@@ -391,7 +391,7 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 errors.append(FluentReferenceError('Unknown variant: -my-term[a]'))
-                return ('Term', errors)
+                return 'Term'
         """)
         self.assertEqual(len(errs), 1)
 
@@ -410,7 +410,7 @@ class TestCompiler(unittest.TestCase):
                 else:
                     _ret = 'B'
 
-                return (_ret, errors)
+                return _ret
         """)
         self.assertEqual(errs, [])
 
@@ -432,7 +432,7 @@ class TestCompiler(unittest.TestCase):
                 else:
                     _ret = NUMBER(2).format(locale)
 
-                return (_ret, errors)
+                return _ret
         """)
         self.assertEqual(errs, [])
 
@@ -452,7 +452,7 @@ class TestCompiler(unittest.TestCase):
                 else:
                     _ret = 'Other'
 
-                return (_ret, errors)
+                return _ret
         """)
         self.assertEqual(errs, [])
 
@@ -481,7 +481,7 @@ class TestCompiler(unittest.TestCase):
                 else:
                     _ret = 'You have some things'
 
-                return (_ret, errors)
+                return _ret
         """)
         self.assertEqual(errs, [])
 
@@ -491,7 +491,7 @@ class TestCompiler(unittest.TestCase):
         """, self.locale)
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return ('Start Middle End', errors)
+                return 'Start Middle End'
         """)
         self.assertEqual(errs, [])
 
@@ -502,7 +502,7 @@ class TestCompiler(unittest.TestCase):
         # No isolating chars, because we have no placeables.
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
-                return ('Foo', errors)
+                return 'Foo'
         """)
         self.assertEqual(errs, [])
 
@@ -520,7 +520,7 @@ class TestCompiler(unittest.TestCase):
                 else:
                     _tmp = handle_argument(_tmp, 'arg', locale, errors)
 
-                return (''.join(['Foo \\u2068', handle_output(_tmp, locale, errors), '\\u2069 Bar']), errors)
+                return ''.join(['Foo \\u2068', handle_output(_tmp, locale, errors), '\\u2069 Bar'])
         """)
         self.assertEqual(errs, [])
 
@@ -531,7 +531,7 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 errors.append(FluentCyclicReferenceError('Cyclic reference in foo'))
-                return (FluentNone().format(locale), errors)
+                return FluentNone().format(locale)
         """)
         self.assertEqual(errs, [('foo', FluentCyclicReferenceError("Cyclic reference in foo"))])
 
@@ -546,11 +546,11 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def foo__attr1(message_args, errors):
                 errors.append(FluentCyclicReferenceError('Cyclic reference in foo.attr1'))
-                return (FluentNone().format(locale), errors)
+                return FluentNone().format(locale)
 
             def bar__attr2(message_args, errors):
                 errors.append(FluentCyclicReferenceError('Cyclic reference in bar.attr2'))
-                return (FluentNone().format(locale), errors)
+                return FluentNone().format(locale)
         """)
         self.assertEqual(errs, [('foo.attr1', FluentCyclicReferenceError("Cyclic reference in foo.attr1")),
                                 ('bar.attr2', FluentCyclicReferenceError("Cyclic reference in bar.attr2")),
@@ -564,7 +564,7 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def cyclic_term_message(message_args, errors):
                 errors.append(FluentCyclicReferenceError('Cyclic reference in cyclic-term-message'))
-                return (FluentNone().format(locale), errors)
+                return FluentNone().format(locale)
         """)
         self.assertEqual(errs, [('cyclic-term-message',
                                  FluentCyclicReferenceError("Cyclic reference in cyclic-term-message")),
@@ -581,11 +581,11 @@ class TestCompiler(unittest.TestCase):
         self.assertCodeEqual(code, """
             def foo(message_args, errors):
                 errors.append(FluentCyclicReferenceError('Cyclic reference in foo'))
-                return (FluentNone().format(locale), errors)
+                return FluentNone().format(locale)
 
             def bar(message_args, errors):
                 errors.append(FluentCyclicReferenceError('Cyclic reference in bar'))
-                return (FluentNone().format(locale), errors)
+                return FluentNone().format(locale)
         """)
         self.assertEqual(errs, [('foo', FluentCyclicReferenceError("Cyclic reference in foo")),
                                 ('bar', FluentCyclicReferenceError("Cyclic reference in bar")),

@@ -272,8 +272,8 @@ def compile_message(msg, msg_id, function_name, module, compiler_env):
         return_expression = finalize_expr_as_string(make_fluent_none(None, module), msg_func, compiler_env)
     else:
         return_expression = compile_expr(msg, msg_func, None, compiler_env)
-    # > return ($return_expression, errors)
-    msg_func.add_return(codegen.Tuple(return_expression, codegen.VariableReference(ERRORS_NAME, msg_func)))
+    # > return $return_expression
+    msg_func.add_return(return_expression)
     return msg_func
 
 
@@ -486,7 +486,7 @@ def do_message_call(name, local_scope, parent_expr, compiler_env):
         msg_func_name = compiler_env.message_mapping[name]
         # > $tmp_name = $msg_func_name(message_args, errors)
         local_scope.add_assignment(
-            (tmp_name, ERRORS_NAME),
+            tmp_name,
             codegen.FunctionCall(msg_func_name,
                                  [codegen.VariableReference(a, local_scope) for a in MESSAGE_FUNCTION_ARGS],
                                  {},

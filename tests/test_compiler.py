@@ -103,8 +103,7 @@ class TestCompiler(unittest.TestCase):
                 return 'Foo'
 
             def bar(message_args, errors):
-                _tmp = foo(message_args, errors)
-                return ''.join(['X ', _tmp])
+                return ''.join(['X ', foo(message_args, errors)])
         """)
         self.assertEqual(errs, [])
 

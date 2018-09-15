@@ -205,7 +205,9 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None, deb
     # which is needed for compilation.
     for msg_id, msg in message_ids_to_ast.items():
         function_name = module.reserve_name(
-            message_function_name_for_msg_id(msg_id))
+            message_function_name_for_msg_id(msg_id),
+            properties={codegen.PROPERTY_RETURN_TYPE: text_type}
+        )
         compiler_env.message_mapping[msg_id] = function_name
 
     # Pass 2, actual compilation
@@ -481,19 +483,11 @@ def compile_expr_term_reference(reference, local_scope, parent_expr, compiler_en
 
 def do_message_call(name, local_scope, parent_expr, compiler_env):
     if name in compiler_env.message_mapping:
-        # Message functions always return strings, so we can type this variable:
-        tmp_name = local_scope.reserve_name('_tmp', properties={codegen.PROPERTY_TYPE: text_type})
         msg_func_name = compiler_env.message_mapping[name]
-        # > $tmp_name = $msg_func_name(message_args, errors)
-        local_scope.add_assignment(
-            tmp_name,
-            codegen.FunctionCall(msg_func_name,
-                                 [codegen.VariableReference(a, local_scope) for a in MESSAGE_FUNCTION_ARGS],
-                                 {},
-                                 local_scope))
-
-        # > $tmp_name
-        return codegen.VariableReference(tmp_name, local_scope)
+        return codegen.FunctionCall(msg_func_name,
+                                    [codegen.VariableReference(a, local_scope) for a in MESSAGE_FUNCTION_ARGS],
+                                    {},
+                                    local_scope)
 
     else:
         return unknown_reference(name, local_scope, compiler_env)

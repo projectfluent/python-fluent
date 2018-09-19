@@ -158,26 +158,16 @@ class Scope(PythonAst):
     # self.statements can be manipulated explicitly, appending statement
     # objects. But in some cases for a better and safe API we have explicit
     # 'add_X' methods and sometimes make the statement objects private
-    def add_assignment(self, names, value):
+    def add_assignment(self, name, value):
         """
         Adds an assigment of the form:
 
            x = value
-
-        or
-
-           x, y = value
-
-        Pass a string for the former, a tuple of strings for the later
         """
-        if not isinstance(names, tuple):
-            names = tuple([names])
+        if name not in self.names_in_use():
+            raise AssertionError("Cannot assign to unreserved name '{0}'".format(name))
 
-        for name in names:
-            if name not in self.names_in_use():
-                raise AssertionError("Cannot assign to unreserved name '{0}'".format(name))
-
-        self.statements.append(_Assignment(names, value))
+        self.statements.append(_Assignment(name, value))
 
     def add_function(self, func_name, func):
         assert func.func_name == func_name
@@ -212,15 +202,12 @@ class Statement(PythonAst):
 
 
 class _Assignment(Statement):
-    def __init__(self, names, value):
-        self.names = names
+    def __init__(self, name, value):
+        self.name = name
         self.value = value
 
-    def format_names(self):
-        return ", ".join(n for n in self.names)
-
     def as_source_code(self):
-        return "{0} = {1}".format(self.format_names(),
+        return "{0} = {1}".format(self.name,
                                   self.value.as_source_code())
 
     def simplify(self, changes):
@@ -269,26 +256,6 @@ class Function(Block, Statement):
 
     def add_return(self, value):
         self.statements.append(Return(value))
-
-    def simplify(self, changes):
-        self = super(Function, self).simplify(changes)
-        if len(self.statements) < 2:
-            return self
-        # Remove needless unpacking and repacking of final return tuple
-        if (isinstance(self.statements[-1], Return) and
-                isinstance(self.statements[-2], _Assignment)):
-            return_s = self.statements[-1]
-            assign_s = self.statements[-2]
-            return_source = return_s.value.as_source_code()
-            assign_names = assign_s.format_names()
-            if (return_source == assign_names or
-                (isinstance(return_s.value, Tuple) and
-                    return_source == "(" + assign_names + ")")):
-                new_return = Return(self.statements[-2].value)
-                self.statements = self.statements[:-2]
-                self.statements.append(new_return)
-                changes.append(True)
-        return self
 
 
 class Return(Statement):
@@ -455,21 +422,6 @@ class StringJoin(Expression):
             return self.parts[0]
         else:
             return self
-
-
-class Tuple(Expression):
-    type = tuple
-
-    def __init__(self, *items):
-        assert len(items) > 1
-        self.items = items
-
-    def as_source_code(self):
-        return '(' + ", ".join(i.as_source_code() for i in self.items) + ')'
-
-    def simplify(self, changes):
-        self.items = [item.simplify(changes) for item in self.items]
-        return self
 
 
 class VariableReference(Expression):

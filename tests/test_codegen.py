@@ -182,15 +182,6 @@ class TestCodeGen(unittest.TestCase):
             x = 'a string'
         """)
 
-    def test_add_assignment_multi(self):
-        scope = codegen.Scope()
-        name1 = scope.reserve_name('x')
-        name2 = scope.reserve_name('y')
-        scope.add_assignment((name1, name2), codegen.Tuple(codegen.String('a string'), codegen.String('another')))
-        self.assertCodeEqual(scope.as_source_code(), """
-            x, y = ('a string', 'another')
-        """)
-
     def test_function_call_unknown(self):
         scope = codegen.Scope()
         self.assertRaises(AssertionError,

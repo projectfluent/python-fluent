@@ -30,15 +30,15 @@ class FluentParser(object):
         self.with_spans = with_spans
 
     def parse(self, source):
-        ps = FTLParserStream(source)
-        ps.skip_blank_lines()
+        ps = FTLParserStream(source.replace('\r\n', '\n'))
+        ps.skip_blank_block()
 
         entries = []
         last_comment = None
 
         while ps.current():
             entry = self.get_entry_or_junk(ps)
-            blank_lines = ps.skip_blank_lines()
+            blank_lines = ps.skip_blank_block()
 
             # Regular Comments require special logic. Comments may be attached
             # to Messages or Terms if they are followed immediately by them.
@@ -92,15 +92,15 @@ class FluentParser(object):
         Preceding comments are ignored unless they contain syntax errors
         themselves, in which case Junk for the invalid comment is returned.
         """
-        ps = FTLParserStream(source)
-        ps.skip_blank_lines()
+        ps = FTLParserStream(source.replace('\r\n', '\n'))
+        ps.skip_blank_block()
 
         while ps.current_is('#'):
             skipped = self.get_entry_or_junk(ps)
             if isinstance(skipped, ast.Junk):
                 # Don't skip Junk comments.
                 return skipped
-            ps.skip_blank_lines()
+            ps.skip_blank_block()
 
         return self.get_entry_or_junk(ps)
 
@@ -158,7 +158,7 @@ class FluentParser(object):
                 content += ch
                 ch = ps.take_char(lambda x: x != '\n')
 
-            if ps.is_peek_next_line_zero_four_style_comment():
+            if ps.is_next_line_zero_four_comment(skip=False):
                 content += ps.current()
                 ps.next()
                 ps.expect_char('/')
@@ -202,7 +202,7 @@ class FluentParser(object):
                     content += ch
                     ch = ps.take_char(lambda x: x != '\n')
 
-            if ps.is_peek_next_line_comment(level):
+            if ps.is_next_line_comment(skip=False, level=level):
                 content += ps.current()
                 ps.next()
             else:
@@ -220,11 +220,11 @@ class FluentParser(object):
         ps.expect_char('[')
         ps.expect_char('[')
 
-        ps.skip_inline_ws()
+        ps.skip_blank_inline()
 
         self.get_variant_name(ps)
 
-        ps.skip_inline_ws()
+        ps.skip_blank_inline()
 
         ps.expect_char(']')
         ps.expect_char(']')
@@ -237,20 +237,17 @@ class FluentParser(object):
     def get_message(self, ps):
         id = self.get_identifier(ps)
 
-        ps.skip_inline_ws()
+        ps.skip_blank_inline()
         pattern = None
 
         # XXX Syntax 0.4 compat
         if ps.current_is('='):
             ps.next()
 
-            if ps.is_peek_value_start():
-                ps.skip_indent()
+            if ps.is_value_start(skip=True):
                 pattern = self.get_pattern(ps)
-            else:
-                ps.skip_inline_ws()
 
-        if ps.is_peek_next_line_attribute_start():
+        if ps.is_next_line_attribute_start(skip=True):
             attrs = self.get_attributes(ps)
         else:
             attrs = None
@@ -264,16 +261,15 @@ class FluentParser(object):
     def get_term(self, ps):
         id = self.get_term_identifier(ps)
 
-        ps.skip_inline_ws()
+        ps.skip_blank_inline()
         ps.expect_char('=')
 
-        if ps.is_peek_value_start():
-            ps.skip_indent()
+        if ps.is_value_start(skip=True):
             value = self.get_value(ps)
         else:
             raise ParseError('E0006', id.name)
 
-        if ps.is_peek_next_line_attribute_start():
+        if ps.is_next_line_attribute_start(skip=True):
             attrs = self.get_attributes(ps)
         else:
             attrs = None
@@ -286,11 +282,10 @@ class FluentParser(object):
 
         key = self.get_identifier(ps)
 
-        ps.skip_inline_ws()
+        ps.skip_blank_inline()
         ps.expect_char('=')
 
-        if ps.is_peek_value_start():
-            ps.skip_indent()
+        if ps.is_value_start(skip=True):
             value = self.get_pattern(ps)
             return ast.Attribute(key, value)
 
@@ -300,11 +295,10 @@ class FluentParser(object):
         attrs = []
 
         while True:
-            ps.expect_indent()
             attr = self.get_attribute(ps)
             attrs.append(attr)
 
-            if not ps.is_peek_next_line_attribute_start():
+            if not ps.is_next_line_attribute_start(skip=True):
                 break
         return attrs
 
@@ -347,13 +341,14 @@ class FluentParser(object):
             default_index = True
 
         ps.expect_char('[')
+        ps.skip_blank()
 
         key = self.get_variant_key(ps)
 
+        ps.skip_blank()
         ps.expect_char(']')
 
-        if ps.is_peek_value_start():
-            ps.skip_indent()
+        if ps.is_value_start(skip=True):
             value = self.get_value(ps)
             return ast.Variant(key, value, default_index)
 
@@ -364,7 +359,6 @@ class FluentParser(object):
         has_default = False
 
         while True:
-            ps.expect_indent()
             variant = self.get_variant(ps, has_default)
 
             if variant.default:
@@ -372,8 +366,10 @@ class FluentParser(object):
 
             variants.append(variant)
 
-            if not ps.is_peek_next_line_variant_start():
+            if not ps.is_next_line_variant_start(skip=False):
                 break
+
+            ps.skip_blank()
 
         if not has_default:
             raise ParseError('E0010')
@@ -426,32 +422,36 @@ class FluentParser(object):
     def get_value(self, ps):
         if ps.current_is('{'):
             ps.peek()
-            ps.peek_inline_ws()
-            if ps.is_peek_next_line_variant_start():
+            ps.peek_blank_inline()
+            if ps.is_next_line_variant_start(skip=False):
                 return self.get_variant_list(ps)
+            ps.reset_peek()
 
         return self.get_pattern(ps)
 
     @with_span
     def get_variant_list(self, ps):
         ps.expect_char('{')
-        ps.skip_inline_ws()
+        ps.skip_blank_inline()
+        ps.expect_char('\n')
+        ps.skip_blank()
         variants = self.get_variants(ps)
-        ps.expect_indent()
+        ps.expect_char('\n')
+        ps.skip_blank()
         ps.expect_char('}')
         return ast.VariantList(variants)
 
     @with_span
     def get_pattern(self, ps):
         elements = []
-        ps.skip_inline_ws()
+        ps.skip_blank_inline()
 
         while ps.current():
             ch = ps.current()
 
             # The end condition for get_pattern's while loop is a newline
             # which is not followed by a valid pattern continuation.
-            if ch == '\n' and not ps.is_peek_next_line_value():
+            if ch == '\n' and not ps.is_next_line_value(skip=False):
                 break
 
             if ch == '{':
@@ -464,6 +464,8 @@ class FluentParser(object):
         last_element = elements[-1]
         if isinstance(last_element, ast.TextElement):
             last_element.value = last_element.value.rstrip(' \t\n\r')
+            if last_element.value == "":
+                elements.pop()
 
         return ast.Pattern(elements)
 
@@ -478,11 +480,11 @@ class FluentParser(object):
                 return ast.TextElement(buf)
 
             if ch == '\n':
-                if not ps.is_peek_next_line_value():
+                if not ps.is_next_line_value(skip=False):
                     return ast.TextElement(buf)
 
                 ps.next()
-                ps.skip_inline_ws()
+                ps.skip_blank_inline()
 
                 # Add the new line to the buffer
                 buf += ch
@@ -527,11 +529,11 @@ class FluentParser(object):
 
     @with_span
     def get_expression(self, ps):
-        ps.skip_inline_ws()
+        ps.skip_blank()
 
         selector = self.get_selector_expression(ps)
 
-        ps.skip_inline_ws()
+        ps.skip_blank()
 
         if ps.current_is('-'):
             ps.peek()
@@ -553,9 +555,12 @@ class FluentParser(object):
             ps.next()
             ps.next()
 
-            ps.skip_inline_ws()
+            ps.skip_blank_inline()
+            ps.expect_char('\n')
+            ps.skip_blank()
 
             variants = self.get_variants(ps)
+            ps.skip_blank()
 
             if len(variants) == 0:
                 raise ParseError('E0011')
@@ -564,14 +569,14 @@ class FluentParser(object):
             if any(isinstance(v.value, ast.VariantList) for v in variants):
                 raise ParseError('E0023')
 
-            ps.expect_indent()
-
             return ast.SelectExpression(selector, variants)
         elif (
             isinstance(selector, ast.AttributeExpression)
             and isinstance(selector.ref, ast.TermReference)
         ):
             raise ParseError('E0019')
+
+        ps.skip_blank()
 
         return selector
 
@@ -623,7 +628,7 @@ class FluentParser(object):
     def get_call_arg(self, ps):
         exp = self.get_selector_expression(ps)
 
-        ps.skip_inline_ws()
+        ps.skip_blank()
 
         if not ps.current_is(':'):
             return exp
@@ -632,7 +637,7 @@ class FluentParser(object):
             raise ParseError('E0009')
 
         ps.next()
-        ps.skip_inline_ws()
+        ps.skip_blank()
 
         val = self.get_arg_val(ps)
 
@@ -643,8 +648,7 @@ class FluentParser(object):
         named = []
         argument_names = set()
 
-        ps.skip_inline_ws()
-        ps.skip_indent()
+        ps.skip_blank()
 
         while True:
             if ps.current_is(')'):
@@ -661,13 +665,11 @@ class FluentParser(object):
             else:
                 positional.append(arg)
 
-            ps.skip_inline_ws()
-            ps.skip_indent()
+            ps.skip_blank()
 
             if ps.current_is(','):
                 ps.next()
-                ps.skip_inline_ws()
-                ps.skip_indent()
+                ps.skip_blank()
                 continue
             else:
                 break

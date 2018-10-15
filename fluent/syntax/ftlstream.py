@@ -3,30 +3,31 @@ from .stream import ParserStream
 from .errors import ParseError
 
 
-INLINE_WS = (' ', '\t')
+INLINE_WS = ' '
+ANY_WS = (INLINE_WS, '\n')
 SPECIAL_LINE_START_CHARS = ('}', '.', '[', '*')
 
 
 class FTLParserStream(ParserStream):
     last_comment_zero_four_syntax = False
 
-    def skip_inline_ws(self):
+    def skip_blank_inline(self):
         while self.ch:
-            if self.ch not in INLINE_WS:
+            if self.ch != INLINE_WS:
                 break
             self.next()
 
-    def peek_inline_ws(self):
+    def peek_blank_inline(self):
         ch = self.current_peek()
         while ch:
-            if ch not in INLINE_WS:
+            if ch != INLINE_WS:
                 break
             ch = self.peek()
 
-    def skip_blank_lines(self):
+    def skip_blank_block(self):
         line_count = 0
         while True:
-            self.peek_inline_ws()
+            self.peek_blank_inline()
 
             if self.current_peek_is('\n'):
                 self.skip_to_peek()
@@ -36,11 +37,11 @@ class FTLParserStream(ParserStream):
                 self.reset_peek()
                 return line_count
 
-    def peek_blank_lines(self):
+    def peek_blank_block(self):
         while True:
             line_start = self.get_peek_index()
 
-            self.peek_inline_ws()
+            self.peek_blank_inline()
 
             if self.current_peek_is('\n'):
                 self.peek()
@@ -48,9 +49,13 @@ class FTLParserStream(ParserStream):
                 self.reset_peek(line_start)
                 break
 
-    def skip_indent(self):
-        self.skip_blank_lines()
-        self.skip_inline_ws()
+    def skip_blank(self):
+        while self.ch in ANY_WS:
+            self.next()
+
+    def peek_blank(self):
+        while self.current_peek() in ANY_WS:
+            self.peek()
 
     def expect_char(self, ch):
         if self.ch == ch:
@@ -62,12 +67,6 @@ class FTLParserStream(ParserStream):
             raise ParseError('E0003', '\u2424')
 
         raise ParseError('E0003', ch)
-
-    def expect_indent(self):
-        self.expect_char('\n')
-        self.skip_blank_lines()
-        self.expect_char(' ')
-        self.skip_inline_ws()
 
     def expect_line_end(self):
         if self.ch is None:
@@ -112,17 +111,24 @@ class FTLParserStream(ParserStream):
 
         return ch not in SPECIAL_LINE_START_CHARS
 
-    def is_peek_value_start(self):
-        self.peek_inline_ws()
+    def is_value_start(self, skip):
+        if skip is False:
+            raise NotImplementedError()
+
+        self.peek_blank_inline()
         ch = self.current_peek()
 
         # Inline Patterns may start with any char.
         if ch is not None and ch != '\n':
+            self.skip_to_peek()
             return True
 
-        return self.is_peek_next_line_value()
+        return self.is_next_line_value(skip)
 
-    def is_peek_next_line_zero_four_style_comment(self):
+    def is_next_line_zero_four_comment(self, skip):
+        if skip is True:
+            raise NotImplementedError()
+
         if not self.current_peek_is('\n'):
             return False
 
@@ -141,7 +147,10 @@ class FTLParserStream(ParserStream):
     #  0 - comment
     #  1 - group comment
     #  2 - resource comment
-    def is_peek_next_line_comment(self, level=-1):
+    def is_next_line_comment(self, skip, level=-1):
+        if skip is True:
+            raise NotImplementedError()
+
         if not self.current_peek_is('\n'):
             return False
 
@@ -165,21 +174,14 @@ class FTLParserStream(ParserStream):
         self.reset_peek()
         return False
 
-    def is_peek_next_line_variant_start(self):
+    def is_next_line_variant_start(self, skip):
+        if skip is True:
+            raise NotImplementedError()
+
         if not self.current_peek_is('\n'):
             return False
 
-        self.peek()
-
-        self.peek_blank_lines()
-
-        ptr = self.get_peek_index()
-
-        self.peek_inline_ws()
-
-        if (self.get_peek_index() - ptr == 0):
-            self.reset_peek()
-            return False
+        self.peek_blank()
 
         if self.current_peek_is('*'):
             self.peek()
@@ -191,50 +193,43 @@ class FTLParserStream(ParserStream):
         self.reset_peek()
         return False
 
-    def is_peek_next_line_attribute_start(self):
-        if not self.current_peek_is('\n'):
-            return False
+    def is_next_line_attribute_start(self, skip):
+        if skip is False:
+            raise NotImplementedError()
 
-        self.peek()
-
-        self.peek_blank_lines()
-
-        ptr = self.get_peek_index()
-
-        self.peek_inline_ws()
-
-        if (self.get_peek_index() - ptr == 0):
-            self.reset_peek()
-            return False
+        self.peek_blank()
 
         if self.current_peek_is('.'):
-            self.reset_peek()
+            self.skip_to_peek()
             return True
 
         self.reset_peek()
         return False
 
-    def is_peek_next_line_value(self):
+    def is_next_line_value(self, skip):
         if not self.current_peek_is('\n'):
             return False
 
-        self.peek()
-
-        self.peek_blank_lines()
+        self.peek_blank_block()
 
         ptr = self.get_peek_index()
 
-        self.peek_inline_ws()
+        self.peek_blank_inline()
 
-        if (self.get_peek_index() - ptr == 0):
+        if not self.current_peek_is("{"):
+            if (self.get_peek_index() - ptr == 0):
+                self.reset_peek()
+                return False
+
+            if not self.is_char_pattern_continuation(self.current_peek()):
+                self.reset_peek()
+                return False
+
+        if skip:
+            self.skip_to_peek()
+        else:
             self.reset_peek()
-            return False
 
-        if not self.is_char_pattern_continuation(self.current_peek()):
-            self.reset_peek()
-            return False
-
-        self.reset_peek()
         return True
 
     def skip_to_next_entry_start(self):

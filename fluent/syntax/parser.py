@@ -217,15 +217,13 @@ class FluentParser(object):
 
     @with_span
     def get_group_comment_from_section(self, ps):
+        def until_closing_bracket_or_eol(ch):
+            return ch not in (']', '\n')
+
         ps.expect_char('[')
         ps.expect_char('[')
-
-        ps.skip_blank_inline()
-
-        self.get_variant_name(ps)
-
-        ps.skip_blank_inline()
-
+        while ps.take_char(until_closing_bracket_or_eol):
+            pass
         ps.expect_char(']')
         ps.expect_char(']')
 
@@ -328,7 +326,7 @@ class FluentParser(object):
         if ((cc >= 48 and cc <= 57) or cc == 45):  # 0-9, -
             return self.get_number(ps)
 
-        return self.get_variant_name(ps)
+        return self.get_identifier(ps)
 
     @with_span
     def get_variant(self, ps, has_default):
@@ -375,18 +373,6 @@ class FluentParser(object):
             raise ParseError('E0010')
 
         return variants
-
-    @with_span
-    def get_variant_name(self, ps):
-        name = ps.take_id_start()
-        while True:
-            ch = ps.take_variant_name_char()
-            if ch:
-                name += ch
-            else:
-                break
-
-        return ast.VariantName(name.rstrip(' \t\n\r'))
 
     def get_digits(self, ps):
         num = ''

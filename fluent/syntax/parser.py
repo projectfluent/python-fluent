@@ -10,7 +10,7 @@ def with_span(fn):
         if not self.with_spans:
             return fn(self, ps, *args)
 
-        start = ps.get_index()
+        start = ps.index
         node = fn(self, ps, *args)
 
         # Don't re-add the span if the node already has it.  This may happen
@@ -18,7 +18,7 @@ def with_span(fn):
         if node.span is not None:
             return node
 
-        end = ps.get_index()
+        end = ps.index
         node.add_span(start, end)
         return node
 
@@ -36,7 +36,7 @@ class FluentParser(object):
         entries = []
         last_comment = None
 
-        while ps.current():
+        while ps.current_char:
             entry = self.get_entry_or_junk(ps)
             blank_lines = ps.skip_blank_block()
 
@@ -47,7 +47,7 @@ class FluentParser(object):
             # Message or the Term parsed successfully.
             if (
                 isinstance(entry, ast.Comment)
-                and blank_lines == 0 and ps.current()
+                and blank_lines == 0 and ps.current_char
             ):
                 # Stash the comment and decide what to do with it
                 # in the next pass.
@@ -79,7 +79,7 @@ class FluentParser(object):
         res = ast.Resource(entries)
 
         if self.with_spans:
-            res.add_span(0, ps.get_index())
+            res.add_span(0, ps.index)
 
         return res
 
@@ -95,7 +95,7 @@ class FluentParser(object):
         ps = FTLParserStream(source.replace('\r\n', '\n'))
         ps.skip_blank_block()
 
-        while ps.current_is('#'):
+        while ps.current_char == '#':
             skipped = self.get_entry_or_junk(ps)
             if isinstance(skipped, ast.Junk):
                 # Don't skip Junk comments.
@@ -105,19 +105,22 @@ class FluentParser(object):
         return self.get_entry_or_junk(ps)
 
     def get_entry_or_junk(self, ps):
-        entry_start_pos = ps.get_index()
+        entry_start_pos = ps.index
 
         try:
             entry = self.get_entry(ps)
             ps.expect_line_end()
             return entry
         except ParseError as err:
-            error_index = ps.get_index()
-            ps.skip_to_next_entry_start()
-            next_entry_start = ps.get_index()
+            error_index = ps.index
+            ps.skip_to_next_entry_start(entry_start_pos)
+            next_entry_start = ps.index
+            if next_entry_start < error_index:
+                # The position of the error must be inside of the Junk's span.
+                error_index = next_entry_start
 
             # Create a Junk instance
-            slice = ps.get_slice(entry_start_pos, next_entry_start)
+            slice = ps.string[entry_start_pos:next_entry_start]
             junk = ast.Junk(slice)
             if self.with_spans:
                 junk.add_span(entry_start_pos, next_entry_start)
@@ -127,16 +130,16 @@ class FluentParser(object):
             return junk
 
     def get_entry(self, ps):
-        if ps.current_is('#'):
+        if ps.current_char == '#':
             return self.get_comment(ps)
 
-        if ps.current_is('/'):
+        if ps.current_char == '/':
             return self.get_zero_four_style_comment(ps)
 
-        if ps.current_is('['):
+        if ps.current_char == '[':
             return self.get_group_comment_from_section(ps)
 
-        if ps.current_is('-'):
+        if ps.current_char == '-':
             return self.get_term(ps)
 
         if ps.is_identifier_start():
@@ -159,7 +162,7 @@ class FluentParser(object):
                 ch = ps.take_char(lambda x: x != '\n')
 
             if ps.is_next_line_zero_four_comment(skip=False):
-                content += ps.current()
+                content += ps.current_char
                 ps.next()
                 ps.expect_char('/')
                 ps.expect_char('/')
@@ -168,8 +171,7 @@ class FluentParser(object):
                 break
 
         # Comments followed by Sections become GroupComments.
-        ps.peek()
-        if ps.current_peek_is('['):
+        if ps.peek() == '[':
             ps.skip_to_peek()
             self.get_group_comment_from_section(ps)
             return ast.GroupComment(content)
@@ -188,14 +190,14 @@ class FluentParser(object):
 
         while True:
             i = -1
-            while ps.current_is('#') and (i < (2 if level == -1 else level)):
+            while ps.current_char == '#' and (i < (2 if level == -1 else level)):
                 ps.next()
                 i += 1
 
             if level == -1:
                 level = i
 
-            if not ps.current_is('\n'):
+            if ps.current_char != '\n':
                 ps.expect_char(' ')
                 ch = ps.take_char(lambda x: x != '\n')
                 while ch:
@@ -203,7 +205,7 @@ class FluentParser(object):
                     ch = ps.take_char(lambda x: x != '\n')
 
             if ps.is_next_line_comment(skip=False, level=level):
-                content += ps.current()
+                content += ps.current_char
                 ps.next()
             else:
                 break
@@ -239,7 +241,7 @@ class FluentParser(object):
         pattern = None
 
         # XXX Syntax 0.4 compat
-        if ps.current_is('='):
+        if ps.current_char == '=':
             ps.next()
 
             if ps.is_value_start(skip=True):
@@ -317,7 +319,7 @@ class FluentParser(object):
         return ast.Identifier('-{}'.format(id.name))
 
     def get_variant_key(self, ps):
-        ch = ps.current()
+        ch = ps.current_char
 
         if ch is None:
             raise ParseError('E0013')
@@ -332,7 +334,7 @@ class FluentParser(object):
     def get_variant(self, ps, has_default):
         default_index = False
 
-        if ps.current_is('*'):
+        if ps.current_char == '*':
             if has_default:
                 raise ParseError('E0015')
             ps.next()
@@ -391,13 +393,13 @@ class FluentParser(object):
     def get_number(self, ps):
         num = ''
 
-        if ps.current_is('-'):
+        if ps.current_char == '-':
             num += '-'
             ps.next()
 
         num += self.get_digits(ps)
 
-        if ps.current_is('.'):
+        if ps.current_char == '.':
             num += '.'
             ps.next()
             num += self.get_digits(ps)
@@ -406,7 +408,7 @@ class FluentParser(object):
 
     @with_span
     def get_value(self, ps):
-        if ps.current_is('{'):
+        if ps.current_char == '{':
             ps.peek()
             ps.peek_blank_inline()
             if ps.is_next_line_variant_start(skip=False):
@@ -432,8 +434,8 @@ class FluentParser(object):
         elements = []
         ps.skip_blank_inline()
 
-        while ps.current():
-            ch = ps.current()
+        while ps.current_char:
+            ch = ps.current_char
 
             # The end condition for get_pattern's while loop is a newline
             # which is not followed by a valid pattern continuation.
@@ -459,8 +461,8 @@ class FluentParser(object):
     def get_text_element(self, ps):
         buf = ''
 
-        while ps.current():
-            ch = ps.current()
+        while ps.current_char:
+            ch = ps.current_char
 
             if ch == '{':
                 return ast.TextElement(buf)
@@ -486,7 +488,7 @@ class FluentParser(object):
         return ast.TextElement(buf)
 
     def get_escape_sequence(self, ps, specials=('{', '\\')):
-        next = ps.current()
+        next = ps.current_char
 
         if next in specials:
             ps.next()
@@ -499,7 +501,7 @@ class FluentParser(object):
             for _ in range(4):
                 ch = ps.take_hex_digit()
                 if ch is None:
-                    raise ParseError('E0026', sequence + ps.current())
+                    raise ParseError('E0026', sequence + ps.current_char)
                 sequence += ch
 
             return '\\u{}'.format(sequence)
@@ -521,10 +523,8 @@ class FluentParser(object):
 
         ps.skip_blank()
 
-        if ps.current_is('-'):
-            ps.peek()
-
-            if not ps.current_peek_is('>'):
+        if ps.current_char == '-':
+            if ps.peek() != '>':
                 ps.reset_peek()
                 return selector
 
@@ -568,7 +568,7 @@ class FluentParser(object):
 
     @with_span
     def get_selector_expression(self, ps):
-        if ps.current_is('{'):
+        if ps.current_char == '{':
             return self.get_placeable(ps)
 
         literal = self.get_literal(ps)
@@ -576,7 +576,7 @@ class FluentParser(object):
         if not isinstance(literal, (ast.MessageReference, ast.TermReference)):
             return literal
 
-        ch = ps.current()
+        ch = ps.current_char
 
         if (ch == '.'):
             ps.next()
@@ -616,7 +616,7 @@ class FluentParser(object):
 
         ps.skip_blank()
 
-        if not ps.current_is(':'):
+        if ps.current_char != ':':
             return exp
 
         if not isinstance(exp, ast.MessageReference):
@@ -637,7 +637,7 @@ class FluentParser(object):
         ps.skip_blank()
 
         while True:
-            if ps.current_is(')'):
+            if ps.current_char == ')':
                 break
 
             arg = self.get_call_arg(ps)
@@ -653,7 +653,7 @@ class FluentParser(object):
 
             ps.skip_blank()
 
-            if ps.current_is(','):
+            if ps.current_char == ',':
                 ps.next()
                 ps.skip_blank()
                 continue
@@ -665,7 +665,7 @@ class FluentParser(object):
     def get_arg_val(self, ps):
         if ps.is_number_start():
             return self.get_number(ps)
-        elif ps.current_is('"'):
+        elif ps.current_char == '"':
             return self.get_string(ps)
         raise ParseError('E0012')
 
@@ -683,7 +683,7 @@ class FluentParser(object):
                 val += ch
             ch = ps.take_char(lambda x: x != '"' and x != '\n')
 
-        if ps.current_is('\n'):
+        if ps.current_char == '\n':
             raise ParseError('E0020')
 
         ps.next()
@@ -692,7 +692,7 @@ class FluentParser(object):
 
     @with_span
     def get_literal(self, ps):
-        ch = ps.current()
+        ch = ps.current_char
 
         if ch is None:
             raise ParseError('E0014')

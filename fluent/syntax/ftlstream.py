@@ -12,13 +12,13 @@ class FTLParserStream(ParserStream):
     last_comment_zero_four_syntax = False
 
     def skip_blank_inline(self):
-        while self.ch:
-            if self.ch != INLINE_WS:
+        while self.current_char:
+            if self.current_char != INLINE_WS:
                 break
             self.next()
 
     def peek_blank_inline(self):
-        ch = self.current_peek()
+        ch = self.current_peek
         while ch:
             if ch != INLINE_WS:
                 break
@@ -29,7 +29,7 @@ class FTLParserStream(ParserStream):
         while True:
             self.peek_blank_inline()
 
-            if self.current_peek_is('\n'):
+            if self.current_peek == '\n':
                 self.skip_to_peek()
                 self.next()
                 line_count += 1
@@ -39,26 +39,26 @@ class FTLParserStream(ParserStream):
 
     def peek_blank_block(self):
         while True:
-            line_start = self.get_peek_index()
+            line_start = self.peek_offset
 
             self.peek_blank_inline()
 
-            if self.current_peek_is('\n'):
+            if self.current_peek == '\n':
                 self.peek()
             else:
                 self.reset_peek(line_start)
                 break
 
     def skip_blank(self):
-        while self.ch in ANY_WS:
+        while self.current_char in ANY_WS:
             self.next()
 
     def peek_blank(self):
-        while self.current_peek() in ANY_WS:
+        while self.current_peek in ANY_WS:
             self.peek()
 
     def expect_char(self, ch):
-        if self.ch == ch:
+        if self.current_char == ch:
             self.next()
             return True
 
@@ -69,13 +69,13 @@ class FTLParserStream(ParserStream):
         raise ParseError('E0003', ch)
 
     def expect_line_end(self):
-        if self.ch is None:
+        if self.current_char is None:
             # EOF is a valid line end in Fluent.
             return True
         return self.expect_char('\n')
 
     def take_char(self, f):
-        ch = self.ch
+        ch = self.current_char
         if ch is not None and f(ch):
             self.next()
             return ch
@@ -90,13 +90,10 @@ class FTLParserStream(ParserStream):
                (cc >= 65 and cc <= 90)
 
     def is_identifier_start(self):
-        ch = self.current_peek()
-        is_id = self.is_char_id_start(ch)
-        self.reset_peek()
-        return is_id
+        return self.is_char_id_start(self.current_peek)
 
     def is_number_start(self):
-        ch = self.peek() if self.current_is('-') else self.current()
+        ch = self.peek() if self.current_char == '-' else self.current_char
         if ch is None:
             return False
 
@@ -116,7 +113,7 @@ class FTLParserStream(ParserStream):
             raise NotImplementedError()
 
         self.peek_blank_inline()
-        ch = self.current_peek()
+        ch = self.current_peek
 
         # Inline Patterns may start with any char.
         if ch is not None and ch != '\n':
@@ -129,19 +126,12 @@ class FTLParserStream(ParserStream):
         if skip is True:
             raise NotImplementedError()
 
-        if not self.current_peek_is('\n'):
+        if self.current_peek != '\n':
             return False
 
-        self.peek()
-
-        if self.current_peek_is('/'):
-            self.peek()
-            if self.current_peek_is('/'):
-                self.reset_peek()
-                return True
-
+        is_comment = (self.peek(), self.peek()) == ('/', '/')
         self.reset_peek()
-        return False
+        return is_comment
 
     # -1 - any
     #  0 - comment
@@ -151,23 +141,20 @@ class FTLParserStream(ParserStream):
         if skip is True:
             raise NotImplementedError()
 
-        if not self.current_peek_is('\n'):
+        if self.current_peek != '\n':
             return False
 
         i = 0
 
         while (i <= level or (level == -1 and i < 3)):
-            self.peek()
-            if not self.current_peek_is('#'):
+            if self.peek() != '#':
                 if i <= level and level != -1:
                     self.reset_peek()
                     return False
                 break
             i += 1
 
-        self.peek()
-
-        if self.current_peek() in [' ', '\n']:
+        if self.peek() in [' ', '\n']:
             self.reset_peek()
             return True
 
@@ -178,15 +165,15 @@ class FTLParserStream(ParserStream):
         if skip is True:
             raise NotImplementedError()
 
-        if not self.current_peek_is('\n'):
+        if self.current_peek != '\n':
             return False
 
         self.peek_blank()
 
-        if self.current_peek_is('*'):
+        if self.current_peek == '*':
             self.peek()
 
-        if self.current_peek_is('[') and not self.peek_char_is('['):
+        if self.current_peek == '[' and self.peek() != '[':
             self.reset_peek()
             return True
 
@@ -199,7 +186,7 @@ class FTLParserStream(ParserStream):
 
         self.peek_blank()
 
-        if self.current_peek_is('.'):
+        if self.current_peek == '.':
             self.skip_to_peek()
             return True
 
@@ -207,21 +194,21 @@ class FTLParserStream(ParserStream):
         return False
 
     def is_next_line_value(self, skip):
-        if not self.current_peek_is('\n'):
+        if self.current_peek != '\n':
             return False
 
         self.peek_blank_block()
 
-        ptr = self.get_peek_index()
+        ptr = self.peek_offset
 
         self.peek_blank_inline()
 
-        if not self.current_peek_is("{"):
-            if (self.get_peek_index() - ptr == 0):
+        if self.current_peek != "{":
+            if (self.peek_offset - ptr == 0):
                 self.reset_peek()
                 return False
 
-            if not self.is_char_pattern_continuation(self.current_peek()):
+            if not self.is_char_pattern_continuation(self.current_peek):
                 self.reset_peek()
                 return False
 
@@ -232,23 +219,33 @@ class FTLParserStream(ParserStream):
 
         return True
 
-    def skip_to_next_entry_start(self):
-        while self.ch:
-            if self.current_is('\n') and not self.peek_char_is('\n'):
-                self.next()
+    def skip_to_next_entry_start(self, junk_start):
+        last_newline = self.string.rfind('\n', 0, self.index)
+        if junk_start < last_newline:
+            # Last seen newline is _after_ the junk start. It's safe to rewind
+            # without the risk of resuming at the same broken entry.
+            self.index = last_newline
 
-                if self.ch is None or \
-                   self.is_identifier_start() or \
-                   self.current_is('-') or \
-                   self.current_is('#') or \
-                   (self.current_is('/') and self.peek_char_is('/')) or \
-                   (self.current_is('[') and self.peek_char_is('[')):
-                    break
-            self.next()
+        while self.current_char:
+            # We're only interested in beginnings of line.
+            if self.current_char != '\n':
+                self.next()
+                continue
+
+            # Break if the first char in this line looks like an entry start.
+            first = self.next()
+            if self.is_char_id_start(first) or first == '-' or first == '#':
+                break
+
+            # Syntax 0.4 compatibility
+            peek = self.peek()
+            self.reset_peek()
+            if (first, peek) == ('/', '/') or (first, peek) == ('[', '['):
+                break
 
     def take_id_start(self):
-        if self.is_char_id_start(self.ch):
-            ret = self.ch
+        if self.is_char_id_start(self.current_char):
+            ret = self.current_char
             self.next()
             return ret
 

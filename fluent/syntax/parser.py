@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import re
-from .ftlstream import FTLParserStream
 from . import ast
+from .stream import FluentParserStream
 from .errors import ParseError
 
 
@@ -30,7 +30,7 @@ class FluentParser(object):
         self.with_spans = with_spans
 
     def parse(self, source):
-        ps = FTLParserStream(source.replace('\r\n', '\n'))
+        ps = FluentParserStream(source)
         ps.skip_blank_block()
 
         entries = []
@@ -92,7 +92,7 @@ class FluentParser(object):
         Preceding comments are ignored unless they contain syntax errors
         themselves, in which case Junk for the invalid comment is returned.
         """
-        ps = FTLParserStream(source.replace('\r\n', '\n'))
+        ps = FluentParserStream(source)
         ps.skip_blank_block()
 
         while ps.current_char == '#':

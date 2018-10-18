@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import re
 from . import ast
-from .stream import FluentParserStream
+from .stream import EOL, FluentParserStream
 from .errors import ParseError
 
 
@@ -156,10 +156,10 @@ class FluentParser(object):
         content = ''
 
         while True:
-            ch = ps.take_char(lambda x: x != '\n')
+            ch = ps.take_char(lambda x: x != EOL)
             while ch:
                 content += ch
-                ch = ps.take_char(lambda x: x != '\n')
+                ch = ps.take_char(lambda x: x != EOL)
 
             if ps.is_next_line_zero_four_comment(skip=False):
                 content += ps.current_char
@@ -197,12 +197,12 @@ class FluentParser(object):
             if level == -1:
                 level = i
 
-            if ps.current_char != '\n':
+            if ps.current_char != EOL:
                 ps.expect_char(' ')
-                ch = ps.take_char(lambda x: x != '\n')
+                ch = ps.take_char(lambda x: x != EOL)
                 while ch:
                     content += ch
-                    ch = ps.take_char(lambda x: x != '\n')
+                    ch = ps.take_char(lambda x: x != EOL)
 
             if ps.is_next_line_comment(skip=False, level=level):
                 content += ps.current_char
@@ -220,7 +220,7 @@ class FluentParser(object):
     @with_span
     def get_group_comment_from_section(self, ps):
         def until_closing_bracket_or_eol(ch):
-            return ch not in (']', '\n')
+            return ch not in (']', EOL)
 
         ps.expect_char('[')
         ps.expect_char('[')
@@ -421,10 +421,10 @@ class FluentParser(object):
     def get_variant_list(self, ps):
         ps.expect_char('{')
         ps.skip_blank_inline()
-        ps.expect_char('\n')
+        ps.expect_line_end()
         ps.skip_blank()
         variants = self.get_variants(ps)
-        ps.expect_char('\n')
+        ps.expect_line_end()
         ps.skip_blank()
         ps.expect_char('}')
         return ast.VariantList(variants)
@@ -432,14 +432,13 @@ class FluentParser(object):
     @with_span
     def get_pattern(self, ps):
         elements = []
-        ps.skip_blank_inline()
 
         while ps.current_char:
             ch = ps.current_char
 
             # The end condition for get_pattern's while loop is a newline
             # which is not followed by a valid pattern continuation.
-            if ch == '\n' and not ps.is_next_line_value(skip=False):
+            if ch == EOL and not ps.is_next_line_value(skip=False):
                 break
 
             if ch == '{':
@@ -467,23 +466,23 @@ class FluentParser(object):
             if ch == '{':
                 return ast.TextElement(buf)
 
-            if ch == '\n':
+            if ch == EOL:
                 if not ps.is_next_line_value(skip=False):
                     return ast.TextElement(buf)
 
                 ps.next()
                 ps.skip_blank_inline()
 
-                # Add the new line to the buffer
-                buf += ch
+                buf += EOL
                 continue
 
             if ch == '\\':
                 ps.next()
                 buf += self.get_escape_sequence(ps)
-            else:
-                buf += ch
-                ps.next()
+                continue
+
+            buf += ch
+            ps.next()
 
         return ast.TextElement(buf)
 
@@ -542,7 +541,7 @@ class FluentParser(object):
             ps.next()
 
             ps.skip_blank_inline()
-            ps.expect_char('\n')
+            ps.expect_line_end()
             ps.skip_blank()
 
             variants = self.get_variants(ps)
@@ -675,18 +674,18 @@ class FluentParser(object):
 
         ps.expect_char('"')
 
-        ch = ps.take_char(lambda x: x != '"' and x != '\n')
+        ch = ps.take_char(lambda x: x != '"' and x != EOL)
         while ch:
             if ch == '\\':
                 val += self.get_escape_sequence(ps, ('{', '\\', '"'))
             else:
                 val += ch
-            ch = ps.take_char(lambda x: x != '"' and x != '\n')
+            ch = ps.take_char(lambda x: x != '"' and x != EOL)
 
-        if ps.current_char == '\n':
+        if ps.current_char == EOL:
             raise ParseError('E0020')
 
-        ps.next()
+        ps.expect_char('"')
 
         return ast.StringLiteral(val)
 

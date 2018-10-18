@@ -8,11 +8,22 @@ class ParserStream(object):
         self.index = 0
         self.peek_offset = 0
 
-    def char_at(self, index):
+    def get(self, offset):
         try:
-            return self.string[index]
+            return self.string[offset]
         except IndexError:
             return None
+
+    def char_at(self, offset):
+        # When the cursor is at CRLF, return LF but don't move the cursor. The
+        # cursor still points to the EOL position, which in this case is the
+        # beginning of the compound CRLF sequence. This ensures slices of
+        # [inclusive, exclusive) continue to work properly.
+        if self.get(offset) == '\r' \
+                and self.get(offset + 1) == '\n':
+            return '\n'
+
+        return self.get(offset)
 
     @property
     def current_char(self):
@@ -23,13 +34,21 @@ class ParserStream(object):
         return self.char_at(self.index + self.peek_offset)
 
     def next(self):
-        self.index += 1
         self.peek_offset = 0
-        return self.char_at(self.index)
+        # Skip over CRLF as if it was a single character.
+        if self.get(self.index) == '\r' \
+                and self.get(self.index + 1) == '\n':
+            self.index += 1
+        self.index += 1
+        return self.get(self.index)
 
     def peek(self):
+        # Skip over CRLF as if it was a single character.
+        if self.get(self.index + self.peek_offset) == '\r' \
+                and self.get(self.index + self.peek_offset + 1) == '\n':
+            self.peek_offset += 1
         self.peek_offset += 1
-        return self.char_at(self.index + self.peek_offset)
+        return self.get(self.index + self.peek_offset)
 
     def reset_peek(self, offset=0):
         self.peek_offset = offset
@@ -39,38 +58,28 @@ class ParserStream(object):
         self.peek_offset = 0
 
 
-INLINE_WS = ' '
-ANY_WS = (INLINE_WS, '\n')
+EOL = '\n'
+EOF = None
 SPECIAL_LINE_START_CHARS = ('}', '.', '[', '*')
 
 
 class FluentParserStream(ParserStream):
     last_comment_zero_four_syntax = False
 
-    def __init__(self, string):
-        # Normalize line endings to LF.
-        string = string.replace('\r\n', '\n')
-        super(FluentParserStream, self).__init__(string)
-
     def skip_blank_inline(self):
-        while self.current_char:
-            if self.current_char != INLINE_WS:
-                break
+        while self.current_char == ' ':
             self.next()
 
     def peek_blank_inline(self):
-        ch = self.current_peek
-        while ch:
-            if ch != INLINE_WS:
-                break
-            ch = self.peek()
+        while self.current_peek == ' ':
+            self.peek()
 
     def skip_blank_block(self):
         line_count = 0
         while True:
             self.peek_blank_inline()
 
-            if self.current_peek == '\n':
+            if self.current_peek == EOL:
                 self.skip_to_peek()
                 self.next()
                 line_count += 1
@@ -84,18 +93,18 @@ class FluentParserStream(ParserStream):
 
             self.peek_blank_inline()
 
-            if self.current_peek == '\n':
+            if self.current_peek == EOL:
                 self.peek()
             else:
                 self.reset_peek(line_start)
                 break
 
     def skip_blank(self):
-        while self.current_char in ANY_WS:
+        while self.current_char in (" ", EOL):
             self.next()
 
     def peek_blank(self):
-        while self.current_peek in ANY_WS:
+        while self.current_peek in (" ", EOL):
             self.peek()
 
     def expect_char(self, ch):
@@ -103,27 +112,29 @@ class FluentParserStream(ParserStream):
             self.next()
             return True
 
-        if ch == '\n':
-            # Unicode Character 'SYMBOL FOR NEWLINE' (U+2424)
-            raise ParseError('E0003', '\u2424')
-
         raise ParseError('E0003', ch)
 
     def expect_line_end(self):
-        if self.current_char is None:
+        if self.current_char is EOF:
             # EOF is a valid line end in Fluent.
             return True
-        return self.expect_char('\n')
+
+        if self.current_char == EOL:
+            self.next()
+            return True
+
+        # Unicode Character 'SYMBOL FOR NEWLINE' (U+2424)
+        raise ParseError('E0003', '\u2424')
 
     def take_char(self, f):
         ch = self.current_char
-        if ch is not None and f(ch):
+        if ch is not EOF and f(ch):
             self.next()
             return ch
         return None
 
-    def is_char_id_start(self, ch=None):
-        if ch is None:
+    def is_char_id_start(self, ch):
+        if ch is EOF:
             return False
 
         cc = ord(ch)
@@ -135,7 +146,8 @@ class FluentParserStream(ParserStream):
 
     def is_number_start(self):
         ch = self.peek() if self.current_char == '-' else self.current_char
-        if ch is None:
+        if ch is EOF:
+            self.reset_peek()
             return False
 
         cc = ord(ch)
@@ -144,7 +156,7 @@ class FluentParserStream(ParserStream):
         return is_digit
 
     def is_char_pattern_continuation(self, ch):
-        if ch is None:
+        if ch is EOF:
             return False
 
         return ch not in SPECIAL_LINE_START_CHARS
@@ -157,7 +169,7 @@ class FluentParserStream(ParserStream):
         ch = self.current_peek
 
         # Inline Patterns may start with any char.
-        if ch is not None and ch != '\n':
+        if ch is not EOF and ch != EOL:
             self.skip_to_peek()
             return True
 
@@ -167,7 +179,7 @@ class FluentParserStream(ParserStream):
         if skip is True:
             raise NotImplementedError()
 
-        if self.current_peek != '\n':
+        if self.current_peek != EOL:
             return False
 
         is_comment = (self.peek(), self.peek()) == ('/', '/')
@@ -182,7 +194,7 @@ class FluentParserStream(ParserStream):
         if skip is True:
             raise NotImplementedError()
 
-        if self.current_peek != '\n':
+        if self.current_peek != EOL:
             return False
 
         i = 0
@@ -195,7 +207,8 @@ class FluentParserStream(ParserStream):
                 break
             i += 1
 
-        if self.peek() in [' ', '\n']:
+        # The first char after #, ## or ###.
+        if self.peek() in (' ', EOL):
             self.reset_peek()
             return True
 
@@ -206,7 +219,7 @@ class FluentParserStream(ParserStream):
         if skip is True:
             raise NotImplementedError()
 
-        if self.current_peek != '\n':
+        if self.current_peek != EOL:
             return False
 
         self.peek_blank()
@@ -235,7 +248,7 @@ class FluentParserStream(ParserStream):
         return False
 
     def is_next_line_value(self, skip):
-        if self.current_peek != '\n':
+        if self.current_peek != EOL:
             return False
 
         self.peek_blank_block()
@@ -261,7 +274,7 @@ class FluentParserStream(ParserStream):
         return True
 
     def skip_to_next_entry_start(self, junk_start):
-        last_newline = self.string.rfind('\n', 0, self.index)
+        last_newline = self.string.rfind(EOL, 0, self.index)
         if junk_start < last_newline:
             # Last seen newline is _after_ the junk start. It's safe to rewind
             # without the risk of resuming at the same broken entry.
@@ -269,7 +282,7 @@ class FluentParserStream(ParserStream):
 
         while self.current_char:
             # We're only interested in beginnings of line.
-            if self.current_char != '\n':
+            if self.current_char != EOL:
                 self.next()
                 continue
 

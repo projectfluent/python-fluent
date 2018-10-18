@@ -190,7 +190,8 @@ class FluentParser(object):
 
         while True:
             i = -1
-            while ps.current_char == '#' and (i < (2 if level == -1 else level)):
+            while ps.current_char == '#' \
+                    and (i < (2 if level == -1 else level)):
                 ps.next()
                 i += 1
 

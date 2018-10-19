@@ -128,10 +128,12 @@ class FluentParserStream(ParserStream):
 
     def take_char(self, f):
         ch = self.current_char
-        if ch is not EOF and f(ch):
+        if ch is EOF:
+            return EOF
+        if f(ch):
             self.next()
             return ch
-        return None
+        return False
 
     def is_char_id_start(self, ch):
         if ch is EOF:

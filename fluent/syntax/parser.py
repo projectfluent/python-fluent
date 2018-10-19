@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import re
 from . import ast
-from .stream import EOL, FluentParserStream
+from .stream import EOF, EOL, FluentParserStream
 from .errors import ParseError
 
 
@@ -322,7 +322,7 @@ class FluentParser(object):
     def get_variant_key(self, ps):
         ch = ps.current_char
 
-        if ch is None:
+        if ch is EOF:
             raise ParseError('E0013')
 
         cc = ord(ch)
@@ -500,7 +500,7 @@ class FluentParser(object):
 
             for _ in range(4):
                 ch = ps.take_hex_digit()
-                if ch is None:
+                if not ch:
                     raise ParseError('E0026', sequence + ps.current_char)
                 sequence += ch
 
@@ -694,7 +694,7 @@ class FluentParser(object):
     def get_literal(self, ps):
         ch = ps.current_char
 
-        if ch is None:
+        if ch is EOF:
             raise ParseError('E0014')
 
         if ch == '$':

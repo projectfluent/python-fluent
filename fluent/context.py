@@ -169,6 +169,8 @@ class CompilingMessageContext(MessageContextBase):
         return self._compiled_messages[message_id](args, errors), errors
 
     def check_messages(self):
+        if self._is_dirty:
+            self._compile()
         return self._parsing_issues + self._compilation_errors
 
 

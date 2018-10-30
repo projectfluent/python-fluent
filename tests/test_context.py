@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.exceptions import FluentDuplicateMessageId, FluentJunkFound
+from fluent.exceptions import FluentDuplicateMessageId, FluentJunkFound, FluentReferenceError
 
 from . import all_message_context_implementations
 from .syntax import dedent_ftl
@@ -122,3 +122,16 @@ class TestMessageContext(unittest.TestCase):
         self.assertEqual(type(check1_error), FluentJunkFound)
         self.assertEqual(check1_error.message, 'Junk found: Expected message "unfinished" to have a value or attributes')
         self.assertEqual(check1_error.annotations[0].message, 'Expected message "unfinished" to have a value or attributes')
+
+    def test_check_messages_compile_errors(self):
+        self.ctx.add_messages("foo = { -missing }")
+        checks = self.ctx.check_messages()
+        if self.ctx.__class__.__name__ == "CompilingMessageContext":
+            # CompilingMessageContext is able to do more static checks.
+            self.assertEqual(len(checks), 1)
+            check1_name, check1_error = checks[0]
+            self.assertEqual(check1_name, 'foo')
+            self.assertEqual(type(check1_error), FluentReferenceError)
+            self.assertEqual(check1_error.args[0], 'Unknown term: -missing')
+        else:
+            self.assertEqual(len(checks), 0)

@@ -21,9 +21,9 @@ class TestSimpleStringValue(unittest.TestCase):
                 .attr = Bar Attribute
             placeable-attr   = { bar.attr }
             -baz = Baz
-                .attr = Baz Attribute
+                .attr = BazAttribute
             selector-attr    = { -baz.attr ->
-               *[Baz Attribute] Member 3
+               *[BazAttribute] Member 3
              }
         """))
 
@@ -68,45 +68,44 @@ class TestComplexStringValue(unittest.TestCase):
         self.ctx = MessageContext(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo               = Foo
-            bar               = { foo } Bar
+            bar               = { foo }Bar
 
-            placeable-message = { bar } Baz
+            placeable-message = { bar }Baz
 
             baz
-                .attr = { bar } Baz Attribute
+                .attr = { bar }BazAttribute
 
             placeable-attr = { baz.attr }
 
             selector-attr = { baz.attr ->
-                [Foo Bar Baz Attribute] Variant
-               *[ok] Valid
+                [FooBarBazAttribute] FooBarBaz
+               *[other] Other
              }
         """))
 
     def test_can_be_used_as_a_value(self):
         val, errs = self.ctx.format('bar', {})
-        self.assertEqual(val, 'Foo Bar')
+        self.assertEqual(val, 'FooBar')
         self.assertEqual(len(errs), 0)
 
     def test_can_be_value_of_a_message_referenced_in_a_placeable(self):
         val, errs = self.ctx.format('placeable-message', {})
-        self.assertEqual(val, 'Foo Bar Baz')
+        self.assertEqual(val, 'FooBarBaz')
         self.assertEqual(len(errs), 0)
 
     def test_can_be_used_as_an_attribute_value(self):
         val, errs = self.ctx.format('baz.attr', {})
-        self.assertEqual(val, 'Foo Bar Baz Attribute')
+        self.assertEqual(val, 'FooBarBazAttribute')
         self.assertEqual(len(errs), 0)
 
     def test_can_be_a_value_of_an_attribute_used_in_a_placeable(self):
         val, errs = self.ctx.format('placeable-attr', {})
-        self.assertEqual(val, 'Foo Bar Baz Attribute')
+        self.assertEqual(val, 'FooBarBazAttribute')
         self.assertEqual(len(errs), 0)
 
-    @unittest.skip("For future FTL spec")
     def test_can_be_a_value_of_an_attribute_used_as_a_selector(self):
         val, errs = self.ctx.format('selector-attr', {})
-        self.assertEqual(val, 'Variant 2')
+        self.assertEqual(val, 'FooBarBaz')
         self.assertEqual(len(errs), 0)
 
 

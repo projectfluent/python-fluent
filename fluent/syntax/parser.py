@@ -5,6 +5,20 @@ from .stream import EOF, EOL, FluentParserStream
 from .errors import ParseError
 
 
+def bitfield():
+    i = 0
+    while True:
+        yield 2**i
+        i += 1
+
+FLAG = bitfield()
+
+SLASH_COMMENTS = next(FLAG)
+POUND_COMMENTS = next(FLAG)
+SECTIONS = next(FLAG)
+TERMS = next(FLAG)
+
+
 def with_span(fn):
     def decorated(self, ps, *args):
         if not self.with_spans:
@@ -26,8 +40,16 @@ def with_span(fn):
 
 
 class FluentParser(object):
+
+    ZERO_FOUR = SLASH_COMMENTS | SECTIONS
+    ZERO_FIVE = POUND_COMMENTS | TERMS
+
     def __init__(self, with_spans=True):
         self.with_spans = with_spans
+        self.features = None
+
+    def has_feature(self, flag):
+        return self.features is None or flag & self.features
 
     def parse(self, source):
         ps = FluentParserStream(source)
@@ -130,14 +152,23 @@ class FluentParser(object):
             return junk
 
     def get_entry(self, ps):
-        if ps.current_char == '#':
-            return self.get_comment(ps)
+        if self.has_feature(POUND_COMMENTS) and ps.current_char == '#':
+            node = self.get_comment(ps)
+            if self.features is None:
+                self.features = self.ZERO_FIVE
+            return node
 
-        if ps.current_char == '/':
-            return self.get_zero_four_style_comment(ps)
+        if self.has_feature(SLASH_COMMENTS) and ps.current_char == '/':
+            node = self.get_zero_four_style_comment(ps)
+            if self.features is None:
+                self.features = self.ZERO_FOUR
+            return node
 
-        if ps.current_char == '[':
-            return self.get_group_comment_from_section(ps)
+        if self.has_feature(SECTIONS) and ps.current_char == '[':
+            node = self.get_group_comment_from_section(ps)
+            if self.features is None:
+                self.features = self.ZERO_FOUR
+            return node
 
         if ps.current_char == '-':
             return self.get_term(ps)

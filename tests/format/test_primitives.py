@@ -75,10 +75,13 @@ class TestComplexStringValue(unittest.TestCase):
             baz
                 .attr = { bar }BazAttribute
 
+            -qux = Qux
+                .attr = { bar }QuxAttribute
+
             placeable-attr = { baz.attr }
 
-            selector-attr = { baz.attr ->
-                [FooBarBazAttribute] FooBarBaz
+            selector-attr = { -qux.attr ->
+                [FooBarQuxAttribute] FooBarQux
                *[other] Other
              }
         """))
@@ -105,7 +108,7 @@ class TestComplexStringValue(unittest.TestCase):
 
     def test_can_be_a_value_of_an_attribute_used_as_a_selector(self):
         val, errs = self.ctx.format('selector-attr', {})
-        self.assertEqual(val, 'FooBarBaz')
+        self.assertEqual(val, 'FooBarQux')
         self.assertEqual(len(errs), 0)
 
 

@@ -343,9 +343,10 @@ speed to GNU gettext as a reference. Below is a rough summary:
 
 For the simple but very common case of a message defining a static string,
 `CompilingMessageContext.format` (the default implmentation) is very close to
-GNU gettext, between about 5% slower and 5% faster. The exact figures depend on
-whether you are using Python 2 or 3, and your Python implementation (e.g.
-CPython or PyPy). For cases of substituting a single string into a message,
+GNU gettext, or much faster, depending on whether you are using Python 2 or 3,
+and your Python implementation (e.g. CPython or PyPy). (The worst case we found
+was 5% slower on CPython 2.7, and the best case was about 4 times faster for
+PyPy2 5.1.2). For cases of substituting a single string into a message,
 `CompilingMessageContext.format` is between 30% slower and 70% faster than an
 equivalent implementation using GNU gettext and Python `%` interpolation.
 

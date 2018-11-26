@@ -145,6 +145,11 @@ class CompilingMessageContext(MessageContextBase):
         # Clear out old compilation errors, they might not apply if we
         # re-compile:
         self._compilation_errors = []
+        self.format = self._compile_and_format
+
+    def _mark_clean(self):
+        self._is_dirty = False
+        self.format = self._format
 
     def add_messages(self, source):
         super(CompilingMessageContext, self).add_messages(source)
@@ -160,11 +165,18 @@ class CompilingMessageContext(MessageContextBase):
             use_isolating=self._use_isolating,
             functions=self._functions,
             debug=self._debug)
-        self._is_dirty = False
+        self._mark_clean()
 
-    def format(self, message_id, args=None):
-        if self._is_dirty:
-            self._compile()
+    # 'format' is the hot path for many scenarios, so we try to optimize it. To
+    # avoid having to check '_is_dirty' inside 'format', we switch 'format' from
+    # '_compile_and_format' to '_format' when compilation is done. This gives us
+    # about 10% improvement for the simplest (but most common) case of an
+    # entirely static string.
+    def _compile_and_format(self, message_id, args=None):
+        self._compile()
+        return self._format(message_id, args)
+
+    def _format(self, message_id, args=None):
         errors = []
         return self._compiled_messages[message_id](args, errors), errors
 

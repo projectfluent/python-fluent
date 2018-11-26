@@ -345,10 +345,11 @@ For the simple but very common case of a message defining a static string,
 `CompilingMessageContext.format` (the default implmentation) is very close to
 GNU gettext, or much faster, depending on whether you are using Python 2 or 3,
 and your Python implementation (e.g. CPython or PyPy). (The worst case we found
-was 5% slower on CPython 2.7, and the best case was about 4 times faster for
-PyPy2 5.1.2). For cases of substituting a single string into a message,
-`CompilingMessageContext.format` is between 30% slower and 70% faster than an
-equivalent implementation using GNU gettext and Python `%` interpolation.
+was 5% faster than gettext on CPython 2.7, and the best case was about 3.5 times
+faster for PyPy2 5.1.2). For cases of substituting a single string into a
+message, `CompilingMessageContext.format` is between 30% slower and 70% faster
+than an equivalent implementation using GNU gettext and Python `%`
+interpolation.
 
 For message where plural rules are involved, currently `CompilingMessageContext`
 can be significantly slower than using GNU gettext, partly because fluent uses

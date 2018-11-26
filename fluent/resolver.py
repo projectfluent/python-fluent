@@ -7,9 +7,9 @@ import attr
 import six
 
 from .exceptions import FluentCyclicReferenceError, FluentReferenceError
-from .syntax.ast import (AttributeExpression, CallExpression, Message, MessageReference, NumberLiteral, Pattern,
-                         Placeable, SelectExpression, StringLiteral, Term, TermReference, TextElement,
-                         VariableReference, VariantExpression, VariantList, VariantName)
+from .syntax.ast import (AttributeExpression, CallExpression, Identifier, Message, MessageReference, NumberLiteral,
+                         Pattern, Placeable, SelectExpression, StringLiteral, Term, TermReference, TextElement,
+                         VariableReference, VariantExpression, VariantList)
 from .types import FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
 from .utils import args_match, inspect_function_args, numeric_to_native
 
@@ -310,9 +310,9 @@ def match(val1, val2, env):
     return val1 == val2
 
 
-@handle.register(VariantName)
-def handle_variant_name(name, env):
-    return name.name
+@handle.register(Identifier)
+def handle_indentifier(identifier, env):
+    return identifier.name
 
 
 @handle.register(VariantExpression)

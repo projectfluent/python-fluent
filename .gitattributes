@@ -1,0 +1,2 @@
+tests/syntax/fixtures_reference/crlf.ftl eol=crlf
+tests/syntax/fixtures_structure/crlf.ftl eol=crlf

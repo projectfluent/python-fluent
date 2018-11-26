@@ -266,15 +266,6 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
 
-    def test_variant_key_words(self):
-        input = """\
-            foo =
-                { $sel ->
-                   *[a b c] A B C
-                }
-        """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
-
     def test_variant_key_number(self):
         input = """\
             foo =

@@ -10,7 +10,7 @@ else:
     extra_requires = []
 
 setup(name='fluent',
-      version='0.8.0',
+      version='0.9.0',
       description='Localization library for expressive translations.',
       author='Mozilla',
       author_email='l10n-drivers@mozilla.org',

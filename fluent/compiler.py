@@ -9,9 +9,9 @@ import six
 
 from . import codegen, runtime
 from .exceptions import FluentCyclicReferenceError, FluentReferenceError
-from .syntax.ast import (Attribute, AttributeExpression, BaseNode, CallExpression, Message, MessageReference,
-                         NumberLiteral, Pattern, Placeable, SelectExpression, StringLiteral, Term, TermReference,
-                         TextElement, VariableReference, VariantExpression, VariantList, VariantName)
+from .syntax.ast import (Attribute, AttributeExpression, BaseNode, CallExpression, Identifier, Message,
+                         MessageReference, NumberLiteral, Pattern, Placeable, SelectExpression, StringLiteral, Term,
+                         TermReference, TextElement, VariableReference, VariantExpression, VariantList)
 from .types import FluentDateType, FluentNumber, FluentType
 from .utils import args_match, inspect_function_args, numeric_to_native
 
@@ -567,7 +567,7 @@ def compile_expr_variant_list(variant_list, local_scope, parent_expr, compiler_e
 
 
 def is_cldr_plural_form_key(key_expr):
-    return (isinstance(key_expr, VariantName) and
+    return (isinstance(key_expr, Identifier) and
             key_expr.name in CLDR_PLURAL_FORMS)
 
 
@@ -635,7 +635,7 @@ def compile_expr_select_expression(select_expr, local_scope, parent_expr, compil
     return codegen.VariableReference(return_tmp_name, local_scope)
 
 
-@compile_expr.register(VariantName)
+@compile_expr.register(Identifier)
 def compile_expr_variant_name(name, local_scope, parent_expr, compiler_env):
     # TODO - handle numeric literals here?
     return codegen.String(name.name)

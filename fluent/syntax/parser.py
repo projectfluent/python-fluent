@@ -6,8 +6,9 @@ from .errors import ParseError
 
 try:
     from __builtin__ import unichr as chr
-except ModuleNotFoundError:
+except ImportError:
     pass
+
 
 
 def with_span(fn):

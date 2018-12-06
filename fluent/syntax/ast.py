@@ -3,13 +3,13 @@ import sys
 import json
 
 
-def to_json(value):
+def to_json(value, **kwargs):
     if isinstance(value, BaseNode):
-        return value.to_json()
+        return value.to_json(**kwargs)
     if isinstance(value, list):
-        return list(map(to_json, value))
+        return list(to_json(item, **kwargs) for item in value)
     if isinstance(value, tuple):
-        return list(map(to_json, value))
+        return list(to_json(item, **kwargs) for item in value)
     else:
         return value
 
@@ -119,10 +119,11 @@ class BaseNode(object):
 
         return True
 
-    def to_json(self):
+    def to_json(self, with_spans=True):
         obj = {
-            name: to_json(value)
+            name: to_json(value, with_spans=with_spans)
             for name, value in vars(self).items()
+            if with_spans or name != 'span'
         }
         obj.update(
             {'type': self.__class__.__name__}

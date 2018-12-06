@@ -423,15 +423,21 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
+    def test_macro_call(self):
+        input = """\
+            foo = { -term() }
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+
     def test_nested_placeables(self):
         input = """\
             foo = {{ FOO() }}
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_escaped_special_in_text_element(self):
+    def test_backslash_in_text(self):
         input = """\
-            foo = \\{Escaped}
+            foo = \\{ placeable }
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
@@ -443,7 +449,7 @@ class TestSerializeResource(unittest.TestCase):
 
     def test_escaped_unicode_sequence(self):
         input = """\
-            foo = \\u0065
+            foo = { "\\u0065" }
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 

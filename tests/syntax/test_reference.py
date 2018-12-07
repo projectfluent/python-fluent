@@ -25,6 +25,13 @@ fixtures = os.path.join(
 class TestReferenceMeta(type):
     def __new__(mcs, name, bases, attrs):
 
+        def remove_untested(obj):
+            if obj['type'] == 'Junk':
+                obj['annotations'] = []
+            if 'span' in obj:
+                del obj['span']
+            return obj
+
         def gen_test(file_name):
             def test(self):
                 ftl_path = os.path.join(fixtures, file_name + '.ftl')
@@ -34,12 +41,8 @@ class TestReferenceMeta(type):
                 expected = read_file(ast_path)
 
                 ast = parse(source)
-                for entry in ast.body:
-                    if isinstance(entry, ftl.Junk):
-                        entry.annotations = []
-
                 self.assertEqual(
-                    ast.to_json(with_spans=False), json.loads(expected))
+                    ast.to_json(remove_untested), json.loads(expected))
 
             return test
 

@@ -4,12 +4,6 @@ from . import ast
 from .stream import EOF, EOL, FluentParserStream
 from .errors import ParseError
 
-try:
-    from __builtin__ import unichr as chr
-except ImportError:
-    pass
-
-
 
 def with_span(fn):
     def decorated(self, ps, *args, **kwargs):
@@ -593,8 +587,11 @@ class FluentParser(object):
 
         codepoint = int(sequence, 16)
         if codepoint <= 0xD7FF or 0xE000 <= codepoint:
-            # It's a Unicode scalar value.
-            unescaped = chr(codepoint)
+            # It's a Unicode scalar value. The escape sequence is 4 or 6 digits
+            # long. Convert it to a 8-digit-long \UHHHHHHHH sequence and encode
+            # it as bytes, because in Python 3 decode is not available on str.
+            byte_sequence = "\\U{:08x}".format(codepoint).encode('utf-8')
+            unescaped = byte_sequence.decode('unicode-escape')
         else:
             # Escape sequences reresenting surrogate code points are
             # well-formed but invalid in Fluent. Replace them with U+FFFD

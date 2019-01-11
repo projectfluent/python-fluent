@@ -297,7 +297,7 @@ def match(val1, val2, env):
     if is_number(val1):
         if not is_number(val2):
             # Could be plural rule match
-            return env.context.plural_form_for_number(val1) == val2
+            return env.context._plural_form(val1) == val2
     else:
         if is_number(val2):
             return match(val2, val1, env)

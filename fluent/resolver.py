@@ -6,7 +6,7 @@ from decimal import Decimal
 import attr
 import six
 
-from .exceptions import FluentCyclicReferenceError, FluentReferenceError
+from .errors import FluentCyclicReferenceError, FluentReferenceError
 from .syntax.ast import (AttributeExpression, CallExpression, Message, MessageReference, NumberLiteral,
                          Pattern, Placeable, SelectExpression, StringLiteral, Term, TermReference, TextElement,
                          VariableReference, VariantExpression, VariantList, Identifier)

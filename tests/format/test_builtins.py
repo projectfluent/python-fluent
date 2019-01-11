@@ -5,7 +5,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from fluent.context import MessageContext
-from fluent.exceptions import FluentReferenceError
+from fluent.errors import FluentReferenceError
 from fluent.types import fluent_date, fluent_number
 
 from ..syntax import dedent_ftl

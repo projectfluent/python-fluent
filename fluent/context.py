@@ -38,12 +38,14 @@ class MessageContext(object):
     def add_messages(self, source):
         parser = FluentParser()
         resource = parser.parse(source)
-        # TODO - warn if items get overwritten
+        # TODO - warn/error about duplicates
         for item in resource.body:
             if isinstance(item, Message):
-                self._messages[item.id.name] = item
+                if item.id.name not in self._messages:
+                    self._messages[item.id.name] = item
             elif isinstance(item, Term):
-                self._terms[item.id.name] = item
+                if item.id.name not in self._terms:
+                    self._terms[item.id.name] = item
 
     def has_message(self, message_id):
         try:

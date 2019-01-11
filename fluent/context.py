@@ -30,8 +30,7 @@ class MessageContext(object):
             _functions.update(functions)
         self._functions = _functions
         self._use_isolating = use_isolating
-        self._messages = {}
-        self._terms = {}
+        self._messages_and_terms = {}
         self._babel_locale = self._get_babel_locale()
         self._plural_form = babel.plural.to_python(self._babel_locale.plural_form)
 
@@ -40,12 +39,9 @@ class MessageContext(object):
         resource = parser.parse(source)
         # TODO - warn/error about duplicates
         for item in resource.body:
-            if isinstance(item, Message):
-                if item.id.name not in self._messages:
-                    self._messages[item.id.name] = item
-            elif isinstance(item, Term):
-                if item.id.name not in self._terms:
-                    self._terms[item.id.name] = item
+            if isinstance(item, (Message, Term)):
+                if item.id.name not in self._messages_and_terms:
+                    self._messages_and_terms[item.id.name] = item
 
     def has_message(self, message_id):
         try:
@@ -63,15 +59,17 @@ class MessageContext(object):
         return resolved, errors
 
     def _get_message(self, message_id):
+        if message_id.startswith('-'):
+            raise LookupError(message_id)
         if '.' in message_id:
             name, attr_name = message_id.split('.', 1)
-            msg = self._messages[name]
+            msg = self._messages_and_terms[name]
             for attribute in msg.attributes:
                 if attribute.id.name == attr_name:
                     return attribute.value
             raise LookupError(message_id)
         else:
-            return self._messages[message_id]
+            return self._messages_and_terms[message_id]
 
     def _get_babel_locale(self):
         for l in self.locales:

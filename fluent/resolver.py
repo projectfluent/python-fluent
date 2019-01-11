@@ -166,17 +166,14 @@ def handle_term_reference(term_reference, env):
 
 def lookup_reference(name, env):
     message = None
-    if name.startswith("-"):
-        try:
-            message = env.context._terms[name]
-        except LookupError:
+    try:
+        message = env.context._messages_and_terms[name]
+    except LookupError:
+        if name.startswith("-"):
             env.errors.append(
                 FluentReferenceError("Unknown term: {0}"
                                      .format(name)))
-    else:
-        try:
-            message = env.context._messages[name]
-        except LookupError:
+        else:
             env.errors.append(
                 FluentReferenceError("Unknown message: {0}"
                                      .format(name)))

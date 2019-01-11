@@ -52,12 +52,6 @@ class MessageContext(object):
         except LookupError:
             return False
 
-    def message_ids(self):
-        """
-        Returns iterable of the message ids of the messages in this context
-        """
-        return six.iterkeys(self._messages)
-
     def format(self, message_id, args=None):
         message = self._get_message(message_id)
         if args is None:

@@ -23,15 +23,6 @@ class TestMessageContext(unittest.TestCase):
         self.assertNotIn('-baz', self.ctx._messages)
         self.assertIn('-baz', self.ctx._terms)
 
-    def test_message_ids(self):
-        self.ctx.add_messages(dedent_ftl("""
-            foo = Foo
-            bar = Bar
-            -baz = Baz
-        """))
-        self.assertEqual(sorted(self.ctx.message_ids()),
-                         ['bar', 'foo'])
-
     def test_has_message(self):
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo

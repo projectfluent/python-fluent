@@ -38,15 +38,6 @@ Installation
 Usage
 -----
 
-Fluent uses unicode everywhere internally, and doesn't accept bytestrings, so
-that you avoid problems down the road when non-ASCII characters start appearing
-in FTL files. If you are using Python 2, for the following examples you will
-first need to do:
-
-    >>> from __future__ import unicode_literals
-
-or add unicode literal markers to strings.
-
 To generate translations from this Python libary, you start with the
 `MessageContext` class:
 
@@ -55,12 +46,8 @@ To generate translations from this Python libary, you start with the
 You pass a list of locales to the constructor - the first being the desired
 locale, with fallbacks after that:
 
-    >>> context = MessageContext(["en-US"], use_isolating=False)
+    >>> context = MessageContext(["en-US"])
 
-Here we have passed `use_isolating=False` which disables the use of Unicode bidi
-isolation characters, to make the example output easier to read. If you might
-have mixed right-to-left and left-to-right output from your messages then you
-should omit this parameter to get the default `True` value.
 
 You must then add messages. These would normally come from a `.ftl` file stored
 on disk, here we will just add them directly:
@@ -73,9 +60,9 @@ on disk, here we will just add them directly:
 To generate translations, use the `format` method, passing a message ID and an
 optional dictionary of substitution parameters. If the the message ID is not
 found, a `LookupError` is raised. Otherwise, as per the Fluent philosophy, the
-implementation tries hard to generate *something* even if there are errors. The
-`format` method therefore returns a tuple containing `(translated string,
-errors)`, as below.
+implementation tries hard to recover from any formatting errors and generate the
+most human readable representation of the value. The `format` method therefore
+returns a tuple containing `(translated string, errors)`, as below.
 
     >>> translated, errs = context.format('welcome')
     >>> translated
@@ -85,13 +72,31 @@ errors)`, as below.
 
     >>> translated, errs = context.format('greet-by-name', {'name': 'Jane'})
     >>> translated
-    "Hello, Jane!"
+    'Hello, \u2068Jane\u2069!'
 
     >>> translated, errs = context.format('greet-by-name', {})
     >>> translated
-    "Hello, name!"
+    'Hello, \u2068name\u2069!'
     >>> errs
     [FluentReferenceError('Unknown external: name')]
+
+You will notice the extra characters `\u2068` and `\u2069` in the output. These
+are Unicode bidi isolation characters that help to ensure that the interpolated
+strings are handled correctly in the situation where the text direction of the
+substitution might not match the text direction of the localized text. These
+characters can be disabled if you are sure that is not possible for your app by
+passing `use_isolating=False` to the `MessageContext` constructor.
+
+Python 2
+--------
+
+The above examples assume Python 3. Since Fluent uses unicode everywhere
+internally (and doesn't accept bytestrings), if you are using Python 2 you will
+need to make adjustments to the above example code. Either add `u` unicode
+literal markers to strings or add this at the top of the module or the start of
+your repl session:
+
+    from __future__ import unicode_literals
 
 
 Numbers
@@ -192,20 +197,28 @@ You can add functions to the ones available to FTL authors by passing
 a `functions` dictionary to the `MessageContext` constructor:
 
 
-    >>> def happy(message, very=False):
-    ...     message = "😄 " + message
-    ...     if very:
-    ...         message = message + " 😄"
-    ...     return message
+    >>> import platform
+    >>> def os_name():
+    ...    """Returns linux/mac/windows/other"""
+    ...    return {'Linux': 'linux',
+    ...            'Darwin': 'mac',
+    ...            'Windows': 'windows'}.get(platform.system(), 'other')
 
-    >>> context = MessageContext(['en-US'], functions={'HAPPY': happy})
+    >>> context = MessageContext(['en-US'], functions={'OS': os_name})
     >>> context.add_messages("""
-    ... greet-by-name = Hello { HAPPY($name, very: 1) }
+    ... welcome = { OS() ->
+    ...    [linux]    Welcome to Linux
+    ...    [mac]      Welcome to Mac
+    ...    [windows]  Welcome to Windows
+    ...   *[other]    Welcome
+    ...   }
     ... """)
-    >>> print(context.format('greet-by-name', {'name': 'Jane'})[0])
-    Hello 😄 Jane 😄
+    >>> print(context.format('welcome')[0]
+    Welcome to Linux
 
-These functions need to accept the following types of arguments:
+These functions can accept positioal and keyword arguments (like the `NUMBER`
+and `DATETIME` builtins), and in this case must accept the following types of
+arguments:
 
 * unicode strings (i.e. `unicode` on Python 2, `str` on Python 3)
 * `fluent.types.FluentType` subclasses, namely:

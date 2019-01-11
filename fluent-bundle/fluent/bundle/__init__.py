@@ -4,19 +4,20 @@ import babel
 import babel.numbers
 import babel.plural
 
+from fluent.syntax import FluentParser
+from fluent.syntax.ast import Message, Term
+
 from .builtins import BUILTINS
 from .resolver import resolve
-from .syntax import FluentParser
-from .syntax.ast import Message, Term
 
 
-class MessageContext(object):
+class FluentBundle(object):
     """
     Message contexts are single-language stores of translations.  They are
     responsible for parsing translation resources in the Fluent syntax and can
     format translation units (entities) to strings.
 
-    Always use `MessageContext.format` to retrieve translation units from
+    Always use `FluentBundle.format` to retrieve translation units from
     a context.  Translations can contain references to other entities or
     external arguments, conditional logic in form of select expressions, traits
     which describe their grammatical features, and can use Fluent builtins.

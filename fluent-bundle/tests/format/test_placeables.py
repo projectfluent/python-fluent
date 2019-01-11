@@ -2,15 +2,15 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
-from fluent.errors import FluentCyclicReferenceError, FluentReferenceError
+from fluent.bundle import FluentBundle
+from fluent.bundle.errors import FluentCyclicReferenceError, FluentReferenceError
 
-from ..syntax import dedent_ftl
+from ..utils import dedent_ftl
 
 
 class TestPlaceables(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             message = Message
                     .attr = Message Attribute

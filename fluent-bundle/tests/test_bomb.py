@@ -2,15 +2,15 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
+from fluent.bundle import FluentBundle
 
-from .syntax import dedent_ftl
+from .utils import dedent_ftl
 
 
 class TestBillionLaughs(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             lol0 = 01234567890123456789012345678901234567890123456789
             lol1 = {lol0}{lol0}{lol0}{lol0}{lol0}{lol0}{lol0}{lol0}{lol0}{lol0}

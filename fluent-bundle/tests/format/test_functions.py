@@ -2,17 +2,17 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
-from fluent.errors import FluentReferenceError
-from fluent.types import FluentNone
+from fluent.bundle import FluentBundle
+from fluent.bundle.errors import FluentReferenceError
+from fluent.bundle.types import FluentNone
 
-from ..syntax import dedent_ftl
+from ..utils import dedent_ftl
 
 
 class TestFunctionCalls(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False,
+        self.ctx = FluentBundle(['en-US'], use_isolating=False,
                                   functions={'IDENTITY': lambda x: x})
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo
@@ -66,7 +66,7 @@ class TestFunctionCalls(unittest.TestCase):
 class TestMissing(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             missing = { MISSING(1) }
         """))
@@ -87,7 +87,7 @@ class TestResolving(unittest.TestCase):
             self.args_passed.append(number)
             return number
 
-        self.ctx = MessageContext(['en-US'], use_isolating=False,
+        self.ctx = FluentBundle(['en-US'], use_isolating=False,
                                   functions={'NUMBER_PROCESSOR':
                                              number_processor})
 
@@ -118,7 +118,7 @@ class TestKeywordArgs(unittest.TestCase):
             self.args_passed.append((arg, kwarg1, kwarg2))
             return arg
 
-        self.ctx = MessageContext(['en-US'], use_isolating=False,
+        self.ctx = FluentBundle(['en-US'], use_isolating=False,
                                   functions={'MYFUNC': my_function})
         self.ctx.add_messages(dedent_ftl("""
             pass-arg        = { MYFUNC("a") }

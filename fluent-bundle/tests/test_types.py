@@ -9,7 +9,7 @@ from decimal import Decimal
 import pytz
 from babel import Locale
 
-from fluent.types import FluentDateType, FluentNumber, fluent_date, fluent_number
+from fluent.bundle.types import FluentDateType, FluentNumber, fluent_date, fluent_number
 
 
 class TestFluentNumber(unittest.TestCase):

@@ -4,17 +4,17 @@ import unittest
 from datetime import date, datetime
 from decimal import Decimal
 
-from fluent.context import MessageContext
-from fluent.errors import FluentReferenceError
-from fluent.types import fluent_date, fluent_number
+from fluent.bundle import FluentBundle
+from fluent.bundle.errors import FluentReferenceError
+from fluent.bundle.types import fluent_date, fluent_number
 
-from ..syntax import dedent_ftl
+from ..utils import dedent_ftl
 
 
 class TestNumberBuiltin(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             implicit-call    = { 123456 }
             implicit-call2   = { $arg }
@@ -99,7 +99,7 @@ class TestNumberBuiltin(unittest.TestCase):
 class TestDatetimeBuiltin(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             implicit-call    = { $date }
             explicit-call    = { DATETIME($date) }

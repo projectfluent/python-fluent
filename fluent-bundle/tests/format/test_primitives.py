@@ -2,14 +2,14 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
+from fluent.bundle import FluentBundle
 
-from ..syntax import dedent_ftl
+from ..utils import dedent_ftl
 
 
 class TestSimpleStringValue(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo               = Foo
             placeable-literal = { "Foo" } Bar
@@ -65,7 +65,7 @@ class TestSimpleStringValue(unittest.TestCase):
 
 class TestComplexStringValue(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo               = Foo
             bar               = { foo }Bar
@@ -114,7 +114,7 @@ class TestComplexStringValue(unittest.TestCase):
 
 class TestNumbers(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             one           =  { 1 }
             one_point_two =  { 1.2 }

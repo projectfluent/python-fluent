@@ -6,10 +6,13 @@ from decimal import Decimal
 import attr
 import six
 
+from fluent.syntax.ast import (AttributeExpression, CallExpression, Message,
+                               MessageReference, NumberLiteral, Pattern,
+                               Placeable, SelectExpression, StringLiteral, Term,
+                               TermReference, TextElement, VariableReference,
+                               VariantExpression, VariantList, Identifier)
+
 from .errors import FluentCyclicReferenceError, FluentReferenceError
-from .syntax.ast import (AttributeExpression, CallExpression, Message, MessageReference, NumberLiteral,
-                         Pattern, Placeable, SelectExpression, StringLiteral, Term, TermReference, TextElement,
-                         VariableReference, VariantExpression, VariantList, Identifier)
 from .types import FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
 from .utils import numeric_to_native
 
@@ -45,7 +48,7 @@ class ResolverEnvironment(object):
 
 def resolve(context, message, args, errors=None):
     """
-    Given a MessageContext, a Message instance and some arguments,
+    Given a FluentBundle, a Message instance and some arguments,
     resolve the message to a string.
 
     This is the normal entry point for this module.

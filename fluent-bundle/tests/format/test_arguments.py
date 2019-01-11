@@ -2,14 +2,14 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.context import MessageContext
+from fluent.bundle import FluentBundle
 
-from ..syntax import dedent_ftl
+from ..utils import dedent_ftl
 
 
 class TestNumbersInValues(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo { $num }
             bar = { foo }
@@ -43,7 +43,7 @@ class TestNumbersInValues(unittest.TestCase):
 
 class TestStrings(unittest.TestCase):
     def setUp(self):
-        self.ctx = MessageContext(['en-US'], use_isolating=False)
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo = { $arg }
         """))

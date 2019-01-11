@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-setup(name='fluent',
+setup(name='fluent_syntax',
       version='0.10.0',
       description='Localization library for expressive translations.',
       author='Mozilla',

@@ -8,7 +8,7 @@ else:
     # functools.singledispatch is in stdlib from Python 3.4 onwards.
     extra_requires = []
 
-setup(name='fluent_bundle',
+setup(name='fluent.bundle',
       version='0.1',
       description='Localization library for expressive translations.',
       author='Mozilla',

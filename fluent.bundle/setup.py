@@ -11,6 +11,7 @@ else:
 setup(name='fluent.bundle',
       version='0.1',
       description='Localization library for expressive translations.',
+      long_description='See https://github.com/projectfluent/python-fluent/ for more info.',
       author='Luke Plant',
       author_email='L.Plant.98@cantab.net',
       license='APL 2',

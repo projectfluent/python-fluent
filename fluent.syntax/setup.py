@@ -4,6 +4,7 @@ from setuptools import setup
 setup(name='fluent.syntax',
       version='0.10.0',
       description='Localization library for expressive translations.',
+      long_description='See https://github.com/projectfluent/python-fluent/ for more info.',
       author='Mozilla',
       author_email='l10n-drivers@mozilla.org',
       license='APL 2',

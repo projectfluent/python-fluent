@@ -5,8 +5,10 @@ python:
   - "3.5"
   - "3.6"
   - "nightly"
+env:
+  - PACKAGE=fluent.syntax
 install: pip install tox-travis
-script: tox
+script: cd $PACKAGE; tox
 notifications:
   irc:
     channels:

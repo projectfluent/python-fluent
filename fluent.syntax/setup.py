@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from setuptools import setup
 
-setup(name='fluent_syntax',
+setup(name='fluent.syntax',
       version='0.10.0',
       description='Localization library for expressive translations.',
       author='Mozilla',

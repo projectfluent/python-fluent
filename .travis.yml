@@ -8,7 +8,7 @@ python:
   - "pypy3"
   - "nightly"
 env:
-  - PACKAGE=fluent-syntax
+  - PACKAGE=fluent.syntax
   - PACKAGE=fluent-bundle
 install: pip install tox-travis
 script: cd $PACKAGE; tox

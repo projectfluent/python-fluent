@@ -33,12 +33,33 @@ you're a tool author you may be interested in the formal [EBNF grammar][].
 Installation
 ------------
 
-    pip install fluent
+python-fluent consists of two namepsace packages:
+
+* `fluent.syntax` - includes AST classes and parser. Most end users will not
+  need this directly. Documentation coming soon!
+
+  To install:
+
+        pip install fluent.syntax
+
+
+* `fluent.bundle` - methods for generating translations from FTL files.
+  Documentation below.
+
+  To install:
+
+        pip install fluent.bundle
+
+  (The correct version of ``fluent.syntax`` will be installed automatically)
+
+
+PyPI also contains an old `fluent` package which is an older version of just
+`fluent.syntax`.
 
 Usage
 -----
 
-To generate translations from this Python libary, you start with the
+To generate translations using ``fluent.bundle``, you start with the
 `FluentBundle` class:
 
     >>> from fluent.bundle import FluentBundle

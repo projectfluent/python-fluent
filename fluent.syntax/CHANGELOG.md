@@ -1,5 +1,10 @@
 # Changelog
 
+## fluent.syntax 0.10.0 (January 15, 2018)
+
+The `fluent` package which used to provide the `fluent.syntax` module has been
+renamed to `fluent.syntax` on PyPI. The code is identical to `fluent` 0.10.
+
 ## fluent-syntax 0.10.0 (December 13, 2018)
 
 This release brings support for version 0.8 of the Fluent Syntax spec. The API

@@ -13,9 +13,11 @@ from babel.numbers import NumberPattern, parse_pattern
 FORMAT_STYLE_DECIMAL = "decimal"
 FORMAT_STYLE_CURRENCY = "currency"
 FORMAT_STYLE_PERCENT = "percent"
-FORMAT_STYLES = set([FORMAT_STYLE_DECIMAL,
-                     FORMAT_STYLE_CURRENCY,
-                     FORMAT_STYLE_PERCENT])
+FORMAT_STYLE_OPTIONS = set([
+    FORMAT_STYLE_DECIMAL,
+    FORMAT_STYLE_CURRENCY,
+    FORMAT_STYLE_PERCENT,
+])
 
 CURRENCY_DISPLAY_SYMBOL = "symbol"
 CURRENCY_DISPLAY_CODE = "code"
@@ -26,9 +28,21 @@ CURRENCY_DISPLAY_OPTIONS = set([
     CURRENCY_DISPLAY_NAME,
 ])
 
+DATE_STYLE_OPTIONS = set([
+    "full",
+    "long",
+    "medium",
+    "short",
+    None,
+])
 
-DATE_STYLE_OPTIONS = ["full", "long", "medium", "short", None]
-TIME_STYLE_OPTIONS = ["full", "long", "medium", "short", None]
+TIME_STYLE_OPTIONS = set([
+    "full",
+    "long",
+    "medium",
+    "short",
+    None,
+])
 
 
 class FluentType(object):
@@ -55,7 +69,7 @@ class NumberFormatOptions(object):
 
     # See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NumberFormat
     style = attr.ib(default=FORMAT_STYLE_DECIMAL,
-                    validator=attr.validators.in_(FORMAT_STYLES))
+                    validator=attr.validators.in_(FORMAT_STYLE_OPTIONS))
     currency = attr.ib(default=None)
     currencyDisplay = attr.ib(default=CURRENCY_DISPLAY_SYMBOL,
                               validator=attr.validators.in_(CURRENCY_DISPLAY_OPTIONS))

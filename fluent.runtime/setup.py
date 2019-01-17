@@ -24,7 +24,7 @@ setup(name='fluent.runtime',
           'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3.5',
       ],
-      packages=['fluent', 'fluent.bundle'],
+      packages=['fluent', 'fluent.runtime'],
       install_requires=[
           'fluent>=0.9,<0.10',
           'attrs',

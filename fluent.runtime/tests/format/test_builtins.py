@@ -4,9 +4,9 @@ import unittest
 from datetime import date, datetime
 from decimal import Decimal
 
-from fluent.bundle import FluentBundle
-from fluent.bundle.errors import FluentReferenceError
-from fluent.bundle.types import fluent_date, fluent_number
+from fluent.runtime import FluentBundle
+from fluent.runtime.errors import FluentReferenceError
+from fluent.runtime.types import fluent_date, fluent_number
 
 from ..utils import dedent_ftl
 

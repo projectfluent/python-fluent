@@ -62,7 +62,7 @@ Usage
 To generate translations using the ``fluent.runtime`` package, you start with
 the `FluentBundle` class:
 
-    >>> from fluent.bundle import FluentBundle
+    >>> from fluent.runtime import FluentBundle
 
 You pass a list of locales to the constructor - the first being the desired
 locale, with fallbacks after that:
@@ -133,9 +133,9 @@ through locale-aware formatting functions:
 
 
 You can specify your own formatting options on the arguments passed in by
-wrapping your numeric arguments with `fluent.types.fluent_number`:
+wrapping your numeric arguments with `fluent.runtime.types.fluent_number`:
 
-    >>> from fluent.bundle.types import fluent_number
+    >>> from fluent.runtime.types import fluent_number
     >>> points = fluent_number(1234567, useGrouping=False)
     >>> bundle.format("show-total-points", {'points': points})[0]
     'You have 1234567 points.'
@@ -174,9 +174,9 @@ currently the only supported options to `DATETIME` are:
 * `dateStyle` and `timeStyle` which are [proposed
   additions](https://github.com/tc39/proposal-ecma402-datetime-style) to the ECMA i18n spec.
 
-To specify options from Python code, use `fluent.bundle.types.fluent_date`:
+To specify options from Python code, use `fluent.runtime.types.fluent_date`:
 
-    >>> from fluent.bundle.types import fluent_date
+    >>> from fluent.runtime.types import fluent_date
     >>> today = date.today()
     >>> short_today = fluent_date(today, dateStyle='short')
     >>> val, errs = bundle.format("today-is", {"today": short_today })
@@ -242,7 +242,7 @@ and `DATETIME` builtins), and in this case must accept the following types of
 arguments:
 
 * unicode strings (i.e. `unicode` on Python 2, `str` on Python 3)
-* `fluent.bundle.types.FluentType` subclasses, namely:
+* `fluent.runtime.types.FluentType` subclasses, namely:
   * `FluentNumber` - `int`, `float` or `Decimal` objects passed in externally,
     or expressed as literals, are wrapped in these. Note that these objects also
     subclass builtin `int`, `float` or `Decimal`, so can be used as numbers in

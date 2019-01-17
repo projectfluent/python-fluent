@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.bundle import FluentBundle
+from fluent.runtime import FluentBundle
 
 from .utils import dedent_ftl
 

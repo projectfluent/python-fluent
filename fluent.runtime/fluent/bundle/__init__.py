@@ -45,11 +45,9 @@ class FluentBundle(object):
                     self._messages_and_terms[item.id.name] = item
 
     def has_message(self, message_id):
-        try:
-            self._get_message(message_id)
-            return True
-        except LookupError:
+        if message_id.startswith('-'):
             return False
+        return message_id in self._messages_and_terms
 
     def format(self, message_id, args=None):
         message = self._get_message(message_id)

@@ -44,7 +44,7 @@ class TestFluentBundle(unittest.TestCase):
         """))
 
         self.assertTrue(self.ctx.has_message('foo'))
-        self.assertTrue(self.ctx.has_message('foo.attr'))
+        self.assertFalse(self.ctx.has_message('foo.attr'))
         self.assertFalse(self.ctx.has_message('foo.other-attribute'))
 
     def test_plural_form_english_ints(self):

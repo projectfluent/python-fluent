@@ -1,1 +1,1 @@
-../fluent.bundle/runtests.py
+../fluent.runtime/runtests.py

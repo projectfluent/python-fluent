@@ -1,6 +1,4 @@
 .tox
 *.pyc
 .eggs/
-fluent.egg-info/
-fluent_syntax.egg-info/
-fluent_bundle.egg-info/
+*.egg-info/

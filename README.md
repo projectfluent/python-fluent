@@ -153,7 +153,7 @@ spec, and the options will be merged.
 Date and time
 -------------
 
-Python `dateime.datetime` and `datetime.date` objects are also passed through
+Python `datetime.datetime` and `datetime.date` objects are also passed through
 locale aware functions:
 
     >>> from datetime import date

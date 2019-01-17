@@ -84,6 +84,11 @@ class TestAttributesWithSimplePatternValues(unittest.TestCase):
         self.assertEqual(val, 'Qux Attribute')
         self.assertEqual(len(errs), 0)
 
+    def test_works_with_self_references_direct(self):
+        val, errs = self.ctx.format('qux.attr', {})
+        self.assertEqual(val, 'Qux Attribute')
+        self.assertEqual(len(errs), 0)
+
 
 class TestMissing(unittest.TestCase):
     def setUp(self):

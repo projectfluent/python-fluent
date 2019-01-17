@@ -15,7 +15,8 @@ class TestSimpleStringValue(unittest.TestCase):
             placeable-literal = { "Foo" } Bar
             placeable-message = { foo } Bar
             selector-literal = { "Foo" ->
-               *[Foo] Member 1
+                [Foo] Member 1
+               *[Bar] Member 2
              }
             bar
                 .attr = Bar Attribute
@@ -23,7 +24,8 @@ class TestSimpleStringValue(unittest.TestCase):
             -baz = Baz
                 .attr = BazAttribute
             selector-attr    = { -baz.attr ->
-               *[BazAttribute] Member 3
+                [BazAttribute] Member 3
+               *[other]        Member 4
              }
         """))
 

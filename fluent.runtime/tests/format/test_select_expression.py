@@ -160,11 +160,16 @@ class TestSelectExpressionWithPluralCategories(unittest.TestCase):
         self.assertEqual(errs,
                          [FluentReferenceError("Unknown external: num")])
 
-    def test_with_argument(self):
+    def test_with_argument_integer(self):
         val, errs = self.ctx.format('qux', {'num': 1})
         self.assertEqual(val, "A")
         self.assertEqual(len(errs), 0)
 
         val, errs = self.ctx.format('qux', {'num': 2})
         self.assertEqual(val, "B")
+        self.assertEqual(len(errs), 0)
+
+    def test_with_argument_float(self):
+        val, errs = self.ctx.format('qux', {'num': 1.0})
+        self.assertEqual(val, "A")
         self.assertEqual(len(errs), 0)

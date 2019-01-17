@@ -25,7 +25,12 @@ setup(name='fluent.runtime',
           'Programming Language :: Python :: 3.5',
       ],
       packages=['fluent', 'fluent.bundle'],
-      install_requires=['fluent>=0.9,<0.10'] + extra_requires,
+      install_requires=[
+          'fluent>=0.9,<0.10',
+          'attrs',
+          'babel',
+          'pytz',
+      ] + extra_requires,
       tests_require=['six'],
       test_suite='tests'
       )

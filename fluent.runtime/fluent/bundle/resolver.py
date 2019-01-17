@@ -207,7 +207,14 @@ def handle_variable_reference(argument, env):
             FluentReferenceError("Unknown external: {0}".format(name)))
         return FluentNone(name)
 
-    return handle_argument(arg_val, name, env)
+    if isinstance(arg_val,
+                  (int, float, Decimal,
+                   date, datetime,
+                   text_type)):
+        return arg_val
+    env.errors.append(TypeError("Unsupported external type: {0}, {1}"
+                                .format(name, type(arg_val))))
+    return FluentNone(name)
 
 
 @handle.register(AttributeExpression)
@@ -378,14 +385,3 @@ def handle_date(d, env):
 @handle.register(datetime)
 def handle_datetime(d, env):
     return fluent_date(d).format(env.context._babel_locale)
-
-
-def handle_argument(arg, name, env):
-    if isinstance(arg,
-                  (int, float, Decimal,
-                   date, datetime,
-                   text_type)):
-        return arg
-    env.errors.append(TypeError("Unsupported external type: {0}, {1}"
-                                .format(name, type(arg))))
-    return FluentNone(name)

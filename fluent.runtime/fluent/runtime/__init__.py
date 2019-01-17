@@ -53,9 +53,7 @@ class FluentBundle(object):
         message = self._get_message(message_id)
         if args is None:
             args = {}
-        errors = []
-        resolved = resolve(self, message, args, errors=errors)
-        return resolved, errors
+        return resolve(self, message, args)
 
     def _get_message(self, message_id):
         if message_id.startswith('-'):

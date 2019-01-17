@@ -46,19 +46,18 @@ class ResolverEnvironment(object):
     part_count = attr.ib(default=0)
 
 
-def resolve(context, message, args, errors=None):
+def resolve(context, message, args):
     """
     Given a FluentBundle, a Message instance and some arguments,
     resolve the message to a string.
 
     This is the normal entry point for this module.
     """
-    if errors is None:
-        errors = []
+    errors = []
     env = ResolverEnvironment(context=context,
                               args=args,
                               errors=errors)
-    return fully_resolve(message, env)
+    return fully_resolve(message, env), errors
 
 
 def fully_resolve(expr, env):

@@ -13,7 +13,7 @@ class TestNumbersInValues(unittest.TestCase):
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo { $num }
             bar = { foo }
-            baz
+            baz =
                 .attr = Baz Attribute { $num }
             qux = { "a" ->
                *[a]     Baz Variant A { $num }

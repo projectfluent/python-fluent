@@ -18,7 +18,7 @@ class TestSimpleStringValue(unittest.TestCase):
                 [Foo] Member 1
                *[Bar] Member 2
              }
-            bar
+            bar =
                 .attr = Bar Attribute
             placeable-attr   = { bar.attr }
             -baz = Baz
@@ -74,7 +74,7 @@ class TestComplexStringValue(unittest.TestCase):
 
             placeable-message = { bar }Baz
 
-            baz
+            baz =
                 .attr = { bar }BazAttribute
 
             -qux = Qux

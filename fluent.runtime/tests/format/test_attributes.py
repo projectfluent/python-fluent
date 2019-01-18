@@ -104,7 +104,7 @@ class TestMissing(unittest.TestCase):
             ref-bar = { bar.missing }
             ref-baz = { baz.missing }
             ref-qux = { qux.missing }
-            attr-only
+            attr-only =
                      .attr  = Attr Only Attribute
         """))
 

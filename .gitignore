@@ -1,4 +1,4 @@
 .tox
 *.pyc
 .eggs/
-fluent.egg-info/
+*.egg-info/

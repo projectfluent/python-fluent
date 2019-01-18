@@ -4,9 +4,12 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
+  - "pypy"
+  - "pypy3"
   - "nightly"
 env:
   - PACKAGE=fluent.syntax
+  - PACKAGE=fluent.runtime
 install: pip install tox-travis
 script: cd $PACKAGE; tox
 notifications:

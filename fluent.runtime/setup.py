@@ -1,12 +1,19 @@
 #!/usr/bin/env python
 from setuptools import setup
+import sys
 
-setup(name='fluent.syntax',
-      version='0.10.0',
+if sys.version_info < (3, 4):
+    extra_requires = ['singledispatch>=3.4']
+else:
+    # functools.singledispatch is in stdlib from Python 3.4 onwards.
+    extra_requires = []
+
+setup(name='fluent.runtime',
+      version='0.1',
       description='Localization library for expressive translations.',
       long_description='See https://github.com/projectfluent/python-fluent/ for more info.',
-      author='Mozilla',
-      author_email='l10n-drivers@mozilla.org',
+      author='Luke Plant',
+      author_email='L.Plant.98@cantab.net',
       license='APL 2',
       url='https://github.com/projectfluent/python-fluent',
       keywords=['fluent', 'localization', 'l10n'],
@@ -17,7 +24,13 @@ setup(name='fluent.syntax',
           'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3.5',
       ],
-      packages=['fluent', 'fluent.syntax'],
+      packages=['fluent', 'fluent.runtime'],
+      install_requires=[
+          'fluent>=0.9,<0.10',
+          'attrs',
+          'babel',
+          'pytz',
+      ] + extra_requires,
       tests_require=['six'],
-      test_suite='tests.syntax'
-)
+      test_suite='tests'
+      )

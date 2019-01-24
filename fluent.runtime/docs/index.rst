@@ -6,12 +6,16 @@
 Welcome to fluent.runtime's documentation!
 ==========================================
 
+These are the docs for ``fluent.runtime`` |release|. Check the :doc:`/history` for
+significant changes.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    installation
    usage
+   history
 
 
 Indices and tables

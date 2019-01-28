@@ -41,8 +41,10 @@ class FluentBundle(object):
         # TODO - warn/error about duplicates
         for item in resource.body:
             if isinstance(item, (Message, Term)):
-                if item.id.name not in self._messages_and_terms:
-                    self._messages_and_terms[item.id.name] = item
+                prefix = "-" if isinstance(item, Term) else ""
+                full_id = prefix + item.id.name
+                if full_id not in self._messages_and_terms:
+                    self._messages_and_terms[full_id] = item
 
     def has_message(self, message_id):
         if message_id.startswith('-'):

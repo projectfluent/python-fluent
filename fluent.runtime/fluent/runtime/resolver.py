@@ -40,7 +40,16 @@ PDI = "\u2069"
 class CurrentEnvironment(object):
     # The parts of ResolverEnvironment that we want to mutate (and restore)
     # temporarily for some parts of a call chain.
+
+    # The values of attributes here must not be mutated, they must only be
+    # swapped out for different objects using `modified` (see below).
+
+    # For Messages, VariableReference nodes are interpreted as external args,
+    # but for Terms they are the values explicitly passed using CallExpression
+    # syntax. So we have to be able to change 'args' for this purpose.
     args = attr.ib()
+    # This controls whether we need to report an error if a VariableReference
+    # refers to an arg that is not present in the args dict.
     error_for_missing_arg = attr.ib(default=True)
 
 
@@ -58,8 +67,8 @@ class ResolverEnvironment(object):
         Context manager that modifies the 'current' attribute of the
         environment, restoring the old data at the end.
         """
-        # CurrentEnvironment only has immutable args at the moment, so the
-        # shallow copy returned by attr.evolve is fine.
+        # CurrentEnvironment only has args that we never mutate, so the shallow
+        # copy returned by attr.evolve is fine (at least for now).
         old_current = self.current
         self.current = attr.evolve(old_current, **replacements)
         yield self

@@ -95,8 +95,8 @@ def fully_resolve(expr, env):
     retval = handle(expr, env)
     if isinstance(retval, text_type):
         return retval
-    else:
-        return fully_resolve(retval, env)
+
+    return fully_resolve(retval, env)
 
 
 @singledispatch
@@ -196,25 +196,22 @@ def lookup_reference(ref, env):
     """
     ref_id = reference_to_id(ref)
 
-    message = None
     try:
-        message = env.context._messages_and_terms[ref_id]
+        return env.context._messages_and_terms[ref_id]
     except LookupError:
         env.errors.append(unknown_reference_error_obj(ref_id))
 
         if isinstance(ref, AttributeExpression):
+            # Fallback
             parent_id = reference_to_id(ref.ref)
             try:
-                message = env.context._messages_and_terms[parent_id]
+                return env.context._messages_and_terms[parent_id]
             except LookupError:
                 # Don't add error here, because we already added error for the
                 # actual thing we were looking for.
                 pass
 
-    if message is None:
-        message = FluentNone(ref_id)
-
-    return message
+    return FluentNone(ref_id)
 
 
 @handle.register(FluentNone)
@@ -285,8 +282,8 @@ def select_from_variant_list(variant_list, env, key):
         found = default
     if found is None:
         return FluentNone()
-    else:
-        return handle(found.value, env)
+
+    return handle(found.value, env)
 
 
 @handle.register(SelectExpression)
@@ -312,8 +309,7 @@ def select_from_select_expression(expression, env, key):
         found = default
     if found is None:
         return FluentNone()
-    else:
-        return handle(found.value, env)
+    return handle(found.value, env)
 
 
 def is_number(val):
@@ -329,9 +325,8 @@ def match(val1, val2, env):
         if not is_number(val2):
             # Could be plural rule match
             return env.context._plural_form(val1) == val2
-    else:
-        if is_number(val2):
-            return match(val2, val1, env)
+    elif is_number(val2):
+        return match(val2, val1, env)
 
     return val1 == val2
 
@@ -369,20 +364,21 @@ def handle_call_expression(expression, env):
                                                 .format(reference_to_id(expression.callee))))
         with env.modified_for_term_reference(args=kwargs):
             return handle(term, env)
-    else:
-        function_name = expression.callee.id.name
-        try:
-            function = env.context._functions[function_name]
-        except LookupError:
-            env.errors.append(FluentReferenceError("Unknown function: {0}"
-                                                   .format(function_name)))
-            return FluentNone(function_name + "()")
 
-        try:
-            return function(*args, **kwargs)
-        except Exception as e:
-            env.errors.append(e)
-            return FluentNone(function_name + "()")
+    # builtin or custom function call
+    function_name = expression.callee.id.name
+    try:
+        function = env.context._functions[function_name]
+    except LookupError:
+        env.errors.append(FluentReferenceError("Unknown function: {0}"
+                                               .format(function_name)))
+        return FluentNone(function_name + "()")
+
+    try:
+        return function(*args, **kwargs)
+    except Exception as e:
+        env.errors.append(e)
+        return FluentNone(function_name + "()")
 
 
 @handle.register(FluentNumber)

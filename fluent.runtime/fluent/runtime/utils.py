@@ -32,8 +32,7 @@ def numeric_to_native(val):
     #  '-'? [0-9]+ ('.' [0-9]+)?
     if '.' in val:
         return float(val)
-    else:
-        return int(val)
+    return int(val)
 
 
 def reference_to_id(ref):
@@ -56,10 +55,9 @@ def reference_to_id(ref):
 def unknown_reference_error_obj(ref_id):
     if ATTRIBUTE_SEPARATOR in ref_id:
         return FluentReferenceError("Unknown attribute: {0}".format(ref_id))
-    elif ref_id.startswith(TERM_SIGIL):
+    if ref_id.startswith(TERM_SIGIL):
         return FluentReferenceError("Unknown term: {0}".format(ref_id))
-    else:
-        return FluentReferenceError("Unknown message: {0}".format(ref_id))
+    return FluentReferenceError("Unknown message: {0}".format(ref_id))
 
 
 def _make_attr_id(parent_ref_id, attr_name):

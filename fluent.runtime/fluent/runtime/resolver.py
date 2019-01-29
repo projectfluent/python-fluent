@@ -7,7 +7,7 @@ from decimal import Decimal
 import attr
 import six
 
-from fluent.syntax.ast import (AttributeExpression, CallExpression, Identifier, Message, MessageReference,
+from fluent.syntax.ast import (Attribute, AttributeExpression, CallExpression, Identifier, Message, MessageReference,
                                NumberLiteral, Pattern, Placeable, SelectExpression, StringLiteral, Term, TermReference,
                                TextElement, VariableReference, VariantExpression, VariantList)
 
@@ -190,24 +190,31 @@ def handle_term_reference(term_reference, env):
 
 
 def lookup_reference(ref, env):
+    """
+    Given a MessageReference, TermReference or AttributeExpression, returns the
+    AST node, or FluentNone if not found, including fallback logic
+    """
     ref_id = reference_to_id(ref)
-    if "." in ref_id:
-        parent_id, attr_name = ref_id.split('.')
-        if parent_id not in env.context._messages_and_terms:
-            env.errors.append(unknown_reference_error_obj(ref_id))
-            return FluentNone(ref_id)
-        else:
-            parent = env.context._messages_and_terms[parent_id]
-            for attribute in parent.attributes:
-                if attribute.id.name == attr_name:
-                    return attribute.value
-            env.errors.append(unknown_reference_error_obj(ref_id))
-            return parent
-    else:
-        if ref_id not in env.context._messages_and_terms:
-            env.errors.append(unknown_reference_error_obj(ref_id))
-            return FluentNone(ref_id)
-        return env.context._messages_and_terms[ref_id]
+
+    message = None
+    try:
+        message = env.context._messages_and_terms[ref_id]
+    except LookupError:
+        env.errors.append(unknown_reference_error_obj(ref_id))
+
+        if isinstance(ref, AttributeExpression):
+            parent_id = reference_to_id(ref.ref)
+            try:
+                message = env.context._messages_and_terms[parent_id]
+            except LookupError:
+                # Don't add error here, because we already added error for the
+                # actual thing we were looking for.
+                pass
+
+    if message is None:
+        message = FluentNone(ref_id)
+
+    return message
 
 
 @handle.register(FluentNone)
@@ -245,6 +252,11 @@ def handle_variable_reference(argument, env):
 @handle.register(AttributeExpression)
 def handle_attribute_expression(attribute_ref, env):
     return handle(lookup_reference(attribute_ref, env), env)
+
+
+@handle.register(Attribute)
+def handle_attribute(attribute, env):
+    return handle(attribute.value, env)
 
 
 @handle.register(VariantList)

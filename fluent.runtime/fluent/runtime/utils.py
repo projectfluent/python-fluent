@@ -1,6 +1,26 @@
-from fluent.syntax.ast import AttributeExpression, TermReference
+from fluent.syntax.ast import AttributeExpression, Term, TermReference
 
 from .errors import FluentReferenceError
+
+TERM_SIGIL = '-'
+ATTRIBUTE_SEPARATOR = '.'
+
+
+def ast_to_id(ast):
+    """
+    Returns a string reference for a Term or Message
+    """
+    return (TERM_SIGIL if isinstance(ast, Term) else '') + ast.id.name
+
+
+def add_message_and_attrs_to_store(store, ref_id, item, is_parent=True):
+    store[ref_id] = item
+    if is_parent:
+        for attr in item.attributes:
+            add_message_and_attrs_to_store(store,
+                                           _make_attr_id(ref_id, attr.id.name),
+                                           attr,
+                                           is_parent=False)
 
 
 def numeric_to_native(val):
@@ -28,15 +48,22 @@ def reference_to_id(ref):
        -term.attr
     """
     if isinstance(ref, AttributeExpression):
-        return "{0}.{1}".format(reference_to_id(ref.ref),
-                                ref.name.name)
-    return ('-' if isinstance(ref, TermReference) else '') + ref.id.name
+        return _make_attr_id(reference_to_id(ref.ref),
+                             ref.name.name)
+    return (TERM_SIGIL if isinstance(ref, TermReference) else '') + ref.id.name
 
 
 def unknown_reference_error_obj(ref_id):
-    if '.' in ref_id:
+    if ATTRIBUTE_SEPARATOR in ref_id:
         return FluentReferenceError("Unknown attribute: {0}".format(ref_id))
-    elif ref_id.startswith('-'):
+    elif ref_id.startswith(TERM_SIGIL):
         return FluentReferenceError("Unknown term: {0}".format(ref_id))
     else:
         return FluentReferenceError("Unknown message: {0}".format(ref_id))
+
+
+def _make_attr_id(parent_ref_id, attr_name):
+    """
+    Given a parent id and the attribute name, return the attribute id
+    """
+    return ''.join([parent_ref_id, ATTRIBUTE_SEPARATOR, attr_name])

@@ -106,6 +106,7 @@ class TestMissing(unittest.TestCase):
             ref-qux = { qux.missing }
             attr-only =
                      .attr  = Attr Only Attribute
+            ref-double-missing = { missing.attr }
         """))
 
     def test_falls_back_for_msg_with_string_value_and_no_attributes(self):
@@ -147,3 +148,8 @@ class TestMissing(unittest.TestCase):
         val, errs = self.ctx.format('attr-only.attr', {})
         self.assertEqual(val, 'Attr Only Attribute')
         self.assertEqual(len(errs), 0)
+
+    def test_missing_message_and_attribute(self):
+        val, errs = self.ctx.format('ref-double-missing', {})
+        self.assertEqual(val, 'missing.attr')
+        self.assertEqual(errs, [FluentReferenceError('Unknown attribute: missing.attr')])

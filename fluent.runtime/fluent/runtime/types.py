@@ -277,7 +277,11 @@ _SUPPORTED_DATETIME_OPTIONS = ['dateStyle', 'timeStyle', 'timeZone']
 
 
 class FluentDateType(object):
-    def _init(self, dt_obj, kwargs):
+    # We need to match signature of `__init__` and `__new__` due to the way
+    # some Python implementation (e.g. PyPy) implement some methods.
+    # So we leave those alone, and implement another `_init_options`
+    # which is called from other constructors.
+    def _init_options(self, dt_obj, kwargs):
         if 'timeStyle' in kwargs and not isinstance(self, datetime):
             raise TypeError("timeStyle option can only be specified for datetime instances, not date instance")
 
@@ -328,37 +332,30 @@ def _ensure_datetime_tzinfo(dt, tzinfo=None):
 
 
 class FluentDate(FluentDateType, date):
-    def __new__(cls,
-                dt_obj,
-                **kwargs):
-        self = super(FluentDate, cls).__new__(
-            cls,
-            dt_obj.year, dt_obj.month, dt_obj.day)
-        self._init(dt_obj, kwargs)
-        return self
+    @classmethod
+    def from_date(cls, dt_obj, **kwargs):
+        obj = cls(dt_obj.year, dt_obj.month, dt_obj.day)
+        obj._init_options(dt_obj, kwargs)
+        return obj
 
 
 class FluentDateTime(FluentDateType, datetime):
-    def __new__(cls,
-                dt_obj,
-                **kwargs):
-        self = super(FluentDateTime, cls).__new__(
-            cls,
-            dt_obj.year, dt_obj.month, dt_obj.day,
-            dt_obj.hour, dt_obj.minute, dt_obj.second,
-            dt_obj.microsecond, tzinfo=dt_obj.tzinfo)
-
-        self._init(dt_obj, kwargs)
-        return self
+    @classmethod
+    def from_date_time(cls, dt_obj, **kwargs):
+        obj = cls(dt_obj.year, dt_obj.month, dt_obj.day,
+                  dt_obj.hour, dt_obj.minute, dt_obj.second,
+                  dt_obj.microsecond, tzinfo=dt_obj.tzinfo)
+        obj._init_options(dt_obj, kwargs)
+        return obj
 
 
 def fluent_date(dt, **kwargs):
     if isinstance(dt, FluentDateType) and not kwargs:
         return dt
     if isinstance(dt, datetime):
-        return FluentDateTime(dt, **kwargs)
+        return FluentDateTime.from_date_time(dt, **kwargs)
     elif isinstance(dt, date):
-        return FluentDate(dt, **kwargs)
+        return FluentDate.from_date(dt, **kwargs)
     elif isinstance(dt, FluentNone):
         return dt
     else:

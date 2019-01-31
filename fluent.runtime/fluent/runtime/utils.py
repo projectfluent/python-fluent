@@ -10,7 +10,9 @@ def ast_to_id(ast):
     """
     Returns a string reference for a Term or Message
     """
-    return (TERM_SIGIL if isinstance(ast, Term) else '') + ast.id.name
+    if isinstance(ast, Term):
+        return TERM_SIGIL + ast.id.name
+    return ast.id.name
 
 
 def add_message_and_attrs_to_store(store, ref_id, item, is_parent=True):
@@ -49,7 +51,9 @@ def reference_to_id(ref):
     if isinstance(ref, AttributeExpression):
         return _make_attr_id(reference_to_id(ref.ref),
                              ref.name.name)
-    return (TERM_SIGIL if isinstance(ref, TermReference) else '') + ref.id.name
+    if isinstance(ref, TermReference):
+        return TERM_SIGIL + ref.id.name
+    return ref.id.name
 
 
 def unknown_reference_error_obj(ref_id):

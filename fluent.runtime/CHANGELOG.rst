@@ -1,6 +1,12 @@
 Changelog
 =========
 
+fluent.runtime development version (unreleased)
+-----------------------------------------------
+
+* Support for Fluent spec 0.8 (``fluent.syntax`` 0.10), including parameterized
+  terms.
+
 fluent.runtime 0.1 (January 21, 2019)
 -------------------------------------
 

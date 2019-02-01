@@ -15,4 +15,6 @@ significant changes.
 
    installation
    usage
+   functions
+   errors
    history

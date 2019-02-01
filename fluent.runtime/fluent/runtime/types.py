@@ -67,6 +67,8 @@ class NumberFormatOptions(object):
     # rather than using underscores as per PEP8, so that
     # we can stick to Fluent spec more easily.
 
+    # Keyword args available to FTL authors must be synced to fluent_number.ftl_arg_spec below
+
     # See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NumberFormat
     style = attr.ib(default=FORMAT_STYLE_DECIMAL,
                     validator=attr.validators.in_(FORMAT_STYLE_OPTIONS))
@@ -81,7 +83,7 @@ class NumberFormatOptions(object):
     maximumSignificantDigits = attr.ib(default=None)
 
 
-class FluentNumber(object):
+class FluentNumber(FluentType):
 
     default_number_format_options = NumberFormatOptions()
 
@@ -228,8 +230,22 @@ def fluent_number(number, **kwargs):
     elif isinstance(number, FluentNone):
         return number
     else:
-        raise TypeError("Can't use fluent_number with object {0} for type {1}"
+        raise TypeError("Can't use fluent_number with object {0} of type {1}"
                         .format(number, type(number)))
+
+
+# Specify arg spec manually, for three reasons:
+# 1. To avoid having to specify kwargs explicitly, which results
+#    in duplication, and in unnecessary work inside FluentNumber
+# 2. To stop 'style' and 'currency' being used inside FTL files
+# 3. To avoid needing inspection to do this work.
+fluent_number.ftl_arg_spec = (1, ['currencyDisplay',
+                                  'useGrouping',
+                                  'minimumIntegerDigits',
+                                  'minimumFractionDigits',
+                                  'maximumFractionDigits',
+                                  'minimumSignificantDigits',
+                                  'maximumSignificantDigits'])
 
 
 _UNGROUPED_PATTERN = parse_pattern("#0")
@@ -255,6 +271,8 @@ class DateFormatOptions(object):
     timeZone = attr.ib(default=None)
 
     # Other
+    # Keyword args available to FTL authors must be synced to fluent_date.ftl_arg_spec below
+
     hour12 = attr.ib(default=None)
     weekday = attr.ib(default=None)
     era = attr.ib(default=None)
@@ -276,7 +294,7 @@ class DateFormatOptions(object):
 _SUPPORTED_DATETIME_OPTIONS = ['dateStyle', 'timeStyle', 'timeZone']
 
 
-class FluentDateType(object):
+class FluentDateType(FluentType):
     # We need to match signature of `__init__` and `__new__` due to the way
     # some Python implementation (e.g. PyPy) implement some methods.
     # So we leave those alone, and implement another `_init_options`
@@ -361,3 +379,19 @@ def fluent_date(dt, **kwargs):
     else:
         raise TypeError("Can't use fluent_date with object {0} of type {1}"
                         .format(dt, type(dt)))
+
+
+fluent_date.ftl_arg_spec = (1,
+                            ['hour12',
+                             'weekday',
+                             'era',
+                             'year',
+                             'month',
+                             'day',
+                             'hour',
+                             'minute',
+                             'second',
+                             'timeZoneName',
+                             'dateStyle',
+                             'timeStyle',
+                             ])

@@ -13,7 +13,8 @@ from fluent.syntax.ast import (Attribute, AttributeExpression, CallExpression, I
 
 from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
 from .types import FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
-from .utils import numeric_to_native, reference_to_id, unknown_reference_error_obj
+from .utils import (args_match, inspect_function_args, numeric_to_native,
+                    reference_to_id, unknown_reference_error_obj)
 
 try:
     from functools import singledispatch
@@ -110,8 +111,8 @@ def fully_resolve(expr, env):
 
 @singledispatch
 def handle(expr, env):
-    raise NotImplementedError("Cannot handle object of type {0}"
-                              .format(type(expr).__name__))
+    raise TypeError("Cannot handle object {0} of type {1}"
+                    .format(expr, type(expr).__name__))
 
 
 @handle.register(Message)
@@ -245,6 +246,7 @@ def handle_variable_reference(argument, env):
                 FluentReferenceError("Unknown external: {0}".format(name)))
         return FluentNone(name)
 
+    # The code below should be synced with fluent.runtime.runtime.handle_argument
     if isinstance(arg_val,
                   (int, float, Decimal,
                    date, datetime,
@@ -383,11 +385,12 @@ def handle_call_expression(expression, env):
                                                .format(function_name)))
         return FluentNone(function_name + "()")
 
-    try:
-        return function(*args, **kwargs)
-    except Exception as e:
-        env.errors.append(e)
-        return FluentNone(function_name + "()")
+    arg_spec = inspect_function_args(function, function_name, env.errors)
+    match, sanitized_args, sanitized_kwargs, errors = args_match(function_name, args, kwargs, arg_spec)
+    env.errors.extend(errors)
+    if match:
+        return function(*sanitized_args, **sanitized_kwargs)
+    return FluentNone(function_name + "()")
 
 
 @handle.register(FluentNumber)

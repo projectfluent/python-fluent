@@ -315,7 +315,7 @@ class VariantExpression(FTL.VariantExpression, BaseResolver):
 
         # TODO What to do if message is not a VariantList?
         # Need test at least.
-        assert isinstance(message, VariantList)
+        assert isinstance(message, VariantList), "Found unexpected {!r}".format(message)
 
         variant_name = self.key.name
         return message(env, variant_name)

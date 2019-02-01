@@ -8,6 +8,7 @@ fluent.runtime development version (unreleased)
   terms.
 * Refined error handling regarding function calls to be more tolerant of errors
   in FTL files, while silencing developer errors less.
+* Added ``CompilingFluentBundle`` implementation.
 
 fluent.runtime 0.1 (January 21, 2019)
 -------------------------------------

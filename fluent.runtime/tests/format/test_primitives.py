@@ -2,14 +2,16 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+import six
 
+from .. import all_fluent_bundle_implementations
 from ..utils import dedent_ftl
 
 
+@all_fluent_bundle_implementations
 class TestSimpleStringValue(unittest.TestCase):
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo               = Foo
             placeable-literal = { "Foo" } Bar
@@ -32,6 +34,7 @@ class TestSimpleStringValue(unittest.TestCase):
     def test_can_be_used_as_a_value(self):
         val, errs = self.ctx.format('foo', {})
         self.assertEqual(val, 'Foo')
+        self.assertEqual(type(val), six.text_type)
         self.assertEqual(len(errs), 0)
 
     def test_can_be_used_in_a_placeable(self):
@@ -65,9 +68,10 @@ class TestSimpleStringValue(unittest.TestCase):
         self.assertEqual(len(errs), 0)
 
 
+@all_fluent_bundle_implementations
 class TestComplexStringValue(unittest.TestCase):
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo               = Foo
             bar               = { foo }Bar
@@ -114,9 +118,10 @@ class TestComplexStringValue(unittest.TestCase):
         self.assertEqual(len(errs), 0)
 
 
+@all_fluent_bundle_implementations
 class TestNumbers(unittest.TestCase):
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             one           =  { 1 }
             one_point_two =  { 1.2 }

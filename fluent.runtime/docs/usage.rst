@@ -93,6 +93,19 @@ module or the start of your repl session:
 
     from __future__ import unicode_literals
 
+CompilingFluentBundle
+~~~~~~~~~~~~~~~~~~~~~
+
+In addition to the default ``FluentBundle`` implementation, there is also a high
+performance implementation that compilers to Python AST. You can use it just the same:
+
+.. code-block:: python
+
+   from fluent.runtime import CompilingFluentBundle as FluentBundle
+
+Be sure to check the notes on :doc:`implementations`, especially the security
+section.
+
 Numbers
 ~~~~~~~
 
@@ -225,5 +238,6 @@ Help with the above would be welcome!
 Other features and further information
 --------------------------------------
 
+* :doc:`implementations`
 * :doc:`functions`
 * :doc:`errors`

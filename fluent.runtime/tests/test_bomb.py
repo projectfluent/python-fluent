@@ -2,15 +2,20 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import InterpretingFluentBundle
 
 from .utils import dedent_ftl
 
 
+# Only InterpretingFluentBundle has protection, for compiler it is too much of
+# a (relative) performance hit and an increase in complexity to track this issue.
+
 class TestBillionLaughs(unittest.TestCase):
 
+    fluent_bundle_cls = InterpretingFluentBundle
+
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             lol0 = 01234567890123456789012345678901234567890123456789
             lol1 = {lol0}{lol0}{lol0}{lol0}{lol0}{lol0}{lol0}{lol0}{lol0}{lol0}

@@ -47,6 +47,13 @@ def ast_to_id(ast):
     return ast.id.name
 
 
+def attribute_ast_to_id(attribute, parent_ast):
+    """
+    Returns a string reference for an Attribute, given Attribute and parent Term or Message
+    """
+    return _make_attr_id(ast_to_id(parent_ast), attribute.id.name)
+
+
 if sys.version_info < (3,):
     # Python 3 has builtin str.isidentifier method, for Python 2 we refer to
     # https://docs.python.org/2/reference/lexical_analysis.html#identifiers

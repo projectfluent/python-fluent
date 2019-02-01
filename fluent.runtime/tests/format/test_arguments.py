@@ -2,14 +2,16 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime.errors import FluentReferenceError
 
+from .. import all_fluent_bundle_implementations
 from ..utils import dedent_ftl
 
 
+@all_fluent_bundle_implementations
 class TestNumbersInValues(unittest.TestCase):
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo = Foo { $num }
             bar = { foo }
@@ -41,9 +43,10 @@ class TestNumbersInValues(unittest.TestCase):
         self.assertEqual(len(errs), 0)
 
 
+@all_fluent_bundle_implementations
 class TestStrings(unittest.TestCase):
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             foo = { $arg }
         """))
@@ -52,3 +55,22 @@ class TestStrings(unittest.TestCase):
         val, errs = self.ctx.format('foo', {'arg': 'Argument'})
         self.assertEqual(val, 'Argument')
         self.assertEqual(len(errs), 0)
+
+
+@all_fluent_bundle_implementations
+class TestMissing(unittest.TestCase):
+    def setUp(self):
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
+        self.ctx.add_messages(dedent_ftl("""
+            foo = { $arg }
+        """))
+
+    def test_missing_with_empty_args_dict(self):
+        val, errs = self.ctx.format('foo', {})
+        self.assertEqual(val, 'arg')
+        self.assertEqual(errs, [FluentReferenceError('Unknown external: arg')])
+
+    def test_missing_with_no_args_dict(self):
+        val, errs = self.ctx.format('foo')
+        self.assertEqual(val, 'arg')
+        self.assertEqual(errs, [FluentReferenceError('Unknown external: arg')])

@@ -2,16 +2,18 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
 from fluent.runtime.errors import FluentFormatError, FluentReferenceError
 
+from .. import all_fluent_bundle_implementations
 from ..utils import dedent_ftl
 
 
+@all_fluent_bundle_implementations
 class TestParameterizedTerms(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
+
         self.ctx.add_messages(dedent_ftl("""
             -thing = { $article ->
                   *[definite] the thing
@@ -68,10 +70,48 @@ class TestParameterizedTerms(unittest.TestCase):
         self.assertEqual(errs, [FluentReferenceError('Unknown term: -missing')])
 
 
+@all_fluent_bundle_implementations
+class TestParameterizedTermsWithNumbers(unittest.TestCase):
+
+    def setUp(self):
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
+        self.ctx.add_messages(dedent_ftl("""
+            -thing = { $count ->
+                  *[1] one thing
+                   [2] two things
+            }
+            thing-no-arg = { -thing }
+            thing-no-arg-alt = { -thing() }
+            thing-one = { -thing(count: 1) }
+            thing-two = { -thing(count: 2) }
+        """))
+
+    def test_argument_omitted(self):
+        val, errs = self.ctx.format('thing-no-arg', {})
+        self.assertEqual(val, 'one thing')
+        self.assertEqual(errs, [])
+
+    def test_argument_omitted_2(self):
+        val, errs = self.ctx.format('thing-no-arg-alt', {})
+        self.assertEqual(val, 'one thing')
+        self.assertEqual(errs, [])
+
+    def test_thing_one(self):
+        val, errs = self.ctx.format('thing-one', {})
+        self.assertEqual(val, 'one thing')
+        self.assertEqual(errs, [])
+
+    def test_thing_two(self):
+        val, errs = self.ctx.format('thing-two', {})
+        self.assertEqual(val, 'two things')
+        self.assertEqual(errs, [])
+
+
+@all_fluent_bundle_implementations
 class TestParameterizedTermAttributes(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             -brand = Cool Thing
                 .status = { $version ->
@@ -107,10 +147,11 @@ class TestParameterizedTermAttributes(unittest.TestCase):
         self.assertEqual(errs, [FluentReferenceError('Unknown attribute: -other.missing')])
 
 
+@all_fluent_bundle_implementations
 class TestNestedParameterizedTerms(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             -thing = { $article ->
                 *[definite] { $first-letter ->
@@ -155,10 +196,50 @@ class TestNestedParameterizedTerms(unittest.TestCase):
         self.assertEqual(errs, [])
 
 
+@all_fluent_bundle_implementations
+class TestTermsWithTermReferences(unittest.TestCase):
+
+    def setUp(self):
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
+        self.ctx.add_messages(dedent_ftl("""
+            -thing = { $article ->
+                  *[definite]    the { -other }
+                   [indefinite]  a { -other }
+                 }
+
+            -other = thing
+
+            thing-with-arg = { -thing(article: "indefinite") }
+            thing-fallback = { -thing(article: "somethingelse") }
+
+            -bad-term = { $article ->
+                 *[all]   Something wrong { -missing }
+             }
+
+            uses-bad-term = { -bad-term }
+        """))
+
+    def test_with_argument(self):
+        val, errs = self.ctx.format('thing-with-arg', {})
+        self.assertEqual(val, 'a thing')
+        self.assertEqual(errs, [])
+
+    def test_fallback(self):
+        val, errs = self.ctx.format('thing-fallback', {})
+        self.assertEqual(val, 'the thing')
+        self.assertEqual(errs, [])
+
+    def test_term_with_missing_term_reference(self):
+        val, errs = self.ctx.format('uses-bad-term', {})
+        self.assertEqual(val, 'Something wrong -missing')
+        self.assertEqual(errs, [FluentReferenceError('Unknown term: -missing',)])
+
+
+@all_fluent_bundle_implementations
 class TestTermsCalledFromTerms(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             -foo = {$a} {$b}
             -bar = {-foo(b: 2)}
@@ -178,10 +259,11 @@ class TestTermsCalledFromTerms(unittest.TestCase):
         self.assertEqual(errs, [])
 
 
+@all_fluent_bundle_implementations
 class TestMessagesCalledFromTerms(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx = self.fluent_bundle_cls(['en-US'], use_isolating=False)
         self.ctx.add_messages(dedent_ftl("""
             msg = Msg is {$arg}
             -foo = {msg}

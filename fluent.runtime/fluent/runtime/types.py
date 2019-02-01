@@ -60,6 +60,9 @@ class FluentNone(FluentType):
     def format(self, locale):
         return self.name or "???"
 
+    def __repr__(self):
+        return '<FluentNone({!r})>'.format(self.name)
+
 
 @attr.s
 class NumberFormatOptions(object):

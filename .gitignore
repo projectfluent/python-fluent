@@ -1,5 +1,11 @@
 .tox
 *.pyc
 .eggs/
+*.pot
+*.mo
+*.po
+.pytest_cache
 *.egg-info/
 _build
+.benchmarks
+.hypothesis

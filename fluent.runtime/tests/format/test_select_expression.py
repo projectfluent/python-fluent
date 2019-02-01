@@ -173,3 +173,45 @@ class TestSelectExpressionWithPluralCategories(unittest.TestCase):
         val, errs = self.ctx.format('qux', {'num': 1.0})
         self.assertEqual(val, "A")
         self.assertEqual(len(errs), 0)
+
+
+class TestSelectExpressionWithTerms(unittest.TestCase):
+
+    def setUp(self):
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx.add_messages(dedent_ftl("""
+            -my-term = term
+                 .attr = termattribute
+
+            ref-term-attr = { -my-term.attr ->
+                    [termattribute]   Term Attribute
+                   *[other]           Other
+            }
+
+            ref-term-attr-other = { -my-term.attr ->
+                    [x]      Term Attribute
+                   *[other]  Other
+            }
+
+            ref-term-attr-missing = { -my-term.missing ->
+                    [x]      Term Attribute
+                   *[other]  Other
+            }
+        """))
+
+    def test_ref_term_attribute(self):
+        val, errs = self.ctx.format('ref-term-attr')
+        self.assertEqual(val, "Term Attribute")
+        self.assertEqual(len(errs), 0)
+
+    def test_ref_term_attribute_fallback(self):
+        val, errs = self.ctx.format('ref-term-attr-other')
+        self.assertEqual(val, "Other")
+        self.assertEqual(len(errs), 0)
+
+    def test_ref_term_attribute_missing(self):
+        val, errs = self.ctx.format('ref-term-attr-missing')
+        self.assertEqual(val, "Other")
+        self.assertEqual(len(errs), 1)
+        self.assertEqual(errs,
+                         [FluentReferenceError('Unknown attribute: -my-term.missing')])

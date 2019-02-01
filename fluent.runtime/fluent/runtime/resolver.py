@@ -1,20 +1,19 @@
 from __future__ import absolute_import, unicode_literals
 
+import contextlib
 from datetime import date, datetime
 from decimal import Decimal
 
 import attr
 import six
 
-from fluent.syntax.ast import (AttributeExpression, CallExpression, Message,
-                               MessageReference, NumberLiteral, Pattern,
-                               Placeable, SelectExpression, StringLiteral, Term,
-                               TermReference, TextElement, VariableReference,
-                               VariantExpression, VariantList, Identifier)
+from fluent.syntax.ast import (Attribute, AttributeExpression, CallExpression, Identifier, Message, MessageReference,
+                               NumberLiteral, Pattern, Placeable, SelectExpression, StringLiteral, Term, TermReference,
+                               TextElement, VariableReference, VariantExpression, VariantList)
 
-from .errors import FluentCyclicReferenceError, FluentReferenceError
+from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
 from .types import FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
-from .utils import numeric_to_native
+from .utils import numeric_to_native, reference_to_id, unknown_reference_error_obj
 
 try:
     from functools import singledispatch
@@ -38,12 +37,46 @@ PDI = "\u2069"
 
 
 @attr.s
+class CurrentEnvironment(object):
+    # The parts of ResolverEnvironment that we want to mutate (and restore)
+    # temporarily for some parts of a call chain.
+
+    # The values of attributes here must not be mutated, they must only be
+    # swapped out for different objects using `modified` (see below).
+
+    # For Messages, VariableReference nodes are interpreted as external args,
+    # but for Terms they are the values explicitly passed using CallExpression
+    # syntax. So we have to be able to change 'args' for this purpose.
+    args = attr.ib()
+    # This controls whether we need to report an error if a VariableReference
+    # refers to an arg that is not present in the args dict.
+    error_for_missing_arg = attr.ib(default=True)
+
+
+@attr.s
 class ResolverEnvironment(object):
     context = attr.ib()
-    args = attr.ib()
     errors = attr.ib()
     dirty = attr.ib(factory=set)
     part_count = attr.ib(default=0)
+    current = attr.ib(factory=CurrentEnvironment)
+
+    @contextlib.contextmanager
+    def modified(self, **replacements):
+        """
+        Context manager that modifies the 'current' attribute of the
+        environment, restoring the old data at the end.
+        """
+        # CurrentEnvironment only has args that we never mutate, so the shallow
+        # copy returned by attr.evolve is fine (at least for now).
+        old_current = self.current
+        self.current = attr.evolve(old_current, **replacements)
+        yield self
+        self.current = old_current
+
+    def modified_for_term_reference(self, args=None):
+        return self.modified(args=args if args is not None else {},
+                             error_for_missing_arg=False)
 
 
 def resolve(context, message, args):
@@ -55,7 +88,7 @@ def resolve(context, message, args):
     """
     errors = []
     env = ResolverEnvironment(context=context,
-                              args=args,
+                              current=CurrentEnvironment(args=args),
                               errors=errors)
     return fully_resolve(message, env), errors
 
@@ -71,8 +104,8 @@ def fully_resolve(expr, env):
     retval = handle(expr, env)
     if isinstance(retval, text_type):
         return retval
-    else:
-        return fully_resolve(retval, env)
+
+    return fully_resolve(retval, env)
 
 
 @singledispatch
@@ -156,33 +189,38 @@ def handle_number_expression(number_expression, env):
 
 @handle.register(MessageReference)
 def handle_message_reference(message_reference, env):
-    name = message_reference.id.name
-    return handle(lookup_reference(name, env), env)
+    return handle(lookup_reference(message_reference, env), env)
 
 
 @handle.register(TermReference)
 def handle_term_reference(term_reference, env):
-    name = term_reference.id.name
-    return handle(lookup_reference(name, env), env)
+    with env.modified_for_term_reference():
+        return handle(lookup_reference(term_reference, env), env)
 
 
-def lookup_reference(name, env):
-    message = None
+def lookup_reference(ref, env):
+    """
+    Given a MessageReference, TermReference or AttributeExpression, returns the
+    AST node, or FluentNone if not found, including fallback logic
+    """
+    ref_id = reference_to_id(ref)
+
     try:
-        message = env.context._messages_and_terms[name]
+        return env.context._messages_and_terms[ref_id]
     except LookupError:
-        if name.startswith("-"):
-            env.errors.append(
-                FluentReferenceError("Unknown term: {0}"
-                                     .format(name)))
-        else:
-            env.errors.append(
-                FluentReferenceError("Unknown message: {0}"
-                                     .format(name)))
-    if message is None:
-        message = FluentNone(name)
+        env.errors.append(unknown_reference_error_obj(ref_id))
 
-    return message
+        if isinstance(ref, AttributeExpression):
+            # Fallback
+            parent_id = reference_to_id(ref.ref)
+            try:
+                return env.context._messages_and_terms[parent_id]
+            except LookupError:
+                # Don't add error here, because we already added error for the
+                # actual thing we were looking for.
+                pass
+
+    return FluentNone(ref_id)
 
 
 @handle.register(FluentNone)
@@ -200,10 +238,11 @@ def handle_none(none, env):
 def handle_variable_reference(argument, env):
     name = argument.id.name
     try:
-        arg_val = env.args[name]
+        arg_val = env.current.args[name]
     except LookupError:
-        env.errors.append(
-            FluentReferenceError("Unknown external: {0}".format(name)))
+        if env.current.error_for_missing_arg:
+            env.errors.append(
+                FluentReferenceError("Unknown external: {0}".format(name)))
         return FluentNone(name)
 
     if isinstance(arg_val,
@@ -217,21 +256,13 @@ def handle_variable_reference(argument, env):
 
 
 @handle.register(AttributeExpression)
-def handle_attribute_expression(attribute, env):
-    parent_id = attribute.ref.id.name
-    attr_name = attribute.name.name
-    message = lookup_reference(parent_id, env)
-    if isinstance(message, FluentNone):
-        return message
+def handle_attribute_expression(attribute_ref, env):
+    return handle(lookup_reference(attribute_ref, env), env)
 
-    for message_attr in message.attributes:
-        if message_attr.id.name == attr_name:
-            return handle(message_attr.value, env)
 
-    env.errors.append(
-        FluentReferenceError("Unknown attribute: {0}.{1}"
-                             .format(parent_id, attr_name)))
-    return handle(message, env)
+@handle.register(Attribute)
+def handle_attribute(attribute, env):
+    return handle(attribute.value, env)
 
 
 @handle.register(VariantList)
@@ -260,8 +291,8 @@ def select_from_variant_list(variant_list, env, key):
         found = default
     if found is None:
         return FluentNone()
-    else:
-        return handle(found.value, env)
+
+    return handle(found.value, env)
 
 
 @handle.register(SelectExpression)
@@ -287,8 +318,7 @@ def select_from_select_expression(expression, env, key):
         found = default
     if found is None:
         return FluentNone()
-    else:
-        return handle(found.value, env)
+    return handle(found.value, env)
 
 
 def is_number(val):
@@ -304,9 +334,8 @@ def match(val1, val2, env):
         if not is_number(val2):
             # Could be plural rule match
             return env.context._plural_form(val1) == val2
-    else:
-        if is_number(val2):
-            return match(val2, val1, env)
+    elif is_number(val2):
+        return match(val2, val1, env)
 
     return val1 == val2
 
@@ -318,7 +347,7 @@ def handle_indentifier(identifier, env):
 
 @handle.register(VariantExpression)
 def handle_variant_expression(expression, env):
-    message = lookup_reference(expression.ref.id.name, env)
+    message = lookup_reference(expression.ref, env)
     if isinstance(message, FluentNone):
         return message
 
@@ -334,7 +363,19 @@ def handle_variant_expression(expression, env):
 
 @handle.register(CallExpression)
 def handle_call_expression(expression, env):
-    function_name = expression.callee.name
+    args = [handle(arg, env) for arg in expression.positional]
+    kwargs = {kwarg.name.name: handle(kwarg.value, env) for kwarg in expression.named}
+
+    if isinstance(expression.callee, (TermReference, AttributeExpression)):
+        term = lookup_reference(expression.callee, env)
+        if args:
+            env.errors.append(FluentFormatError("Ignored positional arguments passed to term '{0}'"
+                                                .format(reference_to_id(expression.callee))))
+        with env.modified_for_term_reference(args=kwargs):
+            return handle(term, env)
+
+    # builtin or custom function call
+    function_name = expression.callee.id.name
     try:
         function = env.context._functions[function_name]
     except LookupError:
@@ -342,8 +383,6 @@ def handle_call_expression(expression, env):
                                                .format(function_name)))
         return FluentNone(function_name + "()")
 
-    args = [handle(arg, env) for arg in expression.positional]
-    kwargs = {kwarg.name.name: handle(kwarg.value, env) for kwarg in expression.named}
     try:
         return function(*args, **kwargs)
     except Exception as e:

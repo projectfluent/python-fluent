@@ -98,3 +98,15 @@ class TestFluentBundle(unittest.TestCase):
         self.assertRaises(LookupError,
                           self.ctx.format,
                           '-foo')
+        self.assertRaises(LookupError,
+                          self.ctx.format,
+                          'foo')
+
+    def test_message_and_term_separate(self):
+        self.ctx.add_messages(dedent_ftl("""
+            foo = Refers to { -foo }
+            -foo = Foo
+        """))
+        val, errs = self.ctx.format('foo', {})
+        self.assertEqual(val, 'Refers to \u2068Foo\u2069')
+        self.assertEqual(errs, [])

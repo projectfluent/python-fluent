@@ -9,6 +9,7 @@ from fluent.syntax.ast import Message, Term
 
 from .builtins import BUILTINS
 from .resolver import resolve
+from .utils import ATTRIBUTE_SEPARATOR, TERM_SIGIL, add_message_and_attrs_to_store, ast_to_id
 
 
 class FluentBundle(object):
@@ -41,32 +42,24 @@ class FluentBundle(object):
         # TODO - warn/error about duplicates
         for item in resource.body:
             if isinstance(item, (Message, Term)):
-                if item.id.name not in self._messages_and_terms:
-                    self._messages_and_terms[item.id.name] = item
+                full_id = ast_to_id(item)
+                if full_id not in self._messages_and_terms:
+                    # We add attributes to the store to enable faster looker
+                    # later, and more direct code in some instances.
+                    add_message_and_attrs_to_store(self._messages_and_terms, full_id, item)
 
     def has_message(self, message_id):
-        if message_id.startswith('-'):
+        if message_id.startswith(TERM_SIGIL) or ATTRIBUTE_SEPARATOR in message_id:
             return False
         return message_id in self._messages_and_terms
 
     def format(self, message_id, args=None):
-        message = self._get_message(message_id)
+        if message_id.startswith(TERM_SIGIL):
+            raise LookupError(message_id)
+        message = self._messages_and_terms[message_id]
         if args is None:
             args = {}
         return resolve(self, message, args)
-
-    def _get_message(self, message_id):
-        if message_id.startswith('-'):
-            raise LookupError(message_id)
-        if '.' in message_id:
-            name, attr_name = message_id.split('.', 1)
-            msg = self._messages_and_terms[name]
-            for attribute in msg.attributes:
-                if attribute.id.name == attr_name:
-                    return attribute.value
-            raise LookupError(message_id)
-        else:
-            return self._messages_and_terms[message_id]
 
     def _get_babel_locale(self):
         for l in self.locales:

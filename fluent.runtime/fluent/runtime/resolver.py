@@ -7,10 +7,7 @@ from decimal import Decimal
 import attr
 import six
 
-from fluent.syntax.ast import (Attribute, AttributeExpression, CallExpression, Identifier, Message, MessageReference,
-                               NumberLiteral, Pattern, Placeable, SelectExpression, StringLiteral, Term, TermReference,
-                               TextElement, VariableReference, VariantExpression, VariantList)
-
+from fluent.syntax import ast as FTL
 from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
 from .types import FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
 from .utils import numeric_to_native, reference_to_id, unknown_reference_error_obj
@@ -114,88 +111,76 @@ def handle(expr, env):
                               .format(type(expr).__name__))
 
 
-@handle.register(Message)
-def handle_message(message, env):
-    return handle(message.value, env)
+class BaseResolver(object):
+    def __call__(self, env):
+        raise NotImplementedError
 
 
-@handle.register(Term)
-def handle_term(term, env):
-    return handle(term.value, env)
+class Literal(BaseResolver):
+    pass
 
 
-@handle.register(Pattern)
-def handle_pattern(pattern, env):
-    if pattern in env.dirty:
-        env.errors.append(FluentCyclicReferenceError("Cyclic reference"))
-        return FluentNone()
-
-    env.dirty.add(pattern)
-
-    parts = []
-    use_isolating = env.context._use_isolating and len(pattern.elements) > 1
-
-    for element in pattern.elements:
-        env.part_count += 1
-        if env.part_count > MAX_PARTS:
-            if env.part_count == MAX_PARTS + 1:
-                # Only append an error once.
-                env.errors.append(ValueError("Too many parts in message (> {0}), "
-                                             "aborting.".format(MAX_PARTS)))
-                parts.append(fully_resolve(FluentNone(), env))
-            break
-
-        if isinstance(element, TextElement):
-            # shortcut deliberately omits the FSI/PDI chars here.
-            parts.append(element.value)
-            continue
-
-        part = fully_resolve(element, env)
-        if use_isolating:
-            parts.append(FSI)
-        if len(part) > MAX_PART_LENGTH:
-            env.errors.append(ValueError(
-                "Too many characters in part, "
-                "({0}, max allowed is {1})".format(len(part),
-                                                   MAX_PART_LENGTH)))
-            part = part[:MAX_PART_LENGTH]
-        parts.append(part)
-        if use_isolating:
-            parts.append(PDI)
-    retval = "".join(parts)
-    env.dirty.remove(pattern)
-    return retval
+class Message(FTL.Message, BaseResolver):
+    def __call__(self, env):
+        return self.value(env)
 
 
-@handle.register(TextElement)
-def handle_text_element(text_element, env):
-    return text_element.value
+class Term(FTL.Term, BaseResolver):
+    def __call__(self, env):
+        return self.value(env)
 
 
-@handle.register(Placeable)
-def handle_placeable(placeable, env):
-    return handle(placeable.expression, env)
+class Pattern(FTL.Pattern, BaseResolver):
+    def __init__(self, *args, **kwargs):
+        super(Pattern, self).__init__(*args, **kwargs)
+        self.dirty = False
+
+    def __call__(self, env):
+        if self.dirty:
+            env.errors.append(FluentCyclicReferenceError("Cyclic reference"))
+            return FluentNone()
+        self.dirty = True
+        retval = ''.join(
+            element(env) for element in self.elements
+        )
+        self.dirty = False
+        return retval
 
 
-@handle.register(StringLiteral)
-def handle_string_expression(string_expression, env):
-    return string_expression.value
+class TextElement(FTL.TextElement, Literal):
+    def __call__(self, env):
+        return self.value
 
 
-@handle.register(NumberLiteral)
-def handle_number_expression(number_expression, env):
-    return numeric_to_native(number_expression.value)
+class Placeable(FTL.Placeable, BaseResolver):
+    def __call__(self, env):
+        return self.expression(env)
 
 
-@handle.register(MessageReference)
-def handle_message_reference(message_reference, env):
-    return handle(lookup_reference(message_reference, env), env)
+class StringLiteral(FTL.StringLiteral, Literal):
+    def __call__(self, env):
+        return self.value
 
 
-@handle.register(TermReference)
-def handle_term_reference(term_reference, env):
-    with env.modified_for_term_reference():
-        return handle(lookup_reference(term_reference, env), env)
+class NumberLiteral(FTL.NumberLiteral, Literal):
+    def __call__(self, env):
+        return self.value
+
+
+class MessageReference(FTL.MessageReference, BaseResolver):
+    def __call__(self, env):
+        return lookup_reference(self, env)(env)
+
+
+class TermReference(FTL.TermReference, BaseResolver):
+    def __call__(self, env):
+        with env.modified_for_term_reference():
+            return lookup_reference(self, env)(env)
+
+
+class FluentNoneResolver(FluentNone, BaseResolver):
+    def __call__(self, env):
+        return self.format(env.context._babel_locale)
 
 
 def lookup_reference(ref, env):
@@ -206,7 +191,7 @@ def lookup_reference(ref, env):
     ref_id = reference_to_id(ref)
 
     try:
-        return env.context._messages_and_terms[ref_id]
+        return env.context._compiler(env.context._messages_and_terms[ref_id])
     except LookupError:
         env.errors.append(unknown_reference_error_obj(ref_id))
 
@@ -214,111 +199,98 @@ def lookup_reference(ref, env):
             # Fallback
             parent_id = reference_to_id(ref.ref)
             try:
-                return env.context._messages_and_terms[parent_id]
+                return env.context._compiler(env.context._messages_and_terms[parent_id])
             except LookupError:
                 # Don't add error here, because we already added error for the
                 # actual thing we were looking for.
                 pass
 
-    return FluentNone(ref_id)
+    return FluentNoneResolver(ref_id)
 
 
-@handle.register(FluentNone)
-def handle_fluent_none(none, env):
-    return none.format(env.context._babel_locale)
+class VariableReference(FTL.VariableReference):
+    def __call__(self, env):
+        name = self.id.name
+        try:
+            arg_val = env.current.args[name]
+        except LookupError:
+            if env.current.error_for_missing_arg:
+                env.errors.append(
+                    FluentReferenceError("Unknown external: {0}".format(name)))
+            return FluentNoneResolver(name)
+
+        if isinstance(arg_val,
+                      (int, float, Decimal,
+                       date, datetime,
+                       text_type)):
+            return lambda env: arg_val
+        env.errors.append(TypeError("Unsupported external type: {0}, {1}"
+                                    .format(name, type(arg_val))))
+        return FluentNoneResolver(name)
 
 
-@handle.register(type(None))
-def handle_none(none, env):
-    # We raise the same error type here as when a message is completely missing.
-    raise LookupError("Message body not defined")
+class AttributeExpression(FTL.AttributeExpression, BaseResolver):
+    def __call__(self, env):
+        return lookup_reference(self, env)(env)
 
 
-@handle.register(VariableReference)
-def handle_variable_reference(argument, env):
-    name = argument.id.name
-    try:
-        arg_val = env.current.args[name]
-    except LookupError:
-        if env.current.error_for_missing_arg:
-            env.errors.append(
-                FluentReferenceError("Unknown external: {0}".format(name)))
-        return FluentNone(name)
-
-    if isinstance(arg_val,
-                  (int, float, Decimal,
-                   date, datetime,
-                   text_type)):
-        return arg_val
-    env.errors.append(TypeError("Unsupported external type: {0}, {1}"
-                                .format(name, type(arg_val))))
-    return FluentNone(name)
+class Attribute(FTL.Attribute, BaseResolver):
+    def __call__(self, env):
+        return self.value(env)
 
 
-@handle.register(AttributeExpression)
-def handle_attribute_expression(attribute_ref, env):
-    return handle(lookup_reference(attribute_ref, env), env)
+class VariantListResolver(BaseResolver):
+    def select_from_variant_list(self, env, key):
+        found = None
+        for variant in self.variants:
+            if variant.default:
+                default = variant
+                if key is None:
+                    # We only want the default
+                    break
 
-
-@handle.register(Attribute)
-def handle_attribute(attribute, env):
-    return handle(attribute.value, env)
-
-
-@handle.register(VariantList)
-def handle_variant_list(variant_list, env):
-    return select_from_variant_list(variant_list, env, None)
-
-
-def select_from_variant_list(variant_list, env, key):
-    found = None
-    for variant in variant_list.variants:
-        if variant.default:
-            default = variant
-            if key is None:
-                # We only want the default
+            compare_value = variant.key(env)
+            if match(key, compare_value, env):
+                found = variant
                 break
 
-        compare_value = handle(variant.key, env)
-        if match(key, compare_value, env):
-            found = variant
-            break
+        if found is None:
+            if (key is not None and not isinstance(key, FluentNone)):
+                env.errors.append(FluentReferenceError("Unknown variant: {0}"
+                                                       .format(key)))
+            found = default
+        if found is None:
+            return FluentNoneResolver()
 
-    if found is None:
-        if (key is not None and not isinstance(key, FluentNone)):
-            env.errors.append(FluentReferenceError("Unknown variant: {0}"
-                                                   .format(key)))
-        found = default
-    if found is None:
-        return FluentNone()
-
-    return handle(found.value, env)
+        return found.value(env)
 
 
-@handle.register(SelectExpression)
-def handle_select_expression(expression, env):
-    key = handle(expression.selector, env)
-    return select_from_select_expression(expression, env,
-                                         key=key)
+class VariantList(FTL.VariantList, VariantListResolver):
+    def __call__(self, env):
+        return self.select_from_variant_list(env, None)
 
 
-def select_from_select_expression(expression, env, key):
-    default = None
-    found = None
-    for variant in expression.variants:
-        if variant.default:
-            default = variant
+class SelectExpression(FTL.SelectExpression, BaseResolver):
+    def __call__(self, env):
+        key = self.selector(env)
+        return self.select_from_select_expression(env, key=key)
 
-        compare_value = handle(variant.key, env)
-        if match(key, compare_value, env):
-            found = variant
-            break
+    def select_from_select_expression(self, env, key):
+        default = None
+        found = None
+        for variant in self.variants:
+            if variant.default:
+                default = variant
 
-    if found is None:
-        found = default
-    if found is None:
-        return FluentNone()
-    return handle(found.value, env)
+            if match(key, variant.key(env), env):
+                found = variant
+                break
+
+        if found is None:
+            found = default
+        if found is None:
+            return FluentNoneResolver()
+        return found.value(env)
 
 
 def is_number(val):
@@ -340,54 +312,57 @@ def match(val1, val2, env):
     return val1 == val2
 
 
-@handle.register(Identifier)
-def handle_indentifier(identifier, env):
-    return identifier.name
+class Variant(FTL.Variant, BaseResolver):
+    def __call__(self, env):
+      return self.value(env)
 
 
-@handle.register(VariantExpression)
-def handle_variant_expression(expression, env):
-    message = lookup_reference(expression.ref, env)
-    if isinstance(message, FluentNone):
-        return message
-
-    # TODO What to do if message is not a VariantList?
-    # Need test at least.
-    assert isinstance(message.value, VariantList)
-
-    variant_name = expression.key.name
-    return select_from_variant_list(message.value,
-                                    env,
-                                    variant_name)
+class Identifier(FTL.Identifier, BaseResolver):
+    def __call__(self, env):
+        return self.name
 
 
-@handle.register(CallExpression)
-def handle_call_expression(expression, env):
-    args = [handle(arg, env) for arg in expression.positional]
-    kwargs = {kwarg.name.name: handle(kwarg.value, env) for kwarg in expression.named}
+class VariantExpression(FTL.VariantExpression, BaseResolver):
+    def __call__(self, env):
+        message = lookup_reference(self.ref, env)
+        if isinstance(message, FluentNone):
+            return FluentNoneResolver(FluentNone.name)
 
-    if isinstance(expression.callee, (TermReference, AttributeExpression)):
-        term = lookup_reference(expression.callee, env)
-        if args:
-            env.errors.append(FluentFormatError("Ignored positional arguments passed to term '{0}'"
-                                                .format(reference_to_id(expression.callee))))
-        with env.modified_for_term_reference(args=kwargs):
-            return handle(term, env)
+        # TODO What to do if message is not a VariantList?
+        # Need test at least.
+        assert isinstance(message.value, VariantList)
 
-    # builtin or custom function call
-    function_name = expression.callee.id.name
-    try:
-        function = env.context._functions[function_name]
-    except LookupError:
-        env.errors.append(FluentReferenceError("Unknown function: {0}"
-                                               .format(function_name)))
-        return FluentNone(function_name + "()")
+        variant_name = self.key.name
+        return message.value.select_from_variant_list(env, variant_name)
 
-    try:
-        return function(*args, **kwargs)
-    except Exception as e:
-        env.errors.append(e)
-        return FluentNone(function_name + "()")
+
+class CallExpression(FTL.CallExpression, BaseResolver):
+    def __call__(self, env):
+        args = [arg(env) for arg in self.positional]
+        kwargs = {kwarg.name.name: kwarg.value(env) for kwarg in self.named}
+
+        if isinstance(self.callee, (TermReference, AttributeExpression)):
+            term = lookup_reference(self.callee, env)
+            if args:
+                env.errors.append(FluentFormatError("Ignored positional arguments passed to term '{0}'"
+                                                    .format(reference_to_id(self.callee))))
+            with env.modified_for_term_reference(args=kwargs):
+                return term(env)
+
+        # builtin or custom function call
+        function_name = self.callee.id.name
+        try:
+            function = env.context._functions[function_name]
+        except LookupError:
+            env.errors.append(FluentReferenceError("Unknown function: {0}"
+                                                   .format(function_name)))
+            return FluentNone(function_name + "()")
+
+        try:
+            return function(*args, **kwargs)
+        except Exception as e:
+            env.errors.append(e)
+            return FluentNoneResolver(function_name + "()")
 
 
 @handle.register(FluentNumber)

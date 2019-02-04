@@ -8,7 +8,8 @@ from fluent.syntax import FluentParser
 from fluent.syntax.ast import Message, Term
 
 from .builtins import BUILTINS
-from .resolver import resolve
+from .prepare import Compiler
+from .resolver import ResolverEnvironment, CurrentEnvironment
 from .utils import ATTRIBUTE_SEPARATOR, TERM_SIGIL, add_message_and_attrs_to_store, ast_to_id
 
 
@@ -33,6 +34,8 @@ class FluentBundle(object):
         self._functions = _functions
         self._use_isolating = use_isolating
         self._messages_and_terms = {}
+        self._compiled = {}
+        self._compiler = Compiler()
         self._babel_locale = self._get_babel_locale()
         self._plural_form = babel.plural.to_python(self._babel_locale.plural_form)
 
@@ -56,10 +59,17 @@ class FluentBundle(object):
     def format(self, message_id, args=None):
         if message_id.startswith(TERM_SIGIL):
             raise LookupError(message_id)
-        message = self._messages_and_terms[message_id]
         if args is None:
             args = {}
-        return resolve(self, message, args)
+        if message_id not in self._compiled:
+            message = self._messages_and_terms[message_id]
+            self._compiled[message_id] = self._compiler(message.value)
+        resolve = self._compiled[message_id]
+        errors = []
+        env = ResolverEnvironment(context=self,
+                                  current=CurrentEnvironment(args=args),
+                                  errors=errors)
+        return [resolve(env), errors]
 
     def _get_babel_locale(self):
         for l in self.locales:

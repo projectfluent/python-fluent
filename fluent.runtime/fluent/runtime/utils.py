@@ -31,18 +31,6 @@ def add_message_and_attrs_to_store(store, ref_id, item, is_parent=True):
                                            is_parent=False)
 
 
-def numeric_to_native(val):
-    """
-    Given a numeric string (as defined by fluent spec),
-    return an int or float
-    """
-    # val matches this EBNF:
-    #  '-'? [0-9]+ ('.' [0-9]+)?
-    if '.' in val:
-        return float(val)
-    return int(val)
-
-
 def native_to_fluent(val):
     """
     Convert a python type to a Fluent Type.
@@ -59,6 +47,7 @@ def native_to_fluent(val):
     if isinstance(val, date):
         return FluentDate.from_date(val)
     return val
+
 
 def reference_to_id(ref):
     """

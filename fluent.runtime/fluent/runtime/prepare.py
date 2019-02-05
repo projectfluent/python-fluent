@@ -4,8 +4,7 @@ from . import resolver
 
 
 class Compiler(object):
-    def __init__(self, use_isolating=False, bundle=None):
-        self.bundle = None
+    def __init__(self, use_isolating=False):
         self.use_isolating = use_isolating
 
     def __call__(self, item):

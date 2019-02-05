@@ -58,8 +58,13 @@ class FluentBundle(object):
 
     def lookup(self, full_id):
         if full_id not in self._compiled:
-            message = self._messages_and_terms[full_id]
-            self._compiled[full_id] = self._compiler(message.value)
+            entry_id = full_id.split(ATTRIBUTE_SEPARATOR, 1)[0]
+            entry = self._messages_and_terms[entry_id]
+            compiled = self._compiler(entry)
+            if compiled.value is not None:
+                self._compiled[entry_id] = compiled.value
+            for attr in compiled.attributes:
+                self._compiled[ATTRIBUTE_SEPARATOR.join([entry_id, attr.id.name])] = attr.value
         return self._compiled[full_id]
 
     def format(self, message_id, args=None):

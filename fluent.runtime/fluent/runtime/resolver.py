@@ -226,10 +226,10 @@ class VariableReference(FTL.VariableReference):
                       (int, float, Decimal,
                        date, datetime,
                        text_type)):
-            return lambda env: arg_val
+            return arg_val
         env.errors.append(TypeError("Unsupported external type: {0}, {1}"
                                     .format(name, type(arg_val))))
-        return FluentNoneResolver(name)
+        return FluentNone(name)
 
 
 class AttributeExpression(FTL.AttributeExpression, BaseResolver):

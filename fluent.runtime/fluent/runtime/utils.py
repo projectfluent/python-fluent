@@ -54,10 +54,10 @@ def native_to_fluent(val):
     if isinstance(val, Decimal):
         return FluentDecimal(val)
 
+    if isinstance(val, datetime):
+        return FluentDateTime.from_date_time(val)
     if isinstance(val, date):
         return FluentDate.from_date(val)
-    if isinstance(val, datetime):
-        return FluentDateTime.from_date(val)
     return val
 
 def reference_to_id(ref):

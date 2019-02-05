@@ -12,12 +12,6 @@ from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferen
 from .types import FluentType, FluentDateType, FluentNone, FluentNumber, FluentInt, FluentFloat, fluent_date, fluent_number
 from .utils import numeric_to_native, reference_to_id, unknown_reference_error_obj
 
-try:
-    from functools import singledispatch
-except ImportError:
-    # Python < 3.4
-    from singledispatch import singledispatch
-
 
 text_type = six.text_type
 
@@ -75,41 +69,6 @@ class ResolverEnvironment(object):
                              error_for_missing_arg=False)
 
 
-def resolve(context, message, args):
-    """
-    Given a FluentBundle, a Message instance and some arguments,
-    resolve the message to a string.
-
-    This is the normal entry point for this module.
-    """
-    errors = []
-    env = ResolverEnvironment(context=context,
-                              current=CurrentEnvironment(args=args),
-                              errors=errors)
-    return fully_resolve(message, env), errors
-
-
-def fully_resolve(expr, env):
-    """
-    Fully resolve an expression to a string
-    """
-    # This differs from 'handle' in that 'handle' will often return non-string
-    # objects, even if a string could have been returned, to allow for further
-    # handling of that object e.g. attributes of messages. fully_resolve is
-    # only used when we must have a string.
-    retval = handle(expr, env)
-    if isinstance(retval, text_type):
-        return retval
-
-    return fully_resolve(retval, env)
-
-
-@singledispatch
-def handle(expr, env):
-    raise NotImplementedError("Cannot handle object of type {0}"
-                              .format(type(expr).__name__))
-
-
 class BaseResolver(object):
     def __call__(self, env):
         raise NotImplementedError
@@ -120,13 +79,11 @@ class Literal(BaseResolver):
 
 
 class Message(FTL.Message, BaseResolver):
-    def __call__(self, env):
-        return self.value(env)
+    pass
 
 
 class Term(FTL.Term, BaseResolver):
-    def __call__(self, env):
-        return self.value(env)
+    pass
 
 
 class Pattern(FTL.Pattern, BaseResolver):
@@ -262,8 +219,7 @@ class AttributeExpression(FTL.AttributeExpression, BaseResolver):
 
 
 class Attribute(FTL.Attribute, BaseResolver):
-    def __call__(self, env):
-        return self.value(env)
+    pass
 
 
 class VariantListResolver(BaseResolver):
@@ -315,8 +271,6 @@ class SelectExpression(FTL.SelectExpression, BaseResolver):
 
         if found is None:
             found = default
-        if found is None:
-            return FluentNoneResolver()
         return found.value(env)
 
 
@@ -340,8 +294,7 @@ def match(val1, val2, env):
 
 
 class Variant(FTL.Variant, BaseResolver):
-    def __call__(self, env):
-      return self.value(env)
+    pass
 
 
 class Identifier(FTL.Identifier, BaseResolver):
@@ -352,8 +305,6 @@ class Identifier(FTL.Identifier, BaseResolver):
 class VariantExpression(FTL.VariantExpression, BaseResolver):
     def __call__(self, env):
         message = lookup_reference(self.ref, env)
-        if isinstance(message, FluentNone):
-            return FluentNoneResolver(FluentNone.name)
 
         # TODO What to do if message is not a VariantList?
         # Need test at least.
@@ -393,40 +344,4 @@ class CallExpression(FTL.CallExpression, BaseResolver):
 
 
 class NamedArgument(FTL.NamedArgument, BaseResolver):
-    def __call__(self, env):
-      return self.value(env)
-
-
-@handle.register(FluentNumber)
-def handle_fluent_number(number, env):
-    return number.format(env.context._babel_locale)
-
-
-@handle.register(int)
-def handle_int(integer, env):
-    return fluent_number(integer).format(env.context._babel_locale)
-
-
-@handle.register(float)
-def handle_float(f, env):
-    return fluent_number(f).format(env.context._babel_locale)
-
-
-@handle.register(Decimal)
-def handle_decimal(d, env):
-    return fluent_number(d).format(env.context._babel_locale)
-
-
-@handle.register(FluentDateType)
-def handle_fluent_date_type(d, env):
-    return d.format(env.context._babel_locale)
-
-
-@handle.register(date)
-def handle_date(d, env):
-    return fluent_date(d).format(env.context._babel_locale)
-
-
-@handle.register(datetime)
-def handle_datetime(d, env):
-    return fluent_date(d).format(env.context._babel_locale)
+    pass

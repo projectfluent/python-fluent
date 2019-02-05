@@ -2,12 +2,6 @@
 from setuptools import setup
 import sys
 
-if sys.version_info < (3, 4):
-    extra_requires = ['singledispatch>=3.4']
-else:
-    # functools.singledispatch is in stdlib from Python 3.4 onwards.
-    extra_requires = []
-
 setup(name='fluent.runtime',
       version='0.1',
       description='Localization library for expressive translations.',
@@ -30,7 +24,7 @@ setup(name='fluent.runtime',
           'attrs',
           'babel',
           'pytz',
-      ] + extra_requires,
+      ],
       tests_require=['six'],
       test_suite='tests'
       )

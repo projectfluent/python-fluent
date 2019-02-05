@@ -9,7 +9,7 @@ import six
 
 from fluent.syntax import ast as FTL
 from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
-from .types import FluentType, FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
+from .types import FluentType, FluentDateType, FluentNone, FluentNumber, FluentInt, FluentFloat, fluent_date, fluent_number
 from .utils import numeric_to_native, reference_to_id, unknown_reference_error_obj
 
 try:
@@ -146,7 +146,7 @@ class Pattern(FTL.Pattern, BaseResolver):
         return retval
 
     def resolve(self, fluentish, env):
-        if isinstance(fluentish, FluentType):
+        if isinstance(fluentish, (FluentType, FluentNumber)):
             return fluentish.format(env.context._babel_locale)
         return fluentish
 
@@ -166,7 +166,13 @@ class StringLiteral(FTL.StringLiteral, Literal):
         return self.value
 
 
-class NumberLiteral(FTL.NumberLiteral, Literal):
+class NumberLiteral(FTL.NumberLiteral, BaseResolver):
+    def __init__(self, value, **kwargs):
+        super(NumberLiteral, self).__init__(value, **kwargs)
+        if '.' in self.value:
+            self.value = FluentFloat(self.value)
+        else:
+            self.value = FluentInt(self.value)
     def __call__(self, env):
         return self.value
 

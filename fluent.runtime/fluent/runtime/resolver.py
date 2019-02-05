@@ -194,7 +194,7 @@ def lookup_reference(ref, env):
     return FluentNoneResolver(ref_id)
 
 
-class VariableReference(FTL.VariableReference):
+class VariableReference(FTL.VariableReference, BaseResolver):
     def __call__(self, env):
         name = self.id.name
         try:
@@ -205,10 +205,7 @@ class VariableReference(FTL.VariableReference):
                     FluentReferenceError("Unknown external: {0}".format(name)))
             return FluentNoneResolver(name)
 
-        if isinstance(arg_val,
-                      (int, float, Decimal,
-                       date, datetime,
-                       text_type)):
+        if isinstance(arg_val, (FluentType, text_type)):
             return arg_val
         env.errors.append(TypeError("Unsupported external type: {0}, {1}"
                                     .format(name, type(arg_val))))

@@ -138,16 +138,28 @@ class Pattern(FTL.Pattern, BaseResolver):
         if self.dirty:
             env.errors.append(FluentCyclicReferenceError("Cyclic reference"))
             return FluentNone()
+        if env.part_count > MAX_PARTS:
+            return ""
         self.dirty = True
+        elements = self.elements
+        remaining_parts = MAX_PARTS - env.part_count
+        if len(self.elements) > remaining_parts:
+            elements = elements[:remaining_parts + 1]
+            env.errors.append(ValueError("Too many parts in message (> {0}), "
+                                         "aborting.".format(MAX_PARTS)))
         retval = ''.join(
-            resolve(element(env), env) for element in self.elements
+            resolve(element(env), env) for element in elements
         )
+        env.part_count += len(elements)
         self.dirty = False
         return retval
 
 def resolve(fluentish, env):
     if isinstance(fluentish, FluentType):
         return fluentish.format(env.context._babel_locale)
+    if isinstance(fluentish, six.string_types):
+        if len(fluentish) > MAX_PART_LENGTH:
+            return fluentish[:MAX_PART_LENGTH]
     return fluentish
 
 

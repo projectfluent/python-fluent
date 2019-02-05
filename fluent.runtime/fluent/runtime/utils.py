@@ -21,16 +21,6 @@ def ast_to_id(ast):
     return ast.id.name
 
 
-def add_message_and_attrs_to_store(store, ref_id, item, is_parent=True):
-    store[ref_id] = item
-    if is_parent:
-        for attr in item.attributes:
-            add_message_and_attrs_to_store(store,
-                                           _make_attr_id(ref_id, attr.id.name),
-                                           attr,
-                                           is_parent=False)
-
-
 def native_to_fluent(val):
     """
     Convert a python type to a Fluent Type.

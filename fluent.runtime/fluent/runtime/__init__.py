@@ -10,7 +10,7 @@ from fluent.syntax.ast import Message, Term
 from .builtins import BUILTINS
 from .prepare import Compiler
 from .resolver import ResolverEnvironment, CurrentEnvironment
-from .utils import ATTRIBUTE_SEPARATOR, TERM_SIGIL, add_message_and_attrs_to_store, ast_to_id, native_to_fluent
+from .utils import ATTRIBUTE_SEPARATOR, TERM_SIGIL, ast_to_id, native_to_fluent
 
 
 class FluentBundle(object):
@@ -47,9 +47,7 @@ class FluentBundle(object):
             if isinstance(item, (Message, Term)):
                 full_id = ast_to_id(item)
                 if full_id not in self._messages_and_terms:
-                    # We add attributes to the store to enable faster looker
-                    # later, and more direct code in some instances.
-                    add_message_and_attrs_to_store(self._messages_and_terms, full_id, item)
+                    self._messages_and_terms[full_id] = item
 
     def has_message(self, message_id):
         if message_id.startswith(TERM_SIGIL) or ATTRIBUTE_SEPARATOR in message_id:

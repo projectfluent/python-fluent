@@ -146,7 +146,7 @@ class Pattern(FTL.Pattern, BaseResolver):
         return retval
 
 def resolve(fluentish, env):
-    if isinstance(fluentish, (FluentType, FluentNumber)):
+    if isinstance(fluentish, FluentType):
         return fluentish.format(env.context._babel_locale)
     return fluentish
 

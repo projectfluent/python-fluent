@@ -10,7 +10,7 @@ from fluent.syntax.ast import Message, Term
 from .builtins import BUILTINS
 from .prepare import Compiler
 from .resolver import ResolverEnvironment, CurrentEnvironment
-from .utils import ATTRIBUTE_SEPARATOR, TERM_SIGIL, add_message_and_attrs_to_store, ast_to_id
+from .utils import ATTRIBUTE_SEPARATOR, TERM_SIGIL, add_message_and_attrs_to_store, ast_to_id, native_to_fluent
 
 
 class FluentBundle(object):
@@ -65,12 +65,15 @@ class FluentBundle(object):
     def format(self, message_id, args=None):
         if message_id.startswith(TERM_SIGIL):
             raise LookupError(message_id)
-        if args is None:
-            args = {}
+        fluent_args = {}
+        if args is not None:
+            for argname, argvalue in args.items():
+                fluent_args[argname] = native_to_fluent(argvalue)
+
         errors = []
         resolve = self.lookup(message_id)
         env = ResolverEnvironment(context=self,
-                                  current=CurrentEnvironment(args=args),
+                                  current=CurrentEnvironment(args=fluent_args),
                                   errors=errors)
         return [resolve(env), errors]
 

@@ -1,5 +1,11 @@
+from __future__ import absolute_import, unicode_literals
+
+from datetime import date, datetime
+from decimal import Decimal
+
 from fluent.syntax.ast import AttributeExpression, Term, TermReference
 
+from .types import FluentInt, FluentFloat, FluentDecimal, FluentDate, FluentDateTime
 from .errors import FluentReferenceError
 
 TERM_SIGIL = '-'
@@ -36,6 +42,23 @@ def numeric_to_native(val):
         return float(val)
     return int(val)
 
+
+def native_to_fluent(val):
+    """
+    Convert a python type to a Fluent Type.
+    """
+    if isinstance(val, int):
+        return FluentInt(val)
+    if isinstance(val, float):
+        return FluentFloat(val)
+    if isinstance(val, Decimal):
+        return FluentDecimal(val)
+
+    if isinstance(val, date):
+        return FluentDate.from_date(val)
+    if isinstance(val, datetime):
+        return FluentDateTime.from_date(val)
+    return val
 
 def reference_to_id(ref):
     """

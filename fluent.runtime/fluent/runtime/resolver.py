@@ -224,8 +224,8 @@ class Attribute(FTL.Attribute, BaseResolver):
     pass
 
 
-class VariantListResolver(BaseResolver):
-    def select_from_variant_list(self, env, key):
+class VariantList(FTL.VariantList, BaseResolver):
+    def __call__(self, env, key=None):
         found = None
         for variant in self.variants:
             if variant.default:
@@ -244,15 +244,9 @@ class VariantListResolver(BaseResolver):
                 env.errors.append(FluentReferenceError("Unknown variant: {0}"
                                                        .format(key)))
             found = default
-        if found is None:
-            return FluentNoneResolver()
+        assert found, "Not having a default variant is a parse error"
 
         return found.value(env)
-
-
-class VariantList(FTL.VariantList, VariantListResolver):
-    def __call__(self, env):
-        return self.select_from_variant_list(env, None)
 
 
 class SelectExpression(FTL.SelectExpression, BaseResolver):
@@ -313,7 +307,7 @@ class VariantExpression(FTL.VariantExpression, BaseResolver):
         assert isinstance(message, VariantList)
 
         variant_name = self.key.name
-        return message.select_from_variant_list(env, variant_name)
+        return message(env, variant_name)
 
 
 class CallExpression(FTL.CallExpression, BaseResolver):

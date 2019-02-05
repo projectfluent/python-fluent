@@ -56,16 +56,19 @@ class FluentBundle(object):
             return False
         return message_id in self._messages_and_terms
 
+    def lookup(self, full_id):
+        if full_id not in self._compiled:
+            message = self._messages_and_terms[full_id]
+            self._compiled[full_id] = self._compiler(message.value)
+        return self._compiled[full_id]
+
     def format(self, message_id, args=None):
         if message_id.startswith(TERM_SIGIL):
             raise LookupError(message_id)
         if args is None:
             args = {}
-        if message_id not in self._compiled:
-            message = self._messages_and_terms[message_id]
-            self._compiled[message_id] = self._compiler(message.value)
-        resolve = self._compiled[message_id]
         errors = []
+        resolve = self.lookup(message_id)
         env = ResolverEnvironment(context=self,
                                   current=CurrentEnvironment(args=args),
                                   errors=errors)

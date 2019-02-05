@@ -9,7 +9,7 @@ import six
 
 from fluent.syntax import ast as FTL
 from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
-from .types import FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
+from .types import FluentType, FluentDateType, FluentNone, FluentNumber, fluent_date, fluent_number
 from .utils import numeric_to_native, reference_to_id, unknown_reference_error_obj
 
 try:
@@ -54,7 +54,6 @@ class CurrentEnvironment(object):
 class ResolverEnvironment(object):
     context = attr.ib()
     errors = attr.ib()
-    dirty = attr.ib(factory=set)
     part_count = attr.ib(default=0)
     current = attr.ib(factory=CurrentEnvironment)
 
@@ -141,10 +140,15 @@ class Pattern(FTL.Pattern, BaseResolver):
             return FluentNone()
         self.dirty = True
         retval = ''.join(
-            element(env) for element in self.elements
+            self.resolve(element(env), env) for element in self.elements
         )
         self.dirty = False
         return retval
+
+    def resolve(self, fluentish, env):
+        if isinstance(fluentish, FluentType):
+            return fluentish.format(env.context._babel_locale)
+        return fluentish
 
 
 class TextElement(FTL.TextElement, Literal):
@@ -189,9 +193,8 @@ def lookup_reference(ref, env):
     AST node, or FluentNone if not found, including fallback logic
     """
     ref_id = reference_to_id(ref)
-
     try:
-        return env.context._compiler(env.context._messages_and_terms[ref_id])
+        return env.context.lookup(ref_id)
     except LookupError:
         env.errors.append(unknown_reference_error_obj(ref_id))
 
@@ -199,7 +202,7 @@ def lookup_reference(ref, env):
             # Fallback
             parent_id = reference_to_id(ref.ref)
             try:
-                return env.context._compiler(env.context._messages_and_terms[parent_id])
+                return env.context.lookup(parent_id)
             except LookupError:
                 # Don't add error here, because we already added error for the
                 # actual thing we were looking for.
@@ -330,10 +333,10 @@ class VariantExpression(FTL.VariantExpression, BaseResolver):
 
         # TODO What to do if message is not a VariantList?
         # Need test at least.
-        assert isinstance(message.value, VariantList)
+        assert isinstance(message, VariantList)
 
         variant_name = self.key.name
-        return message.value.select_from_variant_list(env, variant_name)
+        return message.select_from_variant_list(env, variant_name)
 
 
 class CallExpression(FTL.CallExpression, BaseResolver):
@@ -363,6 +366,11 @@ class CallExpression(FTL.CallExpression, BaseResolver):
         except Exception as e:
             env.errors.append(e)
             return FluentNoneResolver(function_name + "()")
+
+
+class NamedArgument(FTL.NamedArgument, BaseResolver):
+    def __call__(self, env):
+      return self.value(env)
 
 
 @handle.register(FluentNumber)

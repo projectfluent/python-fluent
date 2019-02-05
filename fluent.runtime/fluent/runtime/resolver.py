@@ -70,6 +70,14 @@ class ResolverEnvironment(object):
 
 
 class BaseResolver(object):
+    """
+    Abstract base class of all partially evaluated resolvers.
+
+    Subclasses should implement __call__, with a
+    ResolverEnvironment as parameter. An exception are wrapper
+    classes that don't show up in the evaluation, but need to
+    be part of the compiled tree structure.
+    """
     def __call__(self, env):
         raise NotImplementedError
 

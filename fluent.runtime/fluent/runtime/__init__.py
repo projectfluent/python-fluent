@@ -35,7 +35,7 @@ class FluentBundle(object):
         self._use_isolating = use_isolating
         self._messages_and_terms = {}
         self._compiled = {}
-        self._compiler = Compiler()
+        self._compiler = Compiler(use_isolating=use_isolating)
         self._babel_locale = self._get_babel_locale()
         self._plural_form = babel.plural.to_python(self._babel_locale.plural_form)
 

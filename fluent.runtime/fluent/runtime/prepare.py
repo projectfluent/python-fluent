@@ -4,8 +4,9 @@ from . import resolver
 
 
 class Compiler(object):
-    def __init__(self, bundle=None):
+    def __init__(self, use_isolating=False, bundle=None):
         self.bundle = None
+        self.use_isolating = use_isolating
 
     def __call__(self, item):
         if isinstance(item, FTL.BaseNode):
@@ -28,11 +29,19 @@ class Compiler(object):
         return getattr(resolver, nodename)(**kwargs)
 
     def compile_Placeable(self, _, expression, **kwargs):
+        if self.use_isolating:
+            return resolver.IsolatingPlaceable(expression=expression, **kwargs)
         if isinstance(expression, resolver.Literal):
             return expression
         return resolver.Placeable(expression=expression, **kwargs)
 
     def compile_Pattern(self, _, elements, **kwargs):
+        if (
+            len(elements) == 1 and
+            isinstance(elements[0], resolver.IsolatingPlaceable)
+        ):
+            # Don't isolate isolated placeables
+            return elements[0].expression
         if any(
             not isinstance(child, resolver.Literal)
             for child in elements

@@ -140,15 +140,15 @@ class Pattern(FTL.Pattern, BaseResolver):
             return FluentNone()
         self.dirty = True
         retval = ''.join(
-            self.resolve(element(env), env) for element in self.elements
+            resolve(element(env), env) for element in self.elements
         )
         self.dirty = False
         return retval
 
-    def resolve(self, fluentish, env):
-        if isinstance(fluentish, (FluentType, FluentNumber)):
-            return fluentish.format(env.context._babel_locale)
-        return fluentish
+def resolve(fluentish, env):
+    if isinstance(fluentish, (FluentType, FluentNumber)):
+        return fluentish.format(env.context._babel_locale)
+    return fluentish
 
 
 class TextElement(FTL.TextElement, Literal):
@@ -159,6 +159,12 @@ class TextElement(FTL.TextElement, Literal):
 class Placeable(FTL.Placeable, BaseResolver):
     def __call__(self, env):
         return self.expression(env)
+
+
+class IsolatingPlaceable(FTL.Placeable, BaseResolver):
+    def __call__(self, env):
+        inner = self.expression(env)
+        return "\u2068" + resolve(inner, env) + "\u2069"
 
 
 class StringLiteral(FTL.StringLiteral, Literal):

@@ -3,6 +3,36 @@ import sys
 import json
 
 
+class Visitor(object):
+    '''Read-only visitor pattern.
+
+    Subclass this to gather information from an AST.
+    To generally define which nodes not to descend in to, overload
+    `generic_visit`.
+    To handle specific node types, add methods like `visit_Pattern`.
+    The boolean value of the returned value determines if the visitor
+    descends into the children of the given AST node.
+    '''
+    def visit(self, value):
+        if isinstance(value, BaseNode):
+            self.visit_node(value)
+        if isinstance(value, list):
+            for node in value:
+                self.visit(node)
+
+    def visit_node(self, node):
+        nodename = type(node).__name__
+        visit = getattr(self, 'visit_{}'.format(nodename), self.generic_visit)
+        should_descend = visit(node)
+        if not should_descend:
+            return
+        for propname, propvalue in vars(node).items():
+            self.visit(propvalue)
+
+    def generic_visit(self, node):
+        return True
+
+
 def to_json(value, fn=None):
     if isinstance(value, BaseNode):
         return value.to_json(fn)

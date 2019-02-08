@@ -33,6 +33,39 @@ class Visitor(object):
         return True
 
 
+class ContextVisitor(object):
+    '''Visitor baseclass that collects results.
+    '''
+    def visit(self, value):
+        if isinstance(value, BaseNode):
+            return self.visit_node(value)
+        if isinstance(value, list):
+            return self.value([
+                self.visit(node) for node in value
+            ])
+        return self.value(value)
+
+    def visit_node(self, node):
+        nodename = type(node).__name__
+        enter = getattr(self, 'enter_{}'.format(nodename), self.generic_enter)
+        newprops = {}
+        should_descend = enter(node)
+        if should_descend:
+            for propname, propvalue in vars(node).items():
+                newprops[propname] = self.visit(propvalue)
+        exit = getattr(self, 'exit_{}'.format(nodename), self.generic_exit)
+        return exit(node, newprops)
+
+    def generic_enter(self, node):
+        yield True
+
+    def generic_exit(self, node, props):
+        return node
+
+    def value(self, value):
+        return value
+
+
 def to_json(value, fn=None):
     if isinstance(value, BaseNode):
         return value.to_json(fn)
@@ -71,6 +104,17 @@ def scalars_equal(node1, node2, ignored_fields):
     return node1 == node2
 
 
+class Traversal(ContextVisitor):
+    def __init__(self, fun):
+        self.fun = fun
+
+    def generic_exit(self, node, props):
+        return self.fun(node.__class__(**props))
+
+    def value(self, value):
+        return self.fun(value)
+
+
 class BaseNode(object):
     """Base class for all Fluent AST nodes.
 
@@ -87,21 +131,7 @@ class BaseNode(object):
         Return a new instance of the node.
         """
 
-        def visit(value):
-            """Call `fun` on `value` and its descendants."""
-            if isinstance(value, BaseNode):
-                return value.traverse(fun)
-            if isinstance(value, list):
-                return fun(list(map(visit, value)))
-            else:
-                return fun(value)
-
-        # Use all attributes found on the node as kwargs to the constructor.
-        kwargs = vars(self).items()
-        node = self.__class__(
-            **{name: visit(value) for name, value in kwargs})
-
-        return fun(node)
+        return Traversal(fun).visit(self)
 
     def equals(self, other, ignored_fields=['span']):
         """Compare two nodes.

@@ -70,6 +70,18 @@ class VisitorCounter(ast.Visitor):
         return False
 
 
+class ReplaceText(object):
+    def __init__(self, before, after):
+        self.before = before
+        self.after = after
+    def __call__(self, node):
+        """Perform find and replace on text values only"""
+        if type(node) == ast.TextElement:
+            node.value = node.value.replace(self.before, self.after)
+        return node
+
+
+
 class TestPerf(unittest.TestCase):
     def setUp(self):
         parser = FluentParser()
@@ -89,6 +101,13 @@ class TestPerf(unittest.TestCase):
         counter.visit(self.resource)
         self.assertEqual(counter.word_count, 277)
 
+    def test_edit_traverse(self):
+        edited = self.resource.traverse(ReplaceText('Tab', 'Reiter'))
+        self.assertEqual(
+            edited.body[4].attributes[0].value.elements[0].value,
+            'New Reiter'
+        )
+
 
 def gather_stats(method, repeat=10, number=50):
     t = timeit.Timer(
@@ -107,7 +126,7 @@ test.setUp()
 
 
 if __name__=='__main__':
-    for m in ('traverse', 'visitor'):
+    for m in ('traverse', 'visitor', 'edit_traverse'):
         results = gather_stats(m)
         try:
             import statistics

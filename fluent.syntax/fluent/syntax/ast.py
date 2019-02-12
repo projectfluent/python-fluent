@@ -14,19 +14,18 @@ class Visitor(object):
     descends into the children of the given AST node.
     '''
     def visit(self, value):
-        if isinstance(value, BaseNode):
-            self.visit_node(value)
         if isinstance(value, list):
             for node in value:
                 self.visit(node)
-
-    def visit_node(self, node):
-        nodename = type(node).__name__
+            return
+        if not isinstance(value, BaseNode):
+            return
+        nodename = type(value).__name__
         visit = getattr(self, 'visit_{}'.format(nodename), self.generic_visit)
-        should_descend = visit(node)
+        should_descend = visit(value)
         if not should_descend:
             return
-        for propname, propvalue in vars(node).items():
+        for propname, propvalue in vars(value).items():
             self.visit(propvalue)
 
     def generic_visit(self, node):

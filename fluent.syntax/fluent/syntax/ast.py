@@ -13,19 +13,19 @@ class Visitor(object):
     The boolean value of the returned value determines if the visitor
     descends into the children of the given AST node.
     '''
-    def visit(self, value):
-        if isinstance(value, list):
-            for node in value:
-                self.visit(node)
+    def visit(self, node):
+        if isinstance(node, list):
+            for child in node:
+                self.visit(child)
             return
-        if not isinstance(value, BaseNode):
+        if not isinstance(node, BaseNode):
             return
-        nodename = type(value).__name__
+        nodename = type(node).__name__
         visit = getattr(self, 'visit_{}'.format(nodename), self.generic_visit)
-        should_descend = visit(value)
+        should_descend = visit(node)
         if not should_descend:
             return
-        for propname, propvalue in vars(value).items():
+        for propname, propvalue in vars(node).items():
             self.visit(propvalue)
 
     def generic_visit(self, node):
@@ -147,6 +147,8 @@ class BaseNode(object):
                 return value.clone()
             if isinstance(value, list):
                 return [visit(child) for child in value]
+            if isinstance(value, tuple):
+                return tuple(visit(child) for child in value)
             return value
 
         # Use all attributes found on the node as kwargs to the constructor.

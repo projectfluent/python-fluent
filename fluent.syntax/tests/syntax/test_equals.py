@@ -26,6 +26,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
 
         self.assertTrue(message1.equals(message1))
         self.assertTrue(message1.equals(message1.traverse(identity)))
+        self.assertTrue(message1.equals(message1.clone()))
 
     def test_same_selector_message(self):
         message1 = self.parse_ftl_entry("""\
@@ -41,6 +42,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
 
         self.assertTrue(message1.equals(message1))
         self.assertTrue(message1.equals(message1.traverse(identity)))
+        self.assertTrue(message1.equals(message1.clone()))
 
     def test_same_complex_placeable_message(self):
         message1 = self.parse_ftl_entry("""\
@@ -49,6 +51,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
 
         self.assertTrue(message1.equals(message1))
         self.assertTrue(message1.equals(message1.traverse(identity)))
+        self.assertTrue(message1.equals(message1.clone()))
 
     def test_same_message_with_attribute(self):
         message1 = self.parse_ftl_entry("""\
@@ -58,6 +61,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
 
         self.assertTrue(message1.equals(message1))
         self.assertTrue(message1.equals(message1.traverse(identity)))
+        self.assertTrue(message1.equals(message1.clone()))
 
     def test_same_message_with_attributes(self):
         message1 = self.parse_ftl_entry("""\
@@ -68,6 +72,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
 
         self.assertTrue(message1.equals(message1))
         self.assertTrue(message1.equals(message1.traverse(identity)))
+        self.assertTrue(message1.equals(message1.clone()))
 
     def test_same_junk(self):
         message1 = self.parse_ftl_entry("""\
@@ -76,6 +81,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
 
         self.assertTrue(message1.equals(message1))
         self.assertTrue(message1.equals(message1.traverse(identity)))
+        self.assertTrue(message1.equals(message1.clone()))
 
 
 class TestOrderEquals(unittest.TestCase):

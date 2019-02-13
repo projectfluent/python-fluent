@@ -50,6 +50,30 @@ class TestVisitor(unittest.TestCase):
         )
 
 
+class TestTransformer(unittest.TestCase):
+    def test(self):
+        resource = FluentParser().parse(dedent_ftl('''\
+        one = Message
+        two = Messages
+        three = Has a
+            .an = Message string in the Attribute
+        '''))
+        prior_res_id = id(resource)
+        prior_msg_id = id(resource.body[1].value)
+        backup = resource.clone()
+        transformed = ReplaceTransformer('Message', 'Term').visit(resource)
+        self.assertEqual(prior_res_id, id(transformed))
+        self.assertEqual(
+            prior_msg_id,
+            id(transformed.body[1].value)
+        )
+        self.assertFalse(transformed.equals(backup))
+        self.assertEqual(
+            transformed.body[1].value.elements[0].value,
+            'Terms'
+        )
+
+
 class WordCounter(object):
     def __init__(self):
         self.word_count = 0
@@ -68,6 +92,34 @@ class VisitorCounter(ast.Visitor):
     def visit_TextElement(self, node):
         self.word_count += len(node.value.split())
         return False
+
+
+class ReplaceText(object):
+    def __init__(self, before, after):
+        self.before = before
+        self.after = after
+
+    def __call__(self, node):
+        """Perform find and replace on text values only"""
+        if type(node) == ast.TextElement:
+            node.value = node.value.replace(self.before, self.after)
+        return node
+
+
+class ReplaceTransformer(ast.Transformer):
+    def __init__(self, before, after):
+        self.before = before
+        self.after = after
+
+    def generic_visit(self, node):
+        if isinstance(node, (ast.Span, ast.Annotation)):
+            return node
+        return super(ReplaceTransformer, self).generic_visit(node)
+
+    def visit_TextElement(self, node):
+        """Perform find and replace on text values only"""
+        node.value = node.value.replace(self.before, self.after)
+        return node
 
 
 class TestPerf(unittest.TestCase):
@@ -89,6 +141,27 @@ class TestPerf(unittest.TestCase):
         counter.visit(self.resource)
         self.assertEqual(counter.word_count, 277)
 
+    def test_edit_traverse(self):
+        edited = self.resource.traverse(ReplaceText('Tab', 'Reiter'))
+        self.assertEqual(
+            edited.body[4].attributes[0].value.elements[0].value,
+            'New Reiter'
+        )
+
+    def test_edit_transform(self):
+        edited = ReplaceTransformer('Tab', 'Reiter').visit(self.resource)
+        self.assertEqual(
+            edited.body[4].attributes[0].value.elements[0].value,
+            'New Reiter'
+        )
+
+    def test_edit_cloned(self):
+        edited = ReplaceTransformer('Tab', 'Reiter').visit(self.resource.clone())
+        self.assertEqual(
+            edited.body[4].attributes[0].value.elements[0].value,
+            'New Reiter'
+        )
+
 
 def gather_stats(method, repeat=10, number=50):
     t = timeit.Timer(
@@ -107,7 +180,13 @@ test.setUp()
 
 
 if __name__=='__main__':
-    for m in ('traverse', 'visitor'):
+    for m in (
+        'traverse',
+        'visitor',
+        'edit_traverse',
+        'edit_transform',
+        'edit_cloned',
+    ):
         results = gather_stats(m)
         try:
             import statistics

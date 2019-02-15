@@ -1,5 +1,14 @@
 # Changelog
 
+## fluent.syntax 0.12.0 (February 15, 2019)
+
+- Fixes to the `Visitor` API
+
+  The `Visitor` API introduced in 0.11 was changed to align more with
+  what Python's `ast.Visitor` does. This also allows implementations
+  to have code after descending into child nodes.
+
+
 ## fluent.syntax 0.11.0 (February 13, 2019)
 
 - API enhancements

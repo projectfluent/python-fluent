@@ -10,8 +10,8 @@ class Visitor(object):
     To generally define which nodes not to descend in to, overload
     `generic_visit`.
     To handle specific node types, add methods like `visit_Pattern`.
-    The boolean value of the returned value determines if the visitor
-    descends into the children of the given AST node.
+    If you want to still descend into the children of the node, call
+    `generic_visit` of the superclass.
     '''
     def visit(self, node):
         if isinstance(node, list):
@@ -22,14 +22,11 @@ class Visitor(object):
             return
         nodename = type(node).__name__
         visit = getattr(self, 'visit_{}'.format(nodename), self.generic_visit)
-        should_descend = visit(node)
-        if not should_descend:
-            return
-        for propname, propvalue in vars(node).items():
-            self.visit(propvalue)
+        visit(node)
 
     def generic_visit(self, node):
-        return True
+        for propname, propvalue in vars(node).items():
+            self.visit(propvalue)
 
 
 class Transformer(Visitor):

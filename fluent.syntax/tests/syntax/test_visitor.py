@@ -18,11 +18,10 @@ class MockVisitor(ast.Visitor):
 
     def generic_visit(self, node):
         self.calls[type(node).__name__] += 1
-        return super(MockVisitor, self).generic_visit(node)
+        super(MockVisitor, self).generic_visit(node)
 
     def visit_Pattern(self, node):
         self.pattern_calls += 1
-        return False
 
 
 class TestVisitor(unittest.TestCase):
@@ -87,11 +86,11 @@ class VisitorCounter(ast.Visitor):
         self.word_count = 0
 
     def generic_visit(self, node):
-        return not isinstance(node, (ast.Span, ast.Annotation))
+        if not isinstance(node, (ast.Span, ast.Annotation)):
+            super(VisitorCounter, self).generic_visit(node)
 
     def visit_TextElement(self, node):
         self.word_count += len(node.value.split())
-        return False
 
 
 class ReplaceText(object):

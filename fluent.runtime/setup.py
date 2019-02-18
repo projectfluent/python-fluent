@@ -20,7 +20,7 @@ setup(name='fluent.runtime',
       ],
       packages=['fluent', 'fluent.runtime'],
       install_requires=[
-          'fluent.syntax>=0.10,<=0.11',
+          'fluent.syntax>=0.12,<=0.13',
           'attrs',
           'babel',
           'pytz',

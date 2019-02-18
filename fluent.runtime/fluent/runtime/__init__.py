@@ -68,10 +68,13 @@ class FluentBundle(object):
     def format(self, message_id, args=None):
         if message_id.startswith(TERM_SIGIL):
             raise LookupError(message_id)
-        fluent_args = {}
         if args is not None:
-            for argname, argvalue in args.items():
-                fluent_args[argname] = native_to_fluent(argvalue)
+            fluent_args = {
+                argname: native_to_fluent(argvalue)
+                for argname, argvalue in args.items()
+            }
+        else:
+            fluent_args = {}
 
         errors = []
         resolve = self.lookup(message_id)

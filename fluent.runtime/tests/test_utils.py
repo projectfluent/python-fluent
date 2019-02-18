@@ -35,9 +35,9 @@ class TestInspectFunctionArgs(unittest.TestCase):
     def test_inspect_function_args_bad_keyword_args(self):
         def foo():
             pass
-        foo.ftl_arg_spec = (0, ['bad-kwarg', 'good'])
+        foo.ftl_arg_spec = (0, ['bad kwarg', 'good', 'this-is-fine-too'])
         errors = []
         self.assertEqual(inspect_function_args(foo, 'FOO', errors),
-                         (0, ['good']))
+                         (0, ['good', 'this-is-fine-too']))
         self.assertEqual(errors,
-                         [FluentFormatError("FOO() has invalid keyword argument name 'bad-kwarg'")])
+                         [FluentFormatError("FOO() has invalid keyword argument name 'bad kwarg'")])

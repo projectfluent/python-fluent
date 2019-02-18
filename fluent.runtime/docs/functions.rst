@@ -73,8 +73,12 @@ For example, for a custom function ``my_func`` the following will stop the
 
     my_func.ftl_arg_spec = (1, ['allowed'])
 
-The Fluent spec allows keyword arguments with hyphens (``-``) in them.
-Since these cannot be used in valid Python keyword arguments, they are
-disallowed by ``fluent.runtime`` and will be filtered out and generate
-errors if you specify such a keyword in ``ftl_arg_spec`` or use one in a
-message.
+The Fluent spec allows keyword arguments with hyphens (``-``) in them. These are
+not valid identifiers in Python, so if you need to a custom function to accept
+keyword arguments like this, you will have to use ``**kwargs`` syntax e.g.:
+
+    def my_func(kwarg1=None, **kwargs):
+        kwarg_with_hyphens = kwargs.pop('kwarg-with-hyphens', None)
+        # etc.
+
+    my_func.ftl_arg_spec = (0, ['kwarg1', 'kwarg-with-hyphens'])

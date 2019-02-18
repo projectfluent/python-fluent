@@ -22,6 +22,19 @@ class Any(object):
 Any = Any()
 
 
+# From spec:
+#    NamedArgument ::= Identifier blank? ":" blank? (StringLiteral | NumberLiteral)
+#    Identifier ::= [a-zA-Z] [a-zA-Z0-9_-]*
+
+NAMED_ARG_RE = re.compile(r'^[a-zA-Z][a-zA-Z0-9_-]*$')
+
+
+def allowable_keyword_arg_name(name):
+    # We limit to what Fluent allows for NamedArgument - Python allows anything
+    # if you use **kwarg call and receiving syntax.
+    return NAMED_ARG_RE.match(name)
+
+
 def ast_to_id(ast):
     """
     Returns a string reference for a Term or Message
@@ -174,7 +187,7 @@ def args_match(function_name, args, kwargs, arg_spec):
     positional_arg_count, allowed_kwargs = arg_spec
     match = True
     for kwarg_name, kwarg_val in kwargs.items():
-        if ((allowed_kwargs is Any and allowable_name(kwarg_name)) or
+        if ((allowed_kwargs is Any and allowable_keyword_arg_name(kwarg_name)) or
                 (allowed_kwargs is not Any and kwarg_name in allowed_kwargs)):
             sanitized_kwargs[kwarg_name] = kwarg_val
         else:
@@ -227,7 +240,7 @@ def sanitize_function_args(arg_spec, name, errors):
     else:
         cleaned_kwargs = []
         for kw in keyword_args:
-            if allowable_name(kw):
+            if allowable_keyword_arg_name(kw):
                 cleaned_kwargs.append(kw)
             else:
                 errors.append(FluentFormatError("{0}() has invalid keyword argument name '{1}'".format(name, kw)))

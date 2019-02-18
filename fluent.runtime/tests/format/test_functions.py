@@ -28,7 +28,7 @@ class TestFunctionCalls(unittest.TestCase):
 
         def ANY_ARGS(*args, **kwargs):
             return (' '.join(map(six.text_type, args)) + " " +
-                    ' '.join("{0}={1}".format(k, v) for k, v in kwargs.items()))
+                    ' '.join("{0}={1}".format(k, v) for k, v in sorted(kwargs.items())))
 
         def RESTRICTED(allowed=None, notAllowed=None):
             return allowed if allowed is not None else 'nothing passed'
@@ -69,7 +69,7 @@ class TestFunctionCalls(unittest.TestCase):
             use-restricted-ok  = { RESTRICTED(allowed: 1) }
             use-restricted-bad = { RESTRICTED(notAllowed: 1) }
             bad-output         = { BAD_OUTPUT() }
-            bad-kwarg-python   = { ANY_ARGS(1, foo: 2, invalid-python-kwarg: 3) }
+            non-identfier-arg  = { ANY_ARGS(1, foo: 2, non-identifier: 3) }
         """))
 
     def test_accepts_strings(self):
@@ -158,12 +158,10 @@ class TestFunctionCalls(unittest.TestCase):
         self.assertTrue(cm.exception.args[0].startswith("Cannot handle object"))
         self.assertTrue(cm.exception.args[0].endswith("of type Unsupported"))
 
-    def test_invalid_python_keyword_args(self):
-        val, errs = self.ctx.format('bad-kwarg-python')
-        self.assertEqual(val, '1 foo=2')
-        self.assertEqual(len(errs), 1)
-        self.assertEqual(type(errs[0]), TypeError)
-        self.assertEqual(errs[0].args[0], "ANY_ARGS() got an unexpected keyword argument 'invalid-python-kwarg'")
+    def test_non_identifier_python_keyword_args(self):
+        val, errs = self.ctx.format('non-identfier-arg')
+        self.assertEqual(val, '1 foo=2 non-identifier=3')
+        self.assertEqual(len(errs), 0)
 
 
 class TestMissing(unittest.TestCase):

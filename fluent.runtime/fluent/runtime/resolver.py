@@ -13,18 +13,23 @@ from .types import FluentType, FluentNone, FluentInt, FluentFloat
 from .utils import reference_to_id, unknown_reference_error_obj
 
 
-text_type = six.text_type
+"""
+The classes in this module are used to transform the source
+AST to a partially evaluated resolver tree. They're subclasses
+to the syntax AST node, and `BaseResolver`. Syntax nodes that
+don't require special handling, but have children that need to be
+transformed, need to just inherit from their syntax base class and
+`BaseResolver`. When adding to the module namespace here, watch
+out for naming conflicts with `fluent.syntax.ast`.
+
+`ResolverEnvironment` is the `env` passed to the `__call__` method
+in the resolver tree. The `CurrentEnvironment` keeps track of the
+modifyable state in the resolver environment.
+"""
+
 
 # Prevent expansion of too long placeables, for memory DOS protection
 MAX_PART_LENGTH = 2500
-
-# Prevent messages with too many sub parts, for CPI DOS protection
-MAX_PARTS = 1000
-
-
-# Unicode bidi isolation characters.
-FSI = "\u2068"
-PDI = "\u2069"
 
 
 @attr.s
@@ -95,6 +100,9 @@ class Term(FTL.Term, BaseResolver):
 
 
 class Pattern(FTL.Pattern, BaseResolver):
+    # Prevent messages with too many sub parts, for CPI DOS protection
+    MAX_PARTS = 1000
+
     def __init__(self, *args, **kwargs):
         super(Pattern, self).__init__(*args, **kwargs)
         self.dirty = False
@@ -103,15 +111,15 @@ class Pattern(FTL.Pattern, BaseResolver):
         if self.dirty:
             env.errors.append(FluentCyclicReferenceError("Cyclic reference"))
             return FluentNone()
-        if env.part_count > MAX_PARTS:
+        if env.part_count > self.MAX_PARTS:
             return ""
         self.dirty = True
         elements = self.elements
-        remaining_parts = MAX_PARTS - env.part_count
+        remaining_parts = self.MAX_PARTS - env.part_count
         if len(self.elements) > remaining_parts:
             elements = elements[:remaining_parts + 1]
             env.errors.append(ValueError("Too many parts in message (> {0}), "
-                                         "aborting.".format(MAX_PARTS)))
+                                         "aborting.".format(self.MAX_PARTS)))
         retval = ''.join(
             resolve(element(env), env) for element in elements
         )
@@ -213,7 +221,7 @@ class VariableReference(FTL.VariableReference, BaseResolver):
                     FluentReferenceError("Unknown external: {0}".format(name)))
             return FluentNoneResolver(name)
 
-        if isinstance(arg_val, (FluentType, text_type)):
+        if isinstance(arg_val, (FluentType, six.text_type)):
             return arg_val
         env.errors.append(TypeError("Unsupported external type: {0}, {1}"
                                     .format(name, type(arg_val))))

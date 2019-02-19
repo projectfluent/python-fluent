@@ -81,7 +81,7 @@ class NumberFormatOptions(object):
     maximumSignificantDigits = attr.ib(default=None)
 
 
-class FluentNumber(object):
+class FluentNumber(FluentType):
 
     default_number_format_options = NumberFormatOptions()
 
@@ -276,7 +276,7 @@ class DateFormatOptions(object):
 _SUPPORTED_DATETIME_OPTIONS = ['dateStyle', 'timeStyle', 'timeZone']
 
 
-class FluentDateType(object):
+class FluentDateType(FluentType):
     # We need to match signature of `__init__` and `__new__` due to the way
     # some Python implementation (e.g. PyPy) implement some methods.
     # So we leave those alone, and implement another `_init_options`

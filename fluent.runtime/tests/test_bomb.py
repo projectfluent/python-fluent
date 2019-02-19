@@ -39,5 +39,5 @@ class TestBillionLaughs(unittest.TestCase):
         # Without protection, emptylolz will take a really long time to
         # evaluate, although it generates an empty message.
         val, errs = self.ctx.format('emptylolz')
-        self.assertEqual(val, '???')
+        self.assertEqual(val, '')
         self.assertEqual(len(errs), 1)

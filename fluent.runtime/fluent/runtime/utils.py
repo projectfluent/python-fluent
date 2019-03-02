@@ -4,12 +4,15 @@ import inspect
 import keyword
 import re
 import sys
+from datetime import date, datetime
+from decimal import Decimal
 
 import six
 
 from fluent.syntax.ast import AttributeExpression, Term, TermReference
 
 from .errors import FluentFormatError, FluentReferenceError
+from .types import FluentDate, FluentDateTime, FluentDecimal, FluentFloat, FluentInt
 
 TERM_SIGIL = '-'
 ATTRIBUTE_SEPARATOR = '.'
@@ -42,16 +45,6 @@ def ast_to_id(ast):
     if isinstance(ast, Term):
         return TERM_SIGIL + ast.id.name
     return ast.id.name
-
-
-def add_message_and_attrs_to_store(store, ref_id, item, is_parent=True):
-    store[ref_id] = item
-    if is_parent:
-        for attr in item.attributes:
-            add_message_and_attrs_to_store(store,
-                                           _make_attr_id(ref_id, attr.id.name),
-                                           attr,
-                                           is_parent=False)
 
 
 if sys.version_info < (3,):
@@ -155,16 +148,22 @@ else:
         return sanitize_function_args((positional, keywords), name, errors)
 
 
-def numeric_to_native(val):
+def native_to_fluent(val):
     """
-    Given a numeric string (as defined by fluent spec),
-    return an int or float
+    Convert a python type to a Fluent Type.
     """
-    # val matches this EBNF:
-    #  '-'? [0-9]+ ('.' [0-9]+)?
-    if '.' in val:
-        return float(val)
-    return int(val)
+    if isinstance(val, int):
+        return FluentInt(val)
+    if isinstance(val, float):
+        return FluentFloat(val)
+    if isinstance(val, Decimal):
+        return FluentDecimal(val)
+
+    if isinstance(val, datetime):
+        return FluentDateTime.from_date_time(val)
+    if isinstance(val, date):
+        return FluentDate.from_date(val)
+    return val
 
 
 def args_match(function_name, args, kwargs, arg_spec):

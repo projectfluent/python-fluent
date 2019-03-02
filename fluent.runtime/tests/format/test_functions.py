@@ -155,8 +155,7 @@ class TestFunctionCalls(unittest.TestCase):
         # This is a developer error, so should raise an exception
         with self.assertRaises(TypeError) as cm:
             self.ctx.format('bad-output')
-        self.assertTrue(cm.exception.args[0].startswith("Cannot handle object"))
-        self.assertTrue(cm.exception.args[0].endswith("of type Unsupported"))
+        self.assertIn("Unsupported", cm.exception.args[0])
 
     def test_non_identifier_python_keyword_args(self):
         val, errs = self.ctx.format('non-identfier-arg')

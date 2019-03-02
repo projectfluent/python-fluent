@@ -1,5 +1,28 @@
 # Changelog
 
+## fluent.syntax 0.12.0 (February 15, 2019)
+
+- Fixes to the `Visitor` API
+
+  The `Visitor` API introduced in 0.11 was changed to align more with
+  what Python's `ast.Visitor` does. This also allows implementations
+  to have code after descending into child nodes.
+
+
+## fluent.syntax 0.11.0 (February 13, 2019)
+
+- API enhancements
+
+  There are two new APIs in `fluent.syntax.ast`, `Visitor` and `Transformer`.
+  Use these APIs for read-only iteration over AST trees, and in-place mutation
+  of AST trees, respectively. There's also a new method `BaseNode.clone`,
+  which can be used to create a deep copy of an AST node.
+
+- DEPRECATIONS
+
+  The API `BaseNode.traverse` is deprecated and will be removed in a future
+  release. Please adjust your code to the `Visitor` or `Transformer` APIs.
+
 ## fluent.syntax 0.10.0 (January 15, 2019)
 
 The `fluent` package which used to provide the `fluent.syntax` module has been

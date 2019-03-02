@@ -3,6 +3,67 @@ import sys
 import json
 
 
+class Visitor(object):
+    '''Read-only visitor pattern.
+
+    Subclass this to gather information from an AST.
+    To generally define which nodes not to descend in to, overload
+    `generic_visit`.
+    To handle specific node types, add methods like `visit_Pattern`.
+    If you want to still descend into the children of the node, call
+    `generic_visit` of the superclass.
+    '''
+    def visit(self, node):
+        if isinstance(node, list):
+            for child in node:
+                self.visit(child)
+            return
+        if not isinstance(node, BaseNode):
+            return
+        nodename = type(node).__name__
+        visit = getattr(self, 'visit_{}'.format(nodename), self.generic_visit)
+        visit(node)
+
+    def generic_visit(self, node):
+        for propname, propvalue in vars(node).items():
+            self.visit(propvalue)
+
+
+class Transformer(Visitor):
+    '''In-place AST Transformer pattern.
+
+    Subclass this to create an in-place modified variant
+    of the given AST.
+    If you need to keep the original AST around, pass
+    a `node.clone()` to the transformer.
+    '''
+    def visit(self, node):
+        if not isinstance(node, BaseNode):
+            return node
+
+        nodename = type(node).__name__
+        visit = getattr(self, 'visit_{}'.format(nodename), self.generic_visit)
+        return visit(node)
+
+    def generic_visit(self, node):
+        for propname, propvalue in vars(node).items():
+            if isinstance(propvalue, list):
+                new_vals = []
+                for child in propvalue:
+                    new_val = self.visit(child)
+                    if new_val is not None:
+                        new_vals.append(new_val)
+                # in-place manipulation
+                propvalue[:] = new_vals
+            elif isinstance(propvalue, BaseNode):
+                new_val = self.visit(propvalue)
+                if new_val is None:
+                    delattr(node, propname)
+                else:
+                    setattr(node, propname, new_val)
+        return node
+
+
 def to_json(value, fn=None):
     if isinstance(value, BaseNode):
         return value.to_json(fn)
@@ -49,7 +110,9 @@ class BaseNode(object):
     """
 
     def traverse(self, fun):
-        """Postorder-traverse this node and apply `fun` to all child nodes.
+        """DEPRECATED. Please use Visitor or Transformer.
+
+        Postorder-traverse this node and apply `fun` to all child nodes.
 
         Traverse this node depth-first applying `fun` to subnodes and leaves.
         Children are processed before parents (postorder traversal).
@@ -72,6 +135,23 @@ class BaseNode(object):
             **{name: visit(value) for name, value in kwargs})
 
         return fun(node)
+
+    def clone(self):
+        """Create a deep clone of the current node."""
+        def visit(value):
+            """Clone node and its descendants."""
+            if isinstance(value, BaseNode):
+                return value.clone()
+            if isinstance(value, list):
+                return [visit(child) for child in value]
+            if isinstance(value, tuple):
+                return tuple(visit(child) for child in value)
+            return value
+
+        # Use all attributes found on the node as kwargs to the constructor.
+        return self.__class__(
+            **{name: visit(value) for name, value in vars(self).items()}
+        )
 
     def equals(self, other, ignored_fields=['span']):
         """Compare two nodes.

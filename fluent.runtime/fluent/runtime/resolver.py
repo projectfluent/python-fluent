@@ -315,9 +315,9 @@ class VariantExpression(FTL.VariantExpression, BaseResolver):
     def __call__(self, env):
         message = lookup_reference(self.ref, env)
 
-        # TODO What to do if message is not a VariantList?
-        # Need test at least.
-        assert isinstance(message, VariantList)
+        if not isinstance(message, VariantList):
+            # Must be FluentNoneResolver
+            return message(env)
 
         variant_name = self.key.name
         return message(env, variant_name)

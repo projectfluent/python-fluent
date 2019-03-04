@@ -2,6 +2,7 @@
 from setuptools import setup
 import sys
 
+
 setup(name='fluent.runtime',
       version='0.1',
       description='Localization library for expressive translations.',
@@ -24,7 +25,7 @@ setup(name='fluent.runtime',
           'attrs',
           'babel',
           'pytz',
+          'six',
       ],
-      tests_require=['six'],
-      test_suite='tests'
+      test_suite='tests',
       )

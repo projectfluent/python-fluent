@@ -315,11 +315,17 @@ class VariantExpression(FTL.VariantExpression, BaseResolver):
     def __call__(self, env):
         message = lookup_reference(self.ref, env)
 
-        if not isinstance(message, VariantList):
-            # Must be FluentNoneResolver
+        if isinstance(message, FluentNoneResolver):
+            # We have already reported the reference error in lookup_reference
             return message(env)
 
         variant_name = self.key.name
+        if not isinstance(message, VariantList):
+            # Term without variants, return term contents but also report error
+            env.errors.append(FluentReferenceError("Unknown variant: {0}"
+                                                   .format(variant_name)))
+            return message(env)
+
         return message(env, variant_name)
 
 

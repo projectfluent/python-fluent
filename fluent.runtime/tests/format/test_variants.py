@@ -17,11 +17,13 @@ class TestVariants(unittest.TestCase):
                 [a] A
                *[b] B
              }
+            -non-variant = Term with no variants
             foo = { -variant }
             bar = { -variant[a] }
             baz = { -variant[b] }
             qux = { -variant[c] }
             goo = { -missing[a] }
+            quux = { -non-variant[a] }
         """))
 
     def test_returns_the_default_variant(self):
@@ -54,3 +56,10 @@ class TestVariants(unittest.TestCase):
         self.assertEqual(
             errs,
             [FluentReferenceError("Unknown term: -missing")])
+
+    def test_variant_with_non_variant_term(self):
+        val, errs = self.ctx.format('quux', {})
+        self.assertEqual(val, 'Term with no variants')
+        self.assertEqual(
+            errs,
+            [FluentReferenceError("Unknown variant: a")])

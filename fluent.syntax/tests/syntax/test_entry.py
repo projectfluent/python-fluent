@@ -87,9 +87,9 @@ class TestParseEntry(unittest.TestCase):
             "content": "junk\n",
             "annotations": [
                 {
-                    "args": ["junk"],
-                    "code": "E0005",
-                    "message": "Expected message \"junk\" to have a value or attributes",
+                    "args": ["="],
+                    "code": "E0003",
+                    "message": "Expected token: \"=\"",
                     "span": {
                         "end": 23,
                         "start": 23,

@@ -63,16 +63,7 @@ class FluentParser(object):
                 # clear it.
                 last_comment = None
 
-            if isinstance(entry, ast.Comment) \
-               and ps.last_comment_zero_four_syntax \
-               and len(entries) == 0:
-                comment = ast.ResourceComment(entry.content)
-                comment.span = entry.span
-                entries.append(comment)
-            else:
-                entries.append(entry)
-
-            ps.last_comment_zero_four_syntax = False
+            entries.append(entry)
 
         res = ast.Resource(entries)
 
@@ -131,12 +122,6 @@ class FluentParser(object):
         if ps.current_char == '#':
             return self.get_comment(ps)
 
-        if ps.current_char == '/':
-            return self.get_zero_four_style_comment(ps)
-
-        if ps.current_char == '[':
-            return self.get_group_comment_from_section(ps)
-
         if ps.current_char == '-':
             return self.get_term(ps)
 
@@ -144,39 +129,6 @@ class FluentParser(object):
             return self.get_message(ps)
 
         raise ParseError('E0002')
-
-    @with_span
-    def get_zero_four_style_comment(self, ps):
-        ps.expect_char('/')
-        ps.expect_char('/')
-        ps.take_char(lambda x: x == ' ')
-
-        content = ''
-
-        while True:
-            ch = ps.take_char(lambda x: x != EOL)
-            while ch:
-                content += ch
-                ch = ps.take_char(lambda x: x != EOL)
-
-            if ps.is_next_line_zero_four_comment():
-                content += ps.current_char
-                ps.next()
-                ps.expect_char('/')
-                ps.expect_char('/')
-                ps.take_char(lambda x: x == ' ')
-            else:
-                break
-
-        # Comments followed by Sections become GroupComments.
-        if ps.peek() == '[':
-            ps.skip_to_peek()
-            self.get_group_comment_from_section(ps)
-            return ast.GroupComment(content)
-
-        ps.reset_peek()
-        ps.last_comment_zero_four_syntax = True
-        return ast.Comment(content)
 
     @with_span
     def get_comment(self, ps):
@@ -217,33 +169,12 @@ class FluentParser(object):
             return ast.ResourceComment(content)
 
     @with_span
-    def get_group_comment_from_section(self, ps):
-        def until_closing_bracket_or_eol(ch):
-            return ch not in (']', EOL)
-
-        ps.expect_char('[')
-        ps.expect_char('[')
-        while ps.take_char(until_closing_bracket_or_eol):
-            pass
-        ps.expect_char(']')
-        ps.expect_char(']')
-
-        # A Section without a comment is like an empty Group Comment.
-        # Semantically it ends the previous group and starts a new one.
-        return ast.GroupComment('')
-
-    @with_span
     def get_message(self, ps):
         id = self.get_identifier(ps)
         ps.skip_blank_inline()
+        ps.expect_char('=')
 
-        # XXX Syntax 0.4 compat
-        if ps.current_char == '=':
-            ps.next()
-            value = self.maybe_get_pattern(ps)
-        else:
-            value = None
-
+        value = self.maybe_get_pattern(ps)
         attrs = self.get_attributes(ps)
 
         if value is None and len(attrs) == 0:

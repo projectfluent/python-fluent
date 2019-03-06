@@ -55,7 +55,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
 
     def test_same_message_with_attribute(self):
         message1 = self.parse_ftl_entry("""\
-            foo
+            foo =
                 .attr = Attr
         """)
 
@@ -65,7 +65,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
 
     def test_same_message_with_attributes(self):
         message1 = self.parse_ftl_entry("""\
-            foo
+            foo =
                 .attr1 = Attr 1
                 .attr2 = Attr 2
         """)
@@ -93,12 +93,12 @@ class TestOrderEquals(unittest.TestCase):
 
     def test_attributes(self):
         message1 = self.parse_ftl_entry("""\
-            foo
+            foo =
                 .attr1 = Attr1
                 .attr2 = Attr2
         """)
         message2 = self.parse_ftl_entry("""\
-            foo
+            foo =
                 .attr2 = Attr2
                 .attr1 = Attr1
         """)

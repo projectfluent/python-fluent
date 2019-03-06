@@ -1,250 +1,250 @@
 {
+  "type": "Resource",
   "body": [
     {
-      "comment": null, 
-      "span": {
-        "start": 0, 
-        "end": 33, 
-        "type": "Span"
-      }, 
-      "attributes": [], 
-      "type": "Message", 
+      "type": "Message",
       "id": {
-        "type": "Identifier", 
+        "type": "Identifier",
+        "name": "key01",
         "span": {
-          "start": 0, 
-          "end": 5, 
-          "type": "Span"
-        }, 
-        "name": "key01"
-      }, 
+          "type": "Span",
+          "start": 0,
+          "end": 5
+        }
+      },
       "value": {
-        "type": "Pattern", 
+        "type": "Pattern",
         "elements": [
           {
-            "type": "TextElement", 
+            "type": "TextElement",
+            "value": "Value\nContinued here.",
             "span": {
-              "start": 8, 
-              "end": 33, 
-              "type": "Span"
-            }, 
-            "value": "Value\nContinued here."
+              "type": "Span",
+              "start": 8,
+              "end": 33
+            }
           }
-        ], 
+        ],
         "span": {
-          "start": 8, 
-          "end": 33, 
-          "type": "Span"
+          "type": "Span",
+          "start": 8,
+          "end": 33
         }
-      }
-    }, 
-    {
-      "comment": null, 
+      },
+      "attributes": [],
+      "comment": null,
       "span": {
-        "start": 35, 
-        "end": 72, 
-        "type": "Span"
-      }, 
-      "attributes": [], 
-      "type": "Message", 
+        "type": "Span",
+        "start": 0,
+        "end": 33
+      }
+    },
+    {
+      "type": "Message",
       "id": {
-        "type": "Identifier", 
+        "type": "Identifier",
+        "name": "key02",
         "span": {
-          "start": 35, 
-          "end": 40, 
-          "type": "Span"
-        }, 
-        "name": "key02"
-      }, 
+          "type": "Span",
+          "start": 35,
+          "end": 40
+        }
+      },
       "value": {
-        "type": "Pattern", 
+        "type": "Pattern",
         "elements": [
           {
-            "type": "TextElement", 
+            "type": "TextElement",
+            "value": "Value\nContinued here.",
             "span": {
-              "start": 47, 
-              "end": 72, 
-              "type": "Span"
-            }, 
-            "value": "Value\nContinued here."
+              "type": "Span",
+              "start": 47,
+              "end": 72
+            }
           }
-        ], 
+        ],
         "span": {
-          "start": 43, 
-          "end": 72, 
-          "type": "Span"
+          "type": "Span",
+          "start": 43,
+          "end": 72
         }
+      },
+      "attributes": [],
+      "comment": null,
+      "span": {
+        "type": "Span",
+        "start": 35,
+        "end": 72
       }
-    }, 
+    },
     {
+      "type": "Message",
+      "id": {
+        "type": "Identifier",
+        "name": "key03",
+        "span": {
+          "type": "Span",
+          "start": 159,
+          "end": 164
+        }
+      },
+      "value": {
+        "type": "Pattern",
+        "elements": [
+          {
+            "type": "TextElement",
+            "value": "Value",
+            "span": {
+              "type": "Span",
+              "start": 171,
+              "end": 176
+            }
+          }
+        ],
+        "span": {
+          "type": "Span",
+          "start": 167,
+          "end": 176
+        }
+      },
+      "attributes": [],
       "comment": {
-        "content": "ERROR \"Continued\" looks like a new message.\nkey03 parses fine with just \"Value\".", 
-        "type": "Comment", 
+        "type": "Comment",
+        "content": "ERROR \"Continued\" looks like a new message.\nkey03 parses fine with just \"Value\".",
         "span": {
-          "start": 74, 
-          "end": 158, 
-          "type": "Span"
+          "type": "Span",
+          "start": 74,
+          "end": 158
         }
-      }, 
+      },
       "span": {
-        "start": 74, 
-        "end": 176, 
-        "type": "Span"
-      }, 
-      "attributes": [], 
-      "type": "Message", 
-      "id": {
-        "type": "Identifier", 
-        "span": {
-          "start": 159, 
-          "end": 164, 
-          "type": "Span"
-        }, 
-        "name": "key03"
-      }, 
-      "value": {
-        "type": "Pattern", 
-        "elements": [
-          {
-            "type": "TextElement", 
-            "span": {
-              "start": 171, 
-              "end": 176, 
-              "type": "Span"
-            }, 
-            "value": "Value"
-          }
-        ], 
-        "span": {
-          "start": 167, 
-          "end": 176, 
-          "type": "Span"
-        }
+        "type": "Span",
+        "start": 74,
+        "end": 176
       }
-    }, 
+    },
     {
-      "content": "Continued here\n    and here.\n\n", 
-      "type": "Junk", 
-      "span": {
-        "start": 177, 
-        "end": 207, 
-        "type": "Span"
-      }, 
+      "type": "Junk",
       "annotations": [
         {
-          "type": "Annotation", 
-          "message": "Expected message \"Continued\" to have a value or attributes", 
-          "code": "E0005", 
-          "span": {
-            "start": 187, 
-            "end": 187, 
-            "type": "Span"
-          }, 
+          "type": "Annotation",
+          "code": "E0003",
           "args": [
-            "Continued"
-          ]
+            "="
+          ],
+          "message": "Expected token: \"=\"",
+          "span": {
+            "type": "Span",
+            "start": 187,
+            "end": 187
+          }
         }
-      ]
-    }, 
+      ],
+      "content": "Continued here\n    and here.\n\n",
+      "span": {
+        "type": "Span",
+        "start": 177,
+        "end": 207
+      }
+    },
     {
+      "type": "Message",
+      "id": {
+        "type": "Identifier",
+        "name": "key04",
+        "span": {
+          "type": "Span",
+          "start": 299,
+          "end": 304
+        }
+      },
+      "value": {
+        "type": "Pattern",
+        "elements": [
+          {
+            "type": "TextElement",
+            "value": "Value",
+            "span": {
+              "type": "Span",
+              "start": 311,
+              "end": 316
+            }
+          }
+        ],
+        "span": {
+          "type": "Span",
+          "start": 307,
+          "end": 316
+        }
+      },
+      "attributes": [],
       "comment": {
-        "content": "ERROR \"Continued\" and \"and\" look like new messages\nkey04 parses fine with just \"Value\".", 
-        "type": "Comment", 
+        "type": "Comment",
+        "content": "ERROR \"Continued\" and \"and\" look like new messages\nkey04 parses fine with just \"Value\".",
         "span": {
-          "start": 207, 
-          "end": 298, 
-          "type": "Span"
+          "type": "Span",
+          "start": 207,
+          "end": 298
         }
-      }, 
+      },
       "span": {
-        "start": 207, 
-        "end": 316, 
-        "type": "Span"
-      }, 
-      "attributes": [], 
-      "type": "Message", 
-      "id": {
-        "type": "Identifier", 
-        "span": {
-          "start": 299, 
-          "end": 304, 
-          "type": "Span"
-        }, 
-        "name": "key04"
-      }, 
-      "value": {
-        "type": "Pattern", 
-        "elements": [
-          {
-            "type": "TextElement", 
-            "span": {
-              "start": 311, 
-              "end": 316, 
-              "type": "Span"
-            }, 
-            "value": "Value"
-          }
-        ], 
-        "span": {
-          "start": 307, 
-          "end": 316, 
-          "type": "Span"
-        }
+        "type": "Span",
+        "start": 207,
+        "end": 316
       }
-    }, 
+    },
     {
-      "content": "Continued here\n", 
-      "type": "Junk", 
-      "span": {
-        "start": 317, 
-        "end": 332, 
-        "type": "Span"
-      }, 
+      "type": "Junk",
       "annotations": [
         {
-          "type": "Annotation", 
-          "message": "Expected message \"Continued\" to have a value or attributes", 
-          "code": "E0005", 
-          "span": {
-            "start": 327, 
-            "end": 327, 
-            "type": "Span"
-          }, 
+          "type": "Annotation",
+          "code": "E0003",
           "args": [
-            "Continued"
-          ]
+            "="
+          ],
+          "message": "Expected token: \"=\"",
+          "span": {
+            "type": "Span",
+            "start": 327,
+            "end": 327
+          }
         }
-      ]
-    }, 
-    {
-      "content": "and even here.\n", 
-      "type": "Junk", 
+      ],
+      "content": "Continued here\n",
       "span": {
-        "start": 332, 
-        "end": 347, 
-        "type": "Span"
-      }, 
+        "type": "Span",
+        "start": 317,
+        "end": 332
+      }
+    },
+    {
+      "type": "Junk",
       "annotations": [
         {
-          "type": "Annotation", 
-          "message": "Expected message \"and\" to have a value or attributes", 
-          "code": "E0005", 
-          "span": {
-            "start": 336, 
-            "end": 336, 
-            "type": "Span"
-          }, 
+          "type": "Annotation",
+          "code": "E0003",
           "args": [
-            "and"
-          ]
+            "="
+          ],
+          "message": "Expected token: \"=\"",
+          "span": {
+            "type": "Span",
+            "start": 336,
+            "end": 336
+          }
         }
-      ]
+      ],
+      "content": "and even here.\n",
+      "span": {
+        "type": "Span",
+        "start": 332,
+        "end": 347
+      }
     }
-  ], 
-  "type": "Resource", 
+  ],
   "span": {
-    "start": 0, 
-    "end": 347, 
-    "type": "Span"
+    "type": "Span",
+    "start": 0,
+    "end": 347
   }
 }

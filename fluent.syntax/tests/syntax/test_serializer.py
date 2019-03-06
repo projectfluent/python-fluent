@@ -154,17 +154,6 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_attribute_syntax_zero_four(self):
-        input = """\
-            foo
-                .attr = Foo Attr
-        """
-        output = """\
-            foo =
-                .attr = Foo Attr
-        """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
-
     def test_attribute(self):
         input = """\
             foo =
@@ -180,19 +169,6 @@ class TestSerializeResource(unittest.TestCase):
                     Continued
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
-
-    def test_two_attributes_syntax_zero_four(self):
-        input = """\
-            foo
-                .attr-a = Foo Attr A
-                .attr-b = Foo Attr B
-        """
-        output = """\
-            foo =
-                .attr-a = Foo Attr A
-                .attr-b = Foo Attr B
-        """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
 
     def test_two_attributes(self):
         input = """\

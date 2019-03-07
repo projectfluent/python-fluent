@@ -17,6 +17,7 @@ from .types import FluentDateType, FluentNone, FluentNumber, FluentType
 from .utils import (ATTRIBUTE_SEPARATOR, TERM_SIGIL, args_match, ast_to_id,
                     attribute_ast_to_id, inspect_function_args, reference_to_id,
                     unknown_reference_error_obj)
+from .escapers import null_escaper, escaper_for_message, RegisteredEscaper, EscaperJoin, escapers_compatible, identity
 
 try:
     from functools import singledispatch
@@ -62,6 +63,7 @@ class CurrentEnvironment(object):
     message_id = attr.ib(default=None)
     term_args = attr.ib(default=None)
     in_select_expression = attr.ib(default=False)
+    escaper = attr.ib(default=null_escaper)
 
 
 @attr.s
@@ -71,6 +73,7 @@ class CompilerEnvironment(object):
     use_isolating = attr.ib()
     message_mapping = attr.ib(factory=dict)
     errors = attr.ib(factory=list)
+    escapers = attr.ib(default=None)
     functions = attr.ib(factory=dict)
     function_renames = attr.ib(factory=dict)
     functions_arg_spec = attr.ib(factory=dict)
@@ -80,6 +83,9 @@ class CompilerEnvironment(object):
 
     def add_current_message_error(self, error):
         self.errors.append((self.current.message_id, error))
+
+    def escaper_for_message(self, message_id=None):
+        return escaper_for_message(self.escapers, message_id=message_id)
 
     @contextlib.contextmanager
     def modified(self, **replacements):
@@ -98,7 +104,7 @@ class CompilerEnvironment(object):
         return self.modified(term_args=term_args if term_args is not None else {})
 
 
-def compile_messages(messages, locale, use_isolating=True, functions=None):
+def compile_messages(messages, locale, use_isolating=True, functions=None, escapers=None):
     """
     Compile a dictionary of {id: Message/Term objects} to a Python module,
     and returns a tuple:
@@ -113,7 +119,8 @@ def compile_messages(messages, locale, use_isolating=True, functions=None):
     module, message_mapping, module_globals, errors = messages_to_module(
         messages, locale,
         use_isolating=use_isolating,
-        functions=functions)
+        functions=functions,
+        escapers=escapers)
 
     code_obj = compile(module.as_ast(), '<string>', 'exec')
     exec(code_obj, module_globals)
@@ -127,7 +134,7 @@ def compile_messages(messages, locale, use_isolating=True, functions=None):
     return (retval, errors)
 
 
-def messages_to_module(messages, locale, use_isolating=True, functions=None):
+def messages_to_module(messages, locale, use_isolating=True, functions=None, escapers=None):
     """
     Compile a set of {id: Message/Term objects} to a Python module, returning a tuple:
     (codegen.Module object, dictionary mapping message IDs to Python functions,
@@ -164,6 +171,12 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None):
     for err in function_arg_errors:
         compiler_env.add_current_message_error(err)
 
+    if escapers:
+        if len(set(e.name for e in escapers)) < len(escapers):
+            raise ValueError("Every escaper must have a unique 'name' attribute'")
+        compiler_env.escapers = [RegisteredEscaper(escaper, compiler_env)
+                                 for escaper in escapers]
+
     # Setup globals, and reserve names for them
     module_globals = {
         k: getattr(runtime, k) for k in runtime.__all__
@@ -195,6 +208,17 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None):
         # We should have chosen all our module_globals to avoid name conflicts:
         assert name == k, "Expected {0}=={1}".format(name, k)
 
+    # Reserve names for escapers
+    if compiler_env.escapers is not None:
+        for escaper in compiler_env.escapers:
+            for name, func, properties in escaper.get_reserved_names_with_properties():
+                assigned_name = module.scope.reserve_name(name, properties=properties)
+                # We've chosen the names to not clash with anything that
+                # we've already set up.
+                assert assigned_name == name
+                assert assigned_name not in module_globals
+                module_globals[assigned_name] = func
+
     # Reserve names for function arguments, so that we always
     # know the name of these arguments without needing to do
     # lookups etc.
@@ -213,15 +237,17 @@ def messages_to_module(messages, locale, use_isolating=True, functions=None):
     # Pass one, find all the names, so that we can populate message_mapping,
     # which is needed for compilation.
     for msg_id, msg in message_ids_to_ast.items():
+        escaper = compiler_env.escaper_for_message(message_id=msg_id)
         function_name = module.scope.reserve_name(
             message_function_name_for_msg_id(msg_id),
-            properties={codegen.PROPERTY_RETURN_TYPE: text_type}
+            properties={codegen.PROPERTY_RETURN_TYPE: escaper.output_type}
         )
         compiler_env.message_mapping[msg_id] = function_name
 
     # Pass 2, actual compilation
     for msg_id, msg in message_ids_to_ast.items():
-        with compiler_env.modified(message_id=msg_id):
+        with compiler_env.modified(message_id=msg_id,
+                                   escaper=compiler_env.escaper_for_message(message_id=msg_id)):
             function_name = compiler_env.message_mapping[msg_id]
             function = compile_message(msg, msg_id, function_name, module, compiler_env)
             module.add_function(function_name, function)
@@ -266,7 +292,8 @@ def compile_message(msg, msg_id, function_name, module, compiler_env):
         error = FluentCyclicReferenceError("Cyclic reference in {0}".format(msg_id))
         add_static_msg_error(function_block, error)
         compiler_env.add_current_message_error(error)
-        return_expression = finalize_expr_as_string(make_fluent_none(None, module.scope), function_block, compiler_env)
+        return_expression = finalize_expr_as_output_type(
+            make_fluent_none(None, module.scope), function_block, compiler_env)
     else:
         return_expression = compile_expr(msg, function_block, compiler_env)
     # > return $return_expression
@@ -446,23 +473,28 @@ def compile_expr_pattern(pattern, block, compiler_env):
     parts = []
     subelements = pattern.elements
 
-    use_isolating = compiler_env.use_isolating and len(subelements) > 1
+    escaper = compiler_env.current.escaper
+    use_isolating = ((escaper.use_isolating
+                      if escaper.use_isolating is not None
+                      else compiler_env.use_isolating) and
+                     len(subelements) > 1)
 
     for element in pattern.elements:
         wrap_this_with_isolating = use_isolating and not isinstance(element, TextElement)
         if wrap_this_with_isolating:
-            parts.append(codegen.String(FSI))
+            parts.append(wrap_with_escaper(codegen.String(FSI), block, compiler_env))
         parts.append(compile_expr(element, block, compiler_env))
         if wrap_this_with_isolating:
-            parts.append(codegen.String(PDI))
+            parts.append(wrap_with_escaper(codegen.String(PDI), block, compiler_env))
 
     # > ''.join($[p for p in parts])
-    return codegen.StringJoin([finalize_expr_as_string(p, block, compiler_env) for p in parts])
+    return EscaperJoin([finalize_expr_as_output_type(p, block, compiler_env) for p in parts],
+                       escaper, block.scope)
 
 
 @compile_expr.register(TextElement)
 def compile_expr_text(text, block, compiler_env):
-    return codegen.String(text.value)
+    return wrap_with_mark_escaped(codegen.String(text.value), block, compiler_env)
 
 
 @compile_expr.register(StringLiteral)
@@ -490,26 +522,36 @@ def compile_expr_message_reference(reference, block, compiler_env):
     return handle_message_reference(reference, block, compiler_env)
 
 
-def compile_term(term, block, compiler_env, term_args=None):
-    with compiler_env.modified_for_term_reference(term_args=term_args):
-        return compile_expr(term.value, block, compiler_env)
+def compile_term(term, block, compiler_env, new_escaper, term_args=None):
+    current_escaper = compiler_env.current.escaper
+    if not escapers_compatible(current_escaper, new_escaper):
+        term_id = ast_to_id(term)
+        error = TypeError("Escaper {0} for term {1} cannot be used from calling context with {2} escaper"
+                          .format(new_escaper.name, term_id, current_escaper.name))
+        add_static_msg_error(block, error)
+        compiler_env.add_current_message_error(error)
+        return make_fluent_none(term_id, block.scope)
+    else:
+        with compiler_env.modified(escaper=new_escaper):
+            with compiler_env.modified_for_term_reference(term_args=term_args):
+                return compile_expr(term.value, block, compiler_env)
 
 
 @compile_expr.register(TermReference)
 def compile_expr_term_reference(reference, block, compiler_env):
-    term, err_obj = lookup_term_reference(reference, block, compiler_env)
+    term, new_escaper, err_obj = lookup_term_reference(reference, block, compiler_env)
     if term is None:
         return err_obj
-    return compile_term(term, block, compiler_env)
+    return compile_term(term, block, compiler_env, new_escaper)
 
 
 @compile_expr.register(AttributeExpression)
 def compile_expr_attribute_expression(attr_expr, block, compiler_env):
     if isinstance(attr_expr.ref, TermReference):
-        term, err_obj = lookup_term_reference(attr_expr, block, compiler_env)
+        term, new_escaper, err_obj = lookup_term_reference(attr_expr, block, compiler_env)
         if term is None:
             return err_obj
-        return compile_term(term, block, compiler_env)
+        return compile_term(term, block, compiler_env, new_escaper)
 
     # Message
     return handle_message_reference(attr_expr, block, compiler_env)
@@ -612,15 +654,26 @@ def compile_expr_variant_name(name, block, compiler_env):
 
 @compile_expr.register(VariantExpression)
 def compile_expr_variant_expression(variant_expr, block, compiler_env):
-    term, err_obj = lookup_term_reference(variant_expr.ref, block, compiler_env)
+    term, new_escaper, err_obj = lookup_term_reference(variant_expr.ref, block, compiler_env)
     if term is None:
         return err_obj
 
     term_val = term.value
     if isinstance(term_val, VariantList):
-        return compile_expr_variant_list(term_val, block, compiler_env,
-                                         selected_key=variant_expr.key,
-                                         term=term)
+        current_escaper = compiler_env.current.escaper
+        if not escapers_compatible(current_escaper, new_escaper):
+            term_id = ast_to_id(term)
+            error = TypeError("Escaper {0} for term {1} cannot be used from calling context with {2} escaper"
+                              .format(new_escaper.name, term_id, current_escaper.name))
+            add_static_msg_error(block, error)
+            compiler_env.add_current_message_error(error)
+            return make_fluent_none(term_id, block.scope)
+
+        with compiler_env.modified(escaper=new_escaper):
+            value = compile_expr_variant_list(term_val, block, compiler_env,
+                                              selected_key=variant_expr.key,
+                                              term=term)
+        return wrap_with_escaper(value, block, compiler_env)
 
     error = FluentReferenceError('Unknown variant: {0}[{1}]'.format(
             reference_to_id(variant_expr.ref), variant_expr.key.name))
@@ -655,14 +708,30 @@ def compile_expr_variable_reference(argument, block, compiler_env):
     wrap_with_handle_argument = not compiler_env.current.in_select_expression
     if wrap_with_handle_argument:
         arg_handled_tmp_name = block.scope.reserve_name('_arg_h')
-        handle_argument_func_call = codegen.FunctionCall(
-            "handle_argument",
-            [block.scope.variable(arg_tmp_name),
-             codegen.String(name),
-             block.scope.variable(LOCALE_NAME),
-             block.scope.variable(ERRORS_NAME)],
-            {},
-            block.scope)
+
+        # > $tmp_name = handle_argument_with_escaper($tmp_name, "$name", output_type, locale, errors)
+        # or
+        # > $tmp_name = handle_argument($tmp_name, "$name", locale, errors)
+        escaper = compiler_env.current.escaper
+        if escaper is null_escaper:
+            handle_argument_func_call = codegen.FunctionCall(
+                "handle_argument",
+                [block.scope.variable(arg_tmp_name),
+                 codegen.String(name),
+                 block.scope.variable(LOCALE_NAME),
+                 block.scope.variable(ERRORS_NAME)],
+                {},
+                block.scope)
+        else:
+            handle_argument_func_call = codegen.FunctionCall(
+                "handle_argument_with_escaper",
+                [block.scope.variable(arg_tmp_name),
+                 codegen.String(name),
+                 block.scope.variable(escaper.output_type_name()),
+                 block.scope.variable(LOCALE_NAME),
+                 block.scope.variable(ERRORS_NAME)],
+                {},
+                block.scope)
 
     if block.scope.has_assignment(arg_tmp_name):  # already assigned to this, can re-use
         if not wrap_with_handle_argument:
@@ -729,10 +798,10 @@ def compile_expr_call_expression(expr, block, compiler_env):
             add_static_msg_error(block, args_err)
             compiler_env.add_current_message_error(args_err)
 
-        term, err = lookup_term_reference(expr.callee, block, compiler_env)
+        term, new_escaper, err = lookup_term_reference(expr.callee, block, compiler_env)
         if term is None:
             return err
-        return compile_term(term, block, compiler_env, term_args=kwargs)
+        return compile_term(term, block, compiler_env, new_escaper, term_args=kwargs)
 
     # builtin or custom function
     function_name = expr.callee.id.name
@@ -784,6 +853,15 @@ def add_static_msg_error(block, exception):
 
 
 def do_message_call(msg_id, block, compiler_env):
+    current_escaper = compiler_env.current.escaper
+    new_escaper = compiler_env.escaper_for_message(msg_id)
+    if not escapers_compatible(current_escaper, new_escaper):
+        error = TypeError("Escaper {0} for message {1} cannot be used from calling context with {2} escaper"
+                          .format(new_escaper.name, msg_id, current_escaper.name))
+        add_static_msg_error(block, error)
+        compiler_env.add_current_message_error(error)
+        return make_fluent_none(msg_id, block.scope)
+
     msg_func_name = compiler_env.message_mapping[msg_id]
     if compiler_env.current.term_args is not None:
         # Message call from inside a term.
@@ -793,34 +871,52 @@ def do_message_call(msg_id, block, compiler_env):
         call_args = [term_arg_dict, block.scope.variable(ERRORS_NAME)]
     else:
         call_args = [block.scope.variable(a) for a in MESSAGE_FUNCTION_ARGS]
-    return codegen.FunctionCall(msg_func_name,
-                                call_args,
-                                {},
-                                block.scope)
+
+    func_call = codegen.FunctionCall(msg_func_name,
+                                     call_args,
+                                     {},
+                                     block.scope)
+    return wrap_with_escaper(func_call, block, compiler_env)
 
 
-def finalize_expr_as_string(codegen_ast, block, compiler_env):
+def finalize_expr_as_output_type(codegen_ast, block, compiler_env):
     """
     Wrap an outputted Python expression with code to ensure that it will return
-    a string.
+    a string (or the correct output type for the escaper)
     """
-    if issubclass(codegen_ast.type, text_type):
+    escaper = compiler_env.current.escaper
+    if codegen_ast.type is escaper.output_type:
         return codegen_ast
+    if issubclass(codegen_ast.type, six.text_type):
+        return wrap_with_escaper(codegen_ast, block, compiler_env)
     if issubclass(codegen_ast.type, FluentType):
-        # > $codegen_ast.format(locale)
-        return codegen.MethodCall(codegen_ast,
-                                  'format',
-                                  [block.scope.variable(LOCALE_NAME)],
-                                  expr_type=text_type)
+        # > $escaper.escape($codegen_ast.format(locale))
+        return wrap_with_escaper(
+            codegen.MethodCall(codegen_ast,
+                               'format',
+                               [block.scope.variable(LOCALE_NAME)],
+                               expr_type=text_type),
+            block, compiler_env)
+    if escaper is null_escaper:
+        # > handle_output($python_expr, locale, errors)
+        return codegen.FunctionCall('handle_output',
+                                    [codegen_ast,
+                                     block.scope.variable(LOCALE_NAME),
+                                     block.scope.variable(ERRORS_NAME)],
+                                    {},
+                                    block.scope,
+                                    expr_type=text_type)
 
-    # > handle_output($codegen_ast, locale, errors)
-    return codegen.FunctionCall('handle_output',
+    # > handle_output_with_escaper($codegen_ast, $escaper.output_type, $escaper.escape, locale, errors)
+    return codegen.FunctionCall('handle_output_with_escaper',
                                 [codegen_ast,
+                                 block.scope.variable(escaper.output_type_name()),
+                                 block.scope.variable(escaper.escape_name()),
                                  block.scope.variable(LOCALE_NAME),
                                  block.scope.variable(ERRORS_NAME)],
                                 {},
                                 block.scope,
-                                expr_type=text_type)
+                                expr_type=escaper.output_type)
 
 
 def is_cldr_plural_form_key(key_expr):
@@ -842,7 +938,7 @@ def lookup_term_reference(ref, block, compiler_env):
     # go away.
     term_id = reference_to_id(ref)
     if term_id in compiler_env.term_ids_to_ast:
-        return compiler_env.term_ids_to_ast[term_id], None
+        return compiler_env.term_ids_to_ast[term_id], compiler_env.escaper_for_message(term_id), None
     if isinstance(ref, AttributeExpression):
         # Fallback to parent
         parent_id = reference_to_id(ref.ref)
@@ -850,8 +946,8 @@ def lookup_term_reference(ref, block, compiler_env):
             error = unknown_reference_error_obj(term_id)
             add_static_msg_error(block, error)
             compiler_env.add_current_message_error(error)
-            return compiler_env.term_ids_to_ast[parent_id], None
-    return None, unknown_reference(term_id, block, compiler_env)
+            return compiler_env.term_ids_to_ast[parent_id], compiler_env.escaper_for_message(parent_id), None
+    return None, None, unknown_reference(term_id, block, compiler_env)
 
 
 def handle_message_reference(ref, block, compiler_env):
@@ -963,6 +1059,29 @@ def unknown_reference(name, block, compiler_env):
     compiler_env.add_current_message_error(error)
     return make_fluent_none(name, block.scope)
 
+
+def wrap_with_escaper(codegen_ast, block, compiler_env):
+    escaper = compiler_env.current.escaper
+    if escaper is null_escaper or escaper.escape is identity:
+        return codegen_ast
+    if escaper.output_type is codegen_ast.type:
+        return codegen_ast
+    return codegen.FunctionCall(escaper.escape_name(),
+                                [codegen_ast],
+                                {},
+                                block.scope)
+
+
+def wrap_with_mark_escaped(codegen_ast, block, compiler_env):
+    escaper = compiler_env.current.escaper
+    if escaper is null_escaper or escaper.mark_escaped is identity:
+        return codegen_ast
+    if escaper.output_type is codegen_ast.type:
+        return codegen_ast
+    return codegen.FunctionCall(escaper.mark_escaped_name(),
+                                [codegen_ast],
+                                {},
+                                block.scope)
 
 # AST checking and simplification
 

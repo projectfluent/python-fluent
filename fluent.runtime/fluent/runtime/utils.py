@@ -25,6 +25,27 @@ class Any(object):
 Any = Any()
 
 
+# On Python 3 we could get away with just using a class, but on Python 2
+# functions defined in the class body get wrapped with UnboundMethod, which
+# causes problems.
+
+try:
+    from types import SimpleNamespace
+except AttributeError:
+    # Python 2 fallback
+    class SimpleNamespace:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+        def __repr__(self):
+            keys = sorted(self.__dict__)
+            items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+            return "{}({})".format(type(self).__name__, ", ".join(items))
+
+        def __eq__(self, other):
+            return self.__dict__ == other.__dict__
+
+
 # From spec:
 #    NamedArgument ::= Identifier blank? ":" blank? (StringLiteral | NumberLiteral)
 #    Identifier ::= [a-zA-Z] [a-zA-Z0-9_-]*

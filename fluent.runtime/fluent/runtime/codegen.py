@@ -550,10 +550,8 @@ class StringJoin(Expression):
     def __init__(self, parts):
         self.parts = parts
 
-    def as_ast(self):
-        return MethodCall(String(''), 'join',
-                          [List(self.parts)],
-                          expr_type=self.type).as_ast()
+    def __repr__(self):
+        return 'StringJoin([{0}])'.format(', '.join(repr(p) for p in self.parts))
 
     def simplify(self, changes, simplifier):
         # Simplify sub parts
@@ -573,8 +571,8 @@ class StringJoin(Expression):
             changes.append(True)
         self.parts = new_parts
 
-        # See if we can eliminate the StringJoin altogether
-        if len(self.parts) == 0:
+        # See if we can eliminate the Join altogether
+        if len(self.parts) == 0 and self.type is text_type:
             changes.append(True)
             return simplifier(String(''), changes)
         if len(self.parts) == 1:
@@ -582,8 +580,10 @@ class StringJoin(Expression):
             return simplifier(self.parts[0], changes)
         return simplifier(self, changes)
 
-    def __repr__(self):
-        return 'StringJoin([{0}])'.format(', '.join(repr(p) for p in self.parts))
+    def as_ast(self):
+        return MethodCall(String(''), 'join',
+                          [List(self.parts)],
+                          expr_type=self.type).as_ast()
 
 
 class VariableReference(Expression):

@@ -5,6 +5,9 @@ import unittest
 from fluent.runtime import CompilingFluentBundle
 from fluent.runtime.compiler import messages_to_module
 from fluent.runtime.errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
+from markupsafe import Markup, escape
+
+from fluent.runtime.utils import SimpleNamespace
 
 from .test_codegen import decompile_ast_list, normalize_python
 from .utils import dedent_ftl
@@ -14,20 +17,22 @@ from .utils import dedent_ftl
 # the other FluentBundle.format tests.
 
 
-def compile_messages_to_python(source, locale, use_isolating=False, functions=None):
+def compile_messages_to_python(source, locale, use_isolating=False, functions=None, escapers=None):
     # We use CompilingFluentBundle partially here, but then switch to
     # messages_to_module instead of compile_messages so that we can get the AST
     # back instead of a compiled function.
-    bundle = CompilingFluentBundle([locale], use_isolating=use_isolating, functions=functions)
+    bundle = CompilingFluentBundle([locale], use_isolating=use_isolating,
+                                   functions=functions, escapers=escapers)
     bundle.add_messages(dedent_ftl(source))
     module, message_mapping, module_globals, errors = messages_to_module(
         bundle._messages_and_terms, bundle._babel_locale,
         use_isolating=bundle._use_isolating,
-        functions=bundle._functions)
+        functions=bundle._functions,
+        escapers=escapers)
     return decompile_ast_list([module.as_ast()]), errors
 
 
-class TestCompiler(unittest.TestCase):
+class CompilerTestMixin(object):
     locale = 'en_US'
 
     maxDiff = None
@@ -36,6 +41,8 @@ class TestCompiler(unittest.TestCase):
         self.assertEqual(normalize_python(code1),
                          normalize_python(code2))
 
+
+class TestCompiler(CompilerTestMixin, unittest.TestCase):
     def test_single_string_literal(self):
         code, errs = compile_messages_to_python("""
             foo = Foo
@@ -768,3 +775,94 @@ class TestCompiler(unittest.TestCase):
                 return _ret
         """)
         self.assertEqual(errs, [])
+
+
+empty_markup = Markup('')
+
+html_escaper = SimpleNamespace(
+    select=lambda message_id=None, **hints: message_id.endswith('-html'),
+    output_type=Markup,
+    mark_escaped=Markup,
+    escape=escape,
+    join=empty_markup.join,
+    name='html_escaper',
+    use_isolating=False,
+)
+
+
+class TestCompilerEscaping(CompilerTestMixin, unittest.TestCase):
+    escapers = [html_escaper]
+
+    def compile_messages(self, code, **kwargs):
+        return compile_messages_to_python(code, self.locale, escapers=self.escapers, **kwargs)
+
+    def test_argument(self):
+        code, errs = self.compile_messages("""
+            foo-html = { $arg }
+        """)
+        self.assertCodeEqual(code, """
+            def foo_html(message_args, errors):
+                try:
+                    _arg = message_args['arg']
+                except (LookupError, TypeError):
+                    errors.append(FluentReferenceError('Unknown external: arg'))
+                    _arg = FluentNone('arg')
+                    _arg_h = _arg
+                else:
+                    _arg_h = handle_argument_with_escaper(_arg, 'arg', escaper_0__output_type, locale, errors)
+                return handle_output_with_escaper(
+                    _arg_h,
+                    escaper_0__output_type,
+                    escaper_0__escape,
+                    locale,
+                    errors
+                )
+        """)
+
+    def test_single_text_element(self):
+        code, errs = self.compile_messages("""
+            foo-html = <b>Some HTML</b>
+        """)
+        self.assertCodeEqual(code, """
+            def foo_html(message_args, errors):
+                return escaper_0__mark_escaped('<b>Some HTML</b>')
+        """)
+
+    def test_reference_to_same_escaper(self):
+        # Test we eliminate the unnecessary escaper_0__escape call in the calling code
+        code, errs = self.compile_messages("""
+            foo-html = <b>Some HTML</b>
+            bar-html = { foo-html }
+        """)
+        self.assertCodeEqual(code, """
+            def foo_html(message_args, errors):
+                return escaper_0__mark_escaped('<b>Some HTML</b>')
+
+            def bar_html(message_args, errors):
+                return foo_html(message_args, errors)
+        """)
+
+    def test_reference_to_same_escaper_term(self):
+        code, errs = self.compile_messages("""
+            -term-html = <b>Some HTML</b>
+            foo-html = { -term-html }
+        """)
+        self.assertCodeEqual(code, """
+            def foo_html(message_args, errors):
+                return escaper_0__mark_escaped('<b>Some HTML</b>')
+        """)
+
+    def test_term_inlining_with_escaping(self):
+        code, errs = self.compile_messages("""
+            -term-html = <b>Some HTML</b>
+            foo-html = Hello { -term-html }
+        """)
+        self.assertCodeEqual(code, """
+            def foo_html(message_args, errors):
+                return escaper_0__mark_escaped('Hello <b>Some HTML</b>')
+        """)
+
+    def test_non_unique_escaper(self):
+        self.assertRaises(ValueError,
+                          compile_messages_to_python,
+                          "foo = bar", self.locale, escapers=[html_escaper, html_escaper])

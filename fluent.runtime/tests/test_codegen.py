@@ -7,12 +7,16 @@ import sys
 import textwrap
 import unittest
 
+import six
+from fluent.runtime import codegen
+from fluent.runtime.utils import allowable_name
+
 from ast_decompiler import decompiler
 from hypothesis import given
 from hypothesis.strategies import text
 
-from fluent.runtime import codegen
-from fluent.runtime.utils import allowable_name
+
+text_type = six.text_type
 
 
 def normalize_python(txt):
@@ -478,14 +482,14 @@ class TestCodeGen(unittest.TestCase):
 
     def test_string_join_two(self):
         module = codegen.Module()
-        module.scope.reserve_name('tmp')
+        module.scope.reserve_name('tmp', properties={codegen.PROPERTY_TYPE: text_type})
         var = module.scope.variable('tmp')
         join = codegen.StringJoin([codegen.String('hello '), var])
         self.assertCodeEqual(as_source_code(join), "''.join(['hello ', tmp])")
 
     def test_string_join_collapse_strings(self):
         scope = codegen.Scope()
-        scope.reserve_name('tmp')
+        scope.reserve_name('tmp', properties={codegen.PROPERTY_TYPE: text_type})
         var = scope.variable('tmp')
         join1 = codegen.StringJoin([codegen.String('hello '),
                                     codegen.String('there '),

@@ -109,3 +109,47 @@ class TestPlaceables(unittest.TestCase):
         val, errs = self.ctx.format('self-parent-ref-ok.attr', {})
         self.assertEqual(val, 'Attribute Parent')
         self.assertEqual(len(errs), 0)
+
+
+class TestSingleElementPattern(unittest.TestCase):
+    def test_single_literal_number_isolating(self):
+        self.ctx = FluentBundle(['en-US'], use_isolating=True)
+        self.ctx.add_messages('foo = { 1 }')
+        val, errs = self.ctx.format('foo')
+        self.assertEqual(val, '1')
+        self.assertEqual(errs, [])
+
+    def test_single_literal_number_non_isolating(self):
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx.add_messages('foo = { 1 }')
+        val, errs = self.ctx.format('foo')
+        self.assertEqual(val, '1')
+        self.assertEqual(errs, [])
+
+    def test_single_arg_number_isolating(self):
+        self.ctx = FluentBundle(['en-US'], use_isolating=True)
+        self.ctx.add_messages('foo = { $arg }')
+        val, errs = self.ctx.format('foo', {'arg': 1})
+        self.assertEqual(val, '1')
+        self.assertEqual(errs, [])
+
+    def test_single_arg_number_non_isolating(self):
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx.add_messages('foo = { $arg }')
+        val, errs = self.ctx.format('foo', {'arg': 1})
+        self.assertEqual(val, '1')
+        self.assertEqual(errs, [])
+
+    def test_single_arg_missing_isolating(self):
+        self.ctx = FluentBundle(['en-US'], use_isolating=True)
+        self.ctx.add_messages('foo = { $arg }')
+        val, errs = self.ctx.format('foo')
+        self.assertEqual(val, 'arg')
+        self.assertEqual(len(errs), 1)
+
+    def test_single_arg_missing_non_isolating(self):
+        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.ctx.add_messages('foo = { $arg }')
+        val, errs = self.ctx.format('foo')
+        self.assertEqual(val, 'arg')
+        self.assertEqual(len(errs), 1)

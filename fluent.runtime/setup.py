@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 from setuptools import setup
-import sys
 
 
 setup(name='fluent.runtime',
@@ -21,7 +20,7 @@ setup(name='fluent.runtime',
       ],
       packages=['fluent', 'fluent.runtime'],
       install_requires=[
-          'fluent.syntax>=0.12,<=0.13',
+          'fluent.syntax>=0.10,<=0.13',
           'attrs',
           'babel',
           'pytz',

@@ -87,7 +87,7 @@ class TestParseEntry(unittest.TestCase):
             "content": "junk\n",
             "annotations": [
                 {
-                    "args": ["="],
+                    "arguments": ["="],
                     "code": "E0003",
                     "message": "Expected token: \"=\"",
                     "span": {
@@ -148,7 +148,7 @@ class TestParseEntry(unittest.TestCase):
             "content": "##Invalid Comment\n",
             "annotations": [
                 {
-                    "args": [" "],
+                    "arguments": [" "],
                     "code": "E0003",
                     "message": "Expected token: \" \"",
                     "span": {

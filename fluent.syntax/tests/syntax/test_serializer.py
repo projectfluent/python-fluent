@@ -94,12 +94,6 @@ class TestSerializeResource(unittest.TestCase):
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
-    def test_variant_expression(self):
-        input = """\
-            foo = Foo { -bar[baz] }
-        """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
-
     def test_attribute_expression(self):
         input = """\
             foo = Foo { bar.baz }
@@ -193,16 +187,6 @@ class TestSerializeResource(unittest.TestCase):
                 Continued
                 .attr-a = Foo Attr A
                 .attr-b = Foo Attr B
-        """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
-
-    def test_variant_list(self):
-        input = """\
-            -foo =
-                {
-                   *[a] A
-                    [b] B
-                }
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
@@ -477,12 +461,6 @@ class TestSerializeExpression(unittest.TestCase):
             foo = { msg.attr }
         """
         self.assertEqual(self.pretty_expr(input), 'msg.attr')
-
-    def test_variant_expression(self):
-        input = """\
-            foo = { -msg[variant] }
-        """
-        self.assertEqual(self.pretty_expr(input), '-msg[variant]')
 
     def test_call_expression(self):
         input = """\

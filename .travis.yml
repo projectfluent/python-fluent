@@ -9,10 +9,29 @@ python:
   - "pypy3.5-6.0"
   - "nightly"
 env:
-  - PACKAGE=fluent.syntax
-  - PACKAGE=fluent.runtime
-install: pip install tox-travis
-script: cd $PACKAGE; tox
+  global:
+    - FLUENT_RUNTIME_DEFAULT_DEPS="fluent.syntax==0.12.0 attrs==19.1.0 babel==2.6.0 pytz==2018.9 six==1.12.0"
+    - FLUENT_SYNTAX_DEFAULT_DEPS="six"
+  matrix:
+    - PACKAGE=fluent.syntax
+    - PACKAGE=fluent.runtime
+matrix:
+  include:
+  - name: "fluent.runtime w/ fluent.syntax==0.10"
+    python: "3.6"
+    env: PACKAGE=fluent.runtime TEST_DEPS="fluent.syntax==0.10.0 attrs==19.1.0 babel==2.6.0 pytz==2018.9 six==1.12.0"
+  - name: "fluent.runtime with latest everything"
+    python: "3.6"
+    # These are copy-pasted from setup.py
+    env: PACKAGE=fluent.runtime TEST_DEPS="fluent.syntax>=0.10,<=0.13 attrs babel pytz six"
+  allow_failures:
+  - python: "3.6"
+    env: PACKAGE=fluent.runtime TEST_DEPS="fluent.syntax>=0.10,<=0.13 attrs babel pytz six"
+
+install:
+  - if [ "$PACKAGE" = "fluent.runtime" ]; then TEST_DEPS=${TEST_DEPS:-$FLUENT_RUNTIME_DEFAULT_DEPS}; else TEST_DEPS=${TEST_DEPS:-$FLUENT_SYNTAX_DEFAULT_DEPS}; fi
+  - pip install $TEST_DEPS
+script: cd $PACKAGE; ./runtests.py
 notifications:
   irc:
     channels:

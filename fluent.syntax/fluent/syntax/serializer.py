@@ -143,13 +143,12 @@ def serialize_element(element):
 
 def serialize_placeable(placeable):
     expr = placeable.expression
-
     if isinstance(expr, ast.Placeable):
         return "{{{}}}".format(serialize_placeable(expr))
     if isinstance(expr, ast.SelectExpression):
         # Special-case select expressions to control the withespace around the
         # opening and the closing brace.
-        return "{{ {}}}".format(serialize_select_expression(expr))
+        return "{{ {}}}".format(serialize_expression(expr))
     if isinstance(expr, ast.Expression):
         return "{{ {} }}".format(serialize_expression(expr))
 
@@ -160,47 +159,31 @@ def serialize_expression(expression):
     if isinstance(expression, ast.NumberLiteral):
         return expression.value
     if isinstance(expression, ast.VariableReference):
-        return '${}'.format(expression.id.name)
+        return "${}".format(expression.id.name)
     if isinstance(expression, ast.TermReference):
-        return serialize_reference_expression(
-            expression,
-            id='-{}'.format(expression.id.name)
-        )
-    if isinstance(
-        expression, (
-            ast.MessageReference,
-            ast.FunctionReference,
-        )
-    ):
-        return serialize_reference_expression(expression)
+        out = "-{}".format(expression.id.name)
+        if expression.attribute is not None:
+            out += ".{}".format(expression.attribute.name)
+        if expression.arguments is not None:
+            out += serialize_call_arguments(expression.arguments)
+        return out
+    if isinstance(expression, ast.MessageReference):
+        out = expression.id.name
+        if expression.attribute is not None:
+            out += ".{}".format(expression.attribute.name)
+        return out
+    if isinstance(expression, ast.FunctionReference):
+        args = serialize_call_arguments(expression.arguments)
+        return "{}{}".format(expression.id.name, args)
     if isinstance(expression, ast.SelectExpression):
-        return serialize_select_expression(expression)
+        out = "{} ->".format(
+            serialize_expression(expression.selector))
+        for variant in expression.variants:
+            out += serialize_variant(variant)
+        return "{}\n".format(out)
     if isinstance(expression, ast.Placeable):
         return serialize_placeable(expression)
     raise Exception('Unknown expression type: {}'.format(type(expression)))
-
-
-def serialize_reference_expression(expression, id=None):
-    parts = [expression.id.name if id is None else id]
-    if hasattr(expression, 'attribute') and expression.attribute is not None:
-        parts.append('.{}'.format(expression.attribute.name))
-    if hasattr(expression, 'arguments') and expression.arguments is not None:
-        parts.append(serialize_call_expression(expression.arguments))
-    return ''.join(parts)
-
-
-def serialize_select_expression(expr):
-    parts = []
-    selector = "{} ->".format(
-        serialize_expression(expr.selector))
-    parts.append(selector)
-
-    for variant in expr.variants:
-        parts.append(serialize_variant(variant))
-
-    parts.append("\n")
-
-    return "".join(parts)
 
 
 def serialize_variant(variant):
@@ -211,7 +194,7 @@ def serialize_variant(variant):
     )
 
 
-def serialize_call_expression(expr):
+def serialize_call_arguments(expr):
     positional = ", ".join(
         serialize_expression(arg) for arg in expr.positional)
     named = ", ".join(

@@ -84,7 +84,7 @@ class TestEntryEqualToSelf(unittest.TestCase):
         self.assertTrue(message1.equals(message1.clone()))
 
 
-class TestOrderEquals(unittest.TestCase):
+class TestNonEquals(unittest.TestCase):
     def setUp(self):
         self.parser = FluentParser()
 
@@ -103,8 +103,7 @@ class TestOrderEquals(unittest.TestCase):
                 .attr1 = Attr1
         """)
 
-        self.assertTrue(message1.equals(message2))
-        self.assertTrue(message2.equals(message1))
+        self.assertFalse(message1.equals(message2))
 
     def test_variants(self):
         message1 = self.parse_ftl_entry("""\
@@ -122,8 +121,7 @@ class TestOrderEquals(unittest.TestCase):
                 }
         """)
 
-        self.assertTrue(message1.equals(message2))
-        self.assertTrue(message2.equals(message1))
+        self.assertFalse(message1.equals(message2))
 
     def test_variants_with_numbers(self):
         message1 = self.parse_ftl_entry("""\
@@ -141,8 +139,7 @@ class TestOrderEquals(unittest.TestCase):
                 }
         """)
 
-        self.assertTrue(message1.equals(message2))
-        self.assertTrue(message2.equals(message1))
+        self.assertFalse(message1.equals(message2))
 
 
 class TestEqualWithSpans(unittest.TestCase):

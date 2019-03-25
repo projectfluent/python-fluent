@@ -1,5 +1,20 @@
 # Changelog
 
+## fluent.syntax 0.13.0 (March 25, 2019)
+
+- Make `BaseNode.equals` stricter when comparing lists.
+
+  Starting from this version, `BaseNode.equals` now takes the order of
+  variants and attributes into account when comparing two nodes.
+
+- Remove `FluentSerializer.serialize_expression`.
+
+  The stateless equivalent can still be imported from `fluent.syntax.serializer`:
+
+  ```python
+  from fluent.syntax.serializer import serialize_expression
+  ```
+
 ## fluent.syntax 0.12.0 (February 15, 2019)
 
 - Fixes to the `Visitor` API

@@ -6,6 +6,7 @@ sys.path.append('.')
 
 from tests.syntax import dedent_ftl
 from fluent.syntax import FluentParser, FluentSerializer
+from fluent.syntax.serializer import serialize_expression, serialize_variant_key
 
 
 class TestSerializeResource(unittest.TestCase):
@@ -434,19 +435,16 @@ class TestSerializeExpression(unittest.TestCase):
     @staticmethod
     def pretty_expr(text):
         parser = FluentParser()
-        serializer = FluentSerializer(with_junk=False)
         entry = parser.parse_entry(dedent_ftl(text))
         expr = entry.value.elements[0].expression
-        return serializer.serialize_expression(expr)
+        return serialize_expression(expr)
 
     def test_invalid_expression(self):
-        serializer = FluentSerializer()
+        with self.assertRaisesRegexp(Exception, 'Unknown expression type'):
+            serialize_expression(None)
 
         with self.assertRaisesRegexp(Exception, 'Unknown expression type'):
-            serializer.serialize_expression(None)
-
-        with self.assertRaisesRegexp(Exception, 'Unknown expression type'):
-            serializer.serialize_expression(object())
+            serialize_expression(object())
 
     def test_string_expression(self):
         input = """\
@@ -498,3 +496,43 @@ class TestSerializeExpression(unittest.TestCase):
                 }
         """
         self.assertEqual(self.pretty_expr(input), '$num ->\n   *[one] One\n')
+
+
+class TestSerializeVariantKey(unittest.TestCase):
+    @staticmethod
+    def pretty_variant_key(text, index):
+        parser = FluentParser()
+        entry = parser.parse_entry(dedent_ftl(text))
+        variants = entry.value.elements[0].expression.variants
+        return serialize_variant_key(variants[index].key)
+
+    def test_invalid_expression(self):
+        with self.assertRaisesRegexp(Exception, 'Unknown variant key type'):
+            serialize_variant_key(None)
+
+        with self.assertRaisesRegexp(Exception, 'Unknown variant key type'):
+            serialize_variant_key(object())
+
+    def test_identifiers(self):
+        input = """\
+            foo = { $num ->
+                [one] One
+               *[other] Other
+            }
+        """
+        self.assertEqual(self.pretty_variant_key(input, 0), 'one')
+        self.assertEqual(self.pretty_variant_key(input, 1), 'other')
+
+    def test_number_literals(self):
+        input = """\
+            foo = { $num ->
+                [-123456789] Minus a lot
+                [0] Zero
+               *[3.14] Pi
+                [007] James
+            }
+        """
+        self.assertEqual(self.pretty_variant_key(input, 0), '-123456789')
+        self.assertEqual(self.pretty_variant_key(input, 1), '0')
+        self.assertEqual(self.pretty_variant_key(input, 2), '3.14')
+        self.assertEqual(self.pretty_variant_key(input, 3), '007')

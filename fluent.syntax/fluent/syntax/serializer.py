@@ -60,9 +60,6 @@ class FluentSerializer(object):
             return serialize_junk(entry)
         raise Exception('Unknown entry type: {}'.format(type(entry)))
 
-    def serialize_expression(self, expr):
-        return serialize_expression(expr)
-
 
 def serialize_comment(comment, prefix="#"):
     prefixed = "\n".join([
@@ -252,5 +249,6 @@ def serialize_named_argument(arg):
 def serialize_variant_key(key):
     if isinstance(key, ast.Identifier):
         return key.name
-    else:
-        return serialize_expression(key)
+    if isinstance(key, ast.NumberLiteral):
+        return key.value
+    raise Exception('Unknown variant key type: {}'.format(type(key)))

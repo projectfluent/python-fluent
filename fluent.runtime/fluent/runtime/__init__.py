@@ -32,10 +32,10 @@ class FluentBundle(object):
         if functions:
             _functions.update(functions)
         self._functions = _functions
-        self._use_isolating = use_isolating
+        self.use_isolating = use_isolating
         self._messages_and_terms = {}
         self._compiled = {}
-        self._compiler = Compiler(use_isolating=use_isolating)
+        self._compiler = Compiler()
         self._babel_locale = self._get_babel_locale()
         self._plural_form = babel.plural.to_python(self._babel_locale.plural_form)
 

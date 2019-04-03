@@ -53,7 +53,8 @@ class CurrentEnvironment(object):
 class ResolverEnvironment(object):
     context = attr.ib()
     errors = attr.ib()
-    part_count = attr.ib(default=0)
+    part_count = attr.ib(default=0, init=False)
+    active_patterns = attr.ib(factory=set, init=False)
     current = attr.ib(factory=CurrentEnvironment)
 
     @contextlib.contextmanager
@@ -105,15 +106,14 @@ class Pattern(FTL.Pattern, BaseResolver):
 
     def __init__(self, *args, **kwargs):
         super(Pattern, self).__init__(*args, **kwargs)
-        self.dirty = False
 
     def __call__(self, env):
-        if self.dirty:
+        if self in env.active_patterns:
             env.errors.append(FluentCyclicReferenceError("Cyclic reference"))
             return FluentNone()
         if env.part_count > self.MAX_PARTS:
             return ""
-        self.dirty = True
+        env.active_patterns.add(self)
         elements = self.elements
         remaining_parts = self.MAX_PARTS - env.part_count
         if len(self.elements) > remaining_parts:
@@ -124,7 +124,7 @@ class Pattern(FTL.Pattern, BaseResolver):
             resolve(element(env), env) for element in elements
         )
         env.part_count += len(elements)
-        self.dirty = False
+        env.active_patterns.remove(self)
         return retval
 
 
@@ -144,13 +144,16 @@ class TextElement(FTL.TextElement, Literal):
 
 class Placeable(FTL.Placeable, BaseResolver):
     def __call__(self, env):
-        return self.expression(env)
+        inner = resolve(self.expression(env), env)
+        if not env.context.use_isolating:
+            return inner
+        return "\u2068" + inner + "\u2069"
 
 
-class IsolatingPlaceable(FTL.Placeable, BaseResolver):
+class NeverIsolatingPlaceable(FTL.Placeable, BaseResolver):
     def __call__(self, env):
-        inner = self.expression(env)
-        return "\u2068" + resolve(inner, env) + "\u2069"
+        inner = resolve(self.expression(env), env)
+        return inner
 
 
 class StringLiteral(FTL.StringLiteral, Literal):

@@ -1,5 +1,8 @@
-Project Fluent
-==============
+Project Fluent [![Build Status][travisimage]][travislink]
+=========================================================
+
+[travisimage]: https://travis-ci.org/projectfluent/python-fluent.svg?branch=master
+[travislink]: https://travis-ci.org/projectfluent/python-fluent
 
 This is a Python implementation of Project Fluent, a localization framework
 designed to unleash the entire expressive power of natural language

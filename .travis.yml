@@ -10,7 +10,7 @@ python:
   - "nightly"
 env:
   global:
-    - FLUENT_RUNTIME_DEFAULT_DEPS="fluent.syntax==0.12.0 attrs==19.1.0 babel==2.6.0 pytz==2018.9 six==1.12.0"
+    - FLUENT_RUNTIME_DEFAULT_DEPS="fluent.syntax==0.13.0 attrs==19.1.0 babel==2.6.0 pytz==2018.9 six==1.12.0"
     - FLUENT_SYNTAX_DEFAULT_DEPS="six"
   matrix:
     - PACKAGE=fluent.syntax

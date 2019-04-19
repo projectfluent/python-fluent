@@ -6,6 +6,8 @@ fluent.runtime development version (unreleased)
 
 * Support for Fluent spec 0.8 (``fluent.syntax`` 0.10), including parameterized
   terms.
+* Refined error handling regarding function calls to be more tolerant of errors
+  in FTL files, while silencing developer errors less.
 
 fluent.runtime 0.1 (January 21, 2019)
 -------------------------------------

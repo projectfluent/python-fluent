@@ -202,54 +202,6 @@ ways:
        >>> val
        'Now is Jun 17, 2018, 3:15:05 PM'
 
-Custom functions
-~~~~~~~~~~~~~~~~
-
-You can add functions to the ones available to FTL authors by passing a
-``functions`` dictionary to the ``FluentBundle`` constructor:
-
-.. code-block:: python
-
-    >>> import platform
-    >>> def os_name():
-    ...    """Returns linux/mac/windows/other"""
-    ...    return {'Linux': 'linux',
-    ...            'Darwin': 'mac',
-    ...            'Windows': 'windows'}.get(platform.system(), 'other')
-
-    >>> bundle = FluentBundle(['en-US'], functions={'OS': os_name})
-    >>> bundle.add_messages("""
-    ... welcome = { OS() ->
-    ...    [linux]    Welcome to Linux
-    ...    [mac]      Welcome to Mac
-    ...    [windows]  Welcome to Windows
-    ...   *[other]    Welcome
-    ...   }
-    ... """)
-    >>> print(bundle.format('welcome')[0]
-    Welcome to Linux
-
-These functions can accept positional and keyword arguments (like the
-``NUMBER`` and ``DATETIME`` builtins), and in this case must accept the
-following types of arguments:
-
--  unicode strings (i.e. ``unicode`` on Python 2, ``str`` on Python 3)
--  ``fluent.runtime.types.FluentType`` subclasses, namely:
--  ``FluentNumber`` - ``int``, ``float`` or ``Decimal`` objects passed
-   in externally, or expressed as literals, are wrapped in these. Note
-   that these objects also subclass builtin ``int``, ``float`` or
-   ``Decimal``, so can be used as numbers in the normal way.
--  ``FluentDateType`` - ``date`` or ``datetime`` objects passed in are
-   wrapped in these. Again, these classes also subclass ``date`` or
-   ``datetime``, and can be used as such.
--  ``FluentNone`` - in error conditions, such as a message referring to
-   an argument that hasn't been passed in, objects of this type are
-   passed in.
-
-Custom functions should not throw errors, but return ``FluentNone``
-instances to indicate an error or missing data. Otherwise they should
-return unicode strings, or instances of a ``FluentType`` subclass as
-above.
 
 Known limitations and bugs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -268,3 +220,10 @@ Known limitations and bugs
   <https://github.com/andyearnshaw/Intl.js/blob/master/src/12.datetimeformat.js>`_.
 
 Help with the above would be welcome!
+
+
+Other features and further information
+--------------------------------------
+
+* :doc:`functions`
+* :doc:`errors`

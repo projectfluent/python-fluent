@@ -1,17 +1,15 @@
 from __future__ import absolute_import, unicode_literals
 
 import contextlib
-from datetime import date, datetime
-from decimal import Decimal
 
 import attr
 import six
 
 from fluent.syntax import ast as FTL
-from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
-from .types import FluentType, FluentNone, FluentInt, FluentFloat
-from .utils import reference_to_id, unknown_reference_error_obj
 
+from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
+from .types import FluentFloat, FluentInt, FluentNone, FluentType
+from .utils import args_match, inspect_function_args, reference_to_id, unknown_reference_error_obj
 
 """
 The classes in this module are used to transform the source
@@ -348,11 +346,12 @@ class CallExpression(FTL.CallExpression, BaseResolver):
                                                    .format(function_name)))
             return FluentNone(function_name + "()")
 
-        try:
-            return function(*args, **kwargs)
-        except Exception as e:
-            env.errors.append(e)
-            return FluentNoneResolver(function_name + "()")
+        arg_spec = inspect_function_args(function, function_name, env.errors)
+        match, sanitized_args, sanitized_kwargs, errors = args_match(function_name, args, kwargs, arg_spec)
+        env.errors.extend(errors)
+        if match:
+            return function(*sanitized_args, **sanitized_kwargs)
+        return FluentNone(function_name + "()")
 
 
 class NamedArgument(FTL.NamedArgument, BaseResolver):

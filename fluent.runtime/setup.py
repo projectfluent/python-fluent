@@ -21,7 +21,7 @@ setup(name='fluent.runtime',
       packages=['fluent', 'fluent.runtime'],
       # These should also be duplicated in tox.ini and ../.travis.yml
       install_requires=[
-          'fluent.syntax>=0.10,<=0.13',
+          'fluent.syntax>=0.14,<=0.16',
           'attrs',
           'babel',
           'pytz',

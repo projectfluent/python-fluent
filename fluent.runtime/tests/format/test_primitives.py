@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
 import unittest
@@ -10,7 +11,7 @@ from ..utils import dedent_ftl
 class TestSimpleStringValue(unittest.TestCase):
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_messages(dedent_ftl(r"""
             foo               = Foo
             placeable-literal = { "Foo" } Bar
             placeable-message = { foo } Bar
@@ -27,6 +28,7 @@ class TestSimpleStringValue(unittest.TestCase):
                 [BazAttribute] Member 3
                *[other]        Member 4
              }
+            escapes = {"    "}stuff{"\u0258}\"\\end"}
         """))
 
     def test_can_be_used_as_a_value(self):
@@ -62,6 +64,11 @@ class TestSimpleStringValue(unittest.TestCase):
     def test_can_be_a_value_of_an_attribute_used_as_a_selector(self):
         val, errs = self.ctx.format('selector-attr', {})
         self.assertEqual(val, 'Member 3')
+        self.assertEqual(len(errs), 0)
+
+    def test_escapes(self):
+        val, errs = self.ctx.format('escapes', {})
+        self.assertEqual(val, r'    stuffɘ}"\end')
         self.assertEqual(len(errs), 0)
 
 

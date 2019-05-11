@@ -24,7 +24,6 @@ class TestPlaceables(unittest.TestCase):
             uses-message = { message }
             uses-message-attr = { message.attr }
             uses-term = { -term }
-            uses-term-variant = { -term2[variant2] }
 
             bad-message-ref = Text { not-a-message }
             bad-message-attr-ref = Text { message.not-an-attr }
@@ -55,11 +54,6 @@ class TestPlaceables(unittest.TestCase):
     def test_placeable_term(self):
         val, errs = self.ctx.format('uses-term', {})
         self.assertEqual(val, 'Term')
-        self.assertEqual(len(errs), 0)
-
-    def test_placeable_term_variant(self):
-        val, errs = self.ctx.format('uses-term-variant', {})
-        self.assertEqual(val, 'Term Variant 2')
         self.assertEqual(len(errs), 0)
 
     def test_placeable_bad_message(self):

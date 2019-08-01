@@ -1,5 +1,11 @@
 # Changelog
 
+## fluent.syntax 0.15.1 (August 1, 2019)
+
+  - Comment Serializer fix.
+
+    The serializer had a bug when asked to serialize empty comments.
+
 ## fluent.syntax 0.15.0 (April 17, 2019)
 
   - Support Fluent Syntax 1.0.

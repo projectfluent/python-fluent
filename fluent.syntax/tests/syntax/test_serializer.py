@@ -115,6 +115,8 @@ class TestSerializeResource(unittest.TestCase):
             # A multiline
             # message comment.
             foo = Foo
+            #
+            bar = Bar
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
@@ -128,6 +130,10 @@ class TestSerializeResource(unittest.TestCase):
             ## group comment.
 
             bar = Bar
+
+            ##
+
+            baz = Baz
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 

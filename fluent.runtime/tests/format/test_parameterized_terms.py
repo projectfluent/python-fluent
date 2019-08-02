@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 from fluent.runtime.errors import FluentFormatError, FluentReferenceError
 
 from ..utils import dedent_ftl
@@ -12,7 +12,7 @@ class TestParameterizedTerms(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             -thing = { $article ->
                   *[definite] the thing
                    [indefinite] a thing
@@ -24,7 +24,7 @@ class TestParameterizedTerms(unittest.TestCase):
             thing-positional-arg = { -thing("foo") }
             thing-fallback = { -thing(article: "somethingelse") }
             bad-term = { -missing() }
-        """))
+        """)))
 
     def test_argument_omitted(self):
         val, errs = self.ctx.format('thing-no-arg', {})
@@ -72,7 +72,7 @@ class TestParameterizedTermAttributes(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             -brand = Cool Thing
                 .status = { $version ->
                     [v2]     available
@@ -93,7 +93,7 @@ class TestParameterizedTermAttributes(unittest.TestCase):
                  [ABC]  ABC option
                 *[DEF]  DEF option
             }
-        """))
+        """)))
 
     def test_with_argument(self):
         val, errs = self.ctx.format('attr-with-arg', {})
@@ -111,7 +111,7 @@ class TestNestedParameterizedTerms(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             -thing = { $article ->
                 *[definite] { $first-letter ->
                     *[lower] the thing
@@ -127,7 +127,7 @@ class TestNestedParameterizedTerms(unittest.TestCase):
             outer-arg = This is { -thing(article: "indefinite") }.
             inner-arg = { -thing(first-letter: "upper") }.
             neither-arg = { -thing() }.
-        """))
+        """)))
 
     def test_both_args(self):
         val, errs = self.ctx.format('both-args', {})
@@ -159,13 +159,13 @@ class TestTermsCalledFromTerms(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             -foo = {$a} {$b}
             -bar = {-foo(b: 2)}
             -baz = {-foo}
             ref-bar = {-bar(a: 1)}
             ref-baz = {-baz(a: 1)}
-        """))
+        """)))
 
     def test_term_args_isolated_with_call_syntax(self):
         val, errs = self.ctx.format('ref-bar', {})
@@ -182,11 +182,11 @@ class TestMessagesCalledFromTerms(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             msg = Msg is {$arg}
             -foo = {msg}
             ref-foo = {-foo(arg: 1)}
-        """))
+        """)))
 
     def test_messages_inherit_term_args(self):
         # This behaviour may change in future, message calls might be

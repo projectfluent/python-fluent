@@ -1,6 +1,13 @@
 Changelog
 =========
 
+fluent.runtime next
+-------------------
+
+* Added ``fluent.runtime.FluentResource`` and
+  ``fluent.runtime.FluentBundle.add_resource``.
+* Removed ``fluent.runtime.FluentBundle.add_messages``.
+
 fluent.runtime 0.2 (September 10, 2019)
 ---------------------------------------
 

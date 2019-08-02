@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 from fluent.runtime.errors import FluentCyclicReferenceError, FluentReferenceError
 
 from ..utils import dedent_ftl
@@ -11,7 +11,7 @@ from ..utils import dedent_ftl
 class TestPlaceables(unittest.TestCase):
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             message = Message
                     .attr = Message Attribute
             -term = Term
@@ -39,7 +39,7 @@ class TestPlaceables(unittest.TestCase):
                                   .attr = Attribute
             self-parent-ref-ok = Parent
                                .attr =  Attribute { self-parent-ref-ok }
-        """))
+        """)))
 
     def test_placeable_message(self):
         val, errs = self.ctx.format('uses-message', {})
@@ -108,42 +108,42 @@ class TestPlaceables(unittest.TestCase):
 class TestSingleElementPattern(unittest.TestCase):
     def test_single_literal_number_isolating(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=True)
-        self.ctx.add_messages('foo = { 1 }')
+        self.ctx.add_resource(FluentResource('foo = { 1 }'))
         val, errs = self.ctx.format('foo')
         self.assertEqual(val, '1')
         self.assertEqual(errs, [])
 
     def test_single_literal_number_non_isolating(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages('foo = { 1 }')
+        self.ctx.add_resource(FluentResource('foo = { 1 }'))
         val, errs = self.ctx.format('foo')
         self.assertEqual(val, '1')
         self.assertEqual(errs, [])
 
     def test_single_arg_number_isolating(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=True)
-        self.ctx.add_messages('foo = { $arg }')
+        self.ctx.add_resource(FluentResource('foo = { $arg }'))
         val, errs = self.ctx.format('foo', {'arg': 1})
         self.assertEqual(val, '1')
         self.assertEqual(errs, [])
 
     def test_single_arg_number_non_isolating(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages('foo = { $arg }')
+        self.ctx.add_resource(FluentResource('foo = { $arg }'))
         val, errs = self.ctx.format('foo', {'arg': 1})
         self.assertEqual(val, '1')
         self.assertEqual(errs, [])
 
     def test_single_arg_missing_isolating(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=True)
-        self.ctx.add_messages('foo = { $arg }')
+        self.ctx.add_resource(FluentResource('foo = { $arg }'))
         val, errs = self.ctx.format('foo')
         self.assertEqual(val, 'arg')
         self.assertEqual(len(errs), 1)
 
     def test_single_arg_missing_non_isolating(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages('foo = { $arg }')
+        self.ctx.add_resource(FluentResource('foo = { $arg }'))
         val, errs = self.ctx.format('foo')
         self.assertEqual(val, 'arg')
         self.assertEqual(len(errs), 1)

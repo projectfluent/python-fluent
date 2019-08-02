@@ -7,7 +7,7 @@ import sys
 import pytest
 import six
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 
 
 FTL_CONTENT = """
@@ -25,9 +25,9 @@ ten = Ten
 
 @pytest.fixture
 def fluent_bundle():
-    ctx = FluentBundle(['pl'], use_isolating=False)
-    ctx.add_messages(FTL_CONTENT)
-    return ctx
+    bundle = FluentBundle(['pl'], use_isolating=False)
+    bundle.add_resource(FluentResource(FTL_CONTENT))
+    return bundle
 
 
 def fluent_template(bundle):

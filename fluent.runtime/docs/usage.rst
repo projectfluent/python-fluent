@@ -27,7 +27,7 @@ Once you have some FTL files, you can generate translations using the
 
 .. code-block:: python
 
-    >>> from fluent.runtime import FluentBundle
+    >>> from fluent.runtime import FluentBundle, FluentResource
 
 You pass a list of locales to the constructor - the first being the
 desired locale, with fallbacks after that:
@@ -41,10 +41,11 @@ file stored on disk, here we will just add them directly:
 
 .. code-block:: python
 
-    >>> bundle.add_messages("""
+    >>> resource = FluentResource("""
     ... welcome = Welcome to this great app!
     ... greet-by-name = Hello, { $name }!
     ... """)
+    >>> bundle.add_resource(resource
 
 To generate translations, use the ``format`` method, passing a message
 ID and an optional dictionary of substitution parameters. If the the
@@ -101,7 +102,9 @@ When rendering translations, Fluent passes any numeric arguments (``int``,
 
 .. code-block:: python
 
-    >>> bundle.add_messages("show-total-points = You have { $points } points.")
+    >>> bundle.add_resource(FluentResource(
+    ... "show-total-points = You have { $points } points."
+    ... ))
     >>> val, errs = bundle.format("show-total-points", {'points': 1234567})
     >>> val
     'You have 1,234,567 points.'
@@ -118,7 +121,9 @@ by wrapping your numeric arguments with
     'You have 1234567 points.'
 
     >>> amount = fluent_number(1234.56, style="currency", currency="USD")
-    >>> bundle.add_messages("your-balance = Your balance is { $amount }")
+    >>> bundle.add_resource(FluentResource(
+    ... "your-balance = Your balance is { $amount }"
+    ... ))
     >>> bundle.format("your-balance", {'amount': amount})[0]
     'Your balance is $1,234.56'
 
@@ -136,7 +141,7 @@ passed through locale aware functions:
 .. code-block:: python
 
     >>> from datetime import date
-    >>> bundle.add_messages("today-is = Today is { $today }")
+    >>> bundle.add_resource(FluentResource("today-is = Today is { $today }"))
     >>> val, errs = bundle.format("today-is", {"today": date.today() })
     >>> val
     'Today is Jun 16, 2018'
@@ -145,7 +150,9 @@ You can explicitly call the ``DATETIME`` builtin to specify options:
 
 .. code-block:: python
 
-    >>> bundle.add_messages('today-is = Today is { DATETIME($today, dateStyle: "short") }')
+    >>> bundle.add_resource(FluentResource(
+    ... 'today-is = Today is { DATETIME($today, dateStyle: "short") }'
+    ... ))
 
 See the `DATETIME
 docs <https://projectfluent.org/fluent/guide/functions.html#datetime>`_.
@@ -193,7 +200,7 @@ ways:
        >>> utcnow
        datetime.datetime(2018, 6, 17, 12, 15, 5, 677597)
 
-       >>> bundle.add_messages("now-is = Now is { $now }")
+       >>> bundle.add_resource(FluentResource("now-is = Now is { $now }"))
        >>> val, errs = bundle.format("now-is",
        ...    {"now": fluent_date(utcnow,
        ...                        timeZone="Europe/Moscow",
@@ -218,14 +225,14 @@ You can add functions to the ones available to FTL authors by passing a
     ...            'Windows': 'windows'}.get(platform.system(), 'other')
 
     >>> bundle = FluentBundle(['en-US'], functions={'OS': os_name})
-    >>> bundle.add_messages("""
+    >>> bundle.add_resource(FluentResource("""
     ... welcome = { OS() ->
     ...    [linux]    Welcome to Linux
     ...    [mac]      Welcome to Mac
     ...    [windows]  Welcome to Windows
     ...   *[other]    Welcome
     ...   }
-    ... """)
+    ... """))
     >>> print(bundle.format('welcome')[0]
     Welcome to Linux
 

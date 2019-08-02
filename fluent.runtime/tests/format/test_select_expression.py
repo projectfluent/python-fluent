@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 from fluent.runtime.errors import FluentReferenceError
 
 from ..utils import dedent_ftl
@@ -14,46 +14,46 @@ class TestSelectExpressionWithStrings(unittest.TestCase):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
 
     def test_with_a_matching_selector(self):
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = { "a" ->
                 [a] A
                *[b] B
              }
-        """))
+        """)))
         val, errs = self.ctx.format('foo', {})
         self.assertEqual(val, "A")
         self.assertEqual(len(errs), 0)
 
     def test_with_a_non_matching_selector(self):
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = { "c" ->
                 [a] A
                *[b] B
              }
-        """))
+        """)))
         val, errs = self.ctx.format('foo', {})
         self.assertEqual(val, "B")
         self.assertEqual(len(errs), 0)
 
     def test_with_a_missing_selector(self):
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = { $none ->
                 [a] A
                *[b] B
              }
-        """))
+        """)))
         val, errs = self.ctx.format('foo', {})
         self.assertEqual(val, "B")
         self.assertEqual(errs,
                          [FluentReferenceError("Unknown external: none")])
 
     def test_with_argument_expression(self):
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = { $arg ->
                 [a] A
                *[b] B
              }
-        """))
+        """)))
         val, errs = self.ctx.format('foo', {'arg': 'a'})
         self.assertEqual(val, "A")
 
@@ -62,7 +62,7 @@ class TestSelectExpressionWithNumbers(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = { 1 ->
                *[0] A
                 [1] B
@@ -82,7 +82,7 @@ class TestSelectExpressionWithNumbers(unittest.TestCase):
                *[0] A
                 [1] B
              }
-        """))
+        """)))
 
     def test_selects_the_right_variant(self):
         val, errs = self.ctx.format('foo', {})
@@ -117,7 +117,7 @@ class TestSelectExpressionWithPluralCategories(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = { 1 ->
                 [one] A
                *[other] B
@@ -137,7 +137,7 @@ class TestSelectExpressionWithPluralCategories(unittest.TestCase):
                 [one] A
                *[other] B
              }
-        """))
+        """)))
 
     def test_selects_the_right_category(self):
         val, errs = self.ctx.format('foo', {})
@@ -179,7 +179,7 @@ class TestSelectExpressionWithTerms(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             -my-term = term
                  .attr = termattribute
 
@@ -197,7 +197,7 @@ class TestSelectExpressionWithTerms(unittest.TestCase):
                     [x]      Term Attribute
                    *[other]  Other
             }
-        """))
+        """)))
 
     def test_ref_term_attribute(self):
         val, errs = self.ctx.format('ref-term-attr')

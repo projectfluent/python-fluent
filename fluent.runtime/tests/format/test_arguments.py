@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 
 from ..utils import dedent_ftl
 
@@ -10,7 +10,7 @@ from ..utils import dedent_ftl
 class TestNumbersInValues(unittest.TestCase):
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = Foo { $num }
             bar = { foo }
             baz =
@@ -18,7 +18,7 @@ class TestNumbersInValues(unittest.TestCase):
             qux = { "a" ->
                *[a]     Baz Variant A { $num }
              }
-        """))
+        """)))
 
     def test_can_be_used_in_the_message_value(self):
         val, errs = self.ctx.format('foo', {'num': 3})
@@ -44,9 +44,9 @@ class TestNumbersInValues(unittest.TestCase):
 class TestStrings(unittest.TestCase):
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = { $arg }
-        """))
+        """)))
 
     def test_can_be_a_string(self):
         val, errs = self.ctx.format('foo', {'arg': 'Argument'})

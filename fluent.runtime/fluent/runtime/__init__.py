@@ -13,6 +13,11 @@ from .resolver import ResolverEnvironment, CurrentEnvironment
 from .utils import ATTRIBUTE_SEPARATOR, TERM_SIGIL, ast_to_id, native_to_fluent
 
 
+def FluentResource(source):
+    parser = FluentParser()
+    return parser.parse(source)
+
+
 class FluentBundle(object):
     """
     Message contexts are single-language stores of translations.  They are
@@ -39,14 +44,12 @@ class FluentBundle(object):
         self._babel_locale = self._get_babel_locale()
         self._plural_form = babel.plural.to_python(self._babel_locale.plural_form)
 
-    def add_messages(self, source):
-        parser = FluentParser()
-        resource = parser.parse(source)
+    def add_resource(self, resource, allow_overrides=False):
         # TODO - warn/error about duplicates
         for item in resource.body:
             if isinstance(item, (Message, Term)):
                 full_id = ast_to_id(item)
-                if full_id not in self._messages_and_terms:
+                if full_id not in self._messages_and_terms or allow_overrides:
                     self._messages_and_terms[full_id] = item
 
     def has_message(self, message_id):

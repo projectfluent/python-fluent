@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 
 from ..utils import dedent_ftl
 
@@ -15,12 +15,12 @@ class TestUseIsolating(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'])
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = Foo
             bar = { foo } Bar
             baz = { $arg } Baz
             qux = { bar } { baz }
-        """))
+        """)))
 
     def test_isolates_interpolated_message_references(self):
         val, errs = self.ctx.format('bar', {})
@@ -49,11 +49,11 @@ class TestSkipIsolating(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'])
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             -brand-short-name = Amaya
             foo = { -brand-short-name }
             with-arg = { $arg }
-        """))
+        """)))
 
     def test_skip_isolating_chars_if_just_one_message_ref(self):
         val, errs = self.ctx.format('foo', {})

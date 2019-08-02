@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 
 from ..utils import dedent_ftl
 
@@ -11,7 +11,7 @@ from ..utils import dedent_ftl
 class TestSimpleStringValue(unittest.TestCase):
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl(r"""
+        self.ctx.add_resource(FluentResource(dedent_ftl(r"""
             foo               = Foo
             placeable-literal = { "Foo" } Bar
             placeable-message = { foo } Bar
@@ -29,7 +29,7 @@ class TestSimpleStringValue(unittest.TestCase):
                *[other]        Member 4
              }
             escapes = {"    "}stuff{"\u0258}\"\\end"}
-        """))
+        """)))
 
     def test_can_be_used_as_a_value(self):
         val, errs = self.ctx.format('foo', {})
@@ -75,7 +75,7 @@ class TestSimpleStringValue(unittest.TestCase):
 class TestComplexStringValue(unittest.TestCase):
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo               = Foo
             bar               = { foo }Bar
 
@@ -93,7 +93,7 @@ class TestComplexStringValue(unittest.TestCase):
                 [FooBarQuxAttribute] FooBarQux
                *[other] Other
              }
-        """))
+        """)))
 
     def test_can_be_used_as_a_value(self):
         val, errs = self.ctx.format('bar', {})
@@ -124,14 +124,14 @@ class TestComplexStringValue(unittest.TestCase):
 class TestNumbers(unittest.TestCase):
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             one           =  { 1 }
             one_point_two =  { 1.2 }
             select        =  { 1 ->
                *[0] Zero
                 [1] One
              }
-        """))
+        """)))
 
     def test_int_number_used_in_placeable(self):
         val, errs = self.ctx.format('one', {})

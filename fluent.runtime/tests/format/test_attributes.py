@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 from fluent.runtime.errors import FluentReferenceError
 
 from ..utils import dedent_ftl
@@ -12,14 +12,14 @@ class TestAttributesWithStringValues(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = Foo
                 .attr = Foo Attribute
             bar = { foo } Bar
                 .attr = Bar Attribute
             ref-foo = { foo.attr }
             ref-bar = { bar.attr }
-        """))
+        """)))
 
     def test_can_be_referenced_for_entities_with_string_values(self):
         val, errs = self.ctx.format('ref-foo', {})
@@ -46,7 +46,7 @@ class TestAttributesWithSimplePatternValues(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = Foo
             bar = Bar
                 .attr = { foo } Attribute
@@ -57,7 +57,7 @@ class TestAttributesWithSimplePatternValues(unittest.TestCase):
             ref-bar = { bar.attr }
             ref-baz = { baz.attr }
             ref-qux = { qux.attr }
-        """))
+        """)))
 
     def test_can_be_referenced_for_entities_with_string_values(self):
         val, errs = self.ctx.format('ref-bar', {})
@@ -93,7 +93,7 @@ class TestAttributesWithSimplePatternValues(unittest.TestCase):
 class TestMissing(unittest.TestCase):
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = Foo
             bar = Bar
                 .attr = Bar Attribute
@@ -107,7 +107,7 @@ class TestMissing(unittest.TestCase):
             attr-only =
                      .attr  = Attr Only Attribute
             ref-double-missing = { missing.attr }
-        """))
+        """)))
 
     def test_falls_back_for_msg_with_string_value_and_no_attributes(self):
         val, errs = self.ctx.format('ref-foo', {})

@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 from fluent.runtime.errors import FluentReferenceError
 from fluent.runtime.types import FluentNone
 
@@ -14,7 +14,7 @@ class TestFunctionCalls(unittest.TestCase):
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False,
                                   functions={'IDENTITY': lambda x: x})
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             foo = Foo
                 .attr = Attribute
             pass-nothing       = { IDENTITY() }
@@ -24,7 +24,7 @@ class TestFunctionCalls(unittest.TestCase):
             pass-attr          = { IDENTITY(foo.attr) }
             pass-external      = { IDENTITY($ext) }
             pass-function-call = { IDENTITY(IDENTITY(1)) }
-        """))
+        """)))
 
     def test_accepts_strings(self):
         val, errs = self.ctx.format('pass-string', {})
@@ -67,9 +67,9 @@ class TestMissing(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             missing = { MISSING(1) }
-        """))
+        """)))
 
     def test_falls_back_to_name_of_function(self):
         val, errs = self.ctx.format("missing", {})
@@ -91,10 +91,10 @@ class TestResolving(unittest.TestCase):
                                   functions={'NUMBER_PROCESSOR':
                                              number_processor})
 
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             pass-number = { NUMBER_PROCESSOR(1) }
             pass-arg = { NUMBER_PROCESSOR($arg) }
-        """))
+        """)))
 
     def test_args_passed_as_numbers(self):
         val, errs = self.ctx.format('pass-arg', {'arg': 1})
@@ -120,13 +120,13 @@ class TestKeywordArgs(unittest.TestCase):
 
         self.ctx = FluentBundle(['en-US'], use_isolating=False,
                                   functions={'MYFUNC': my_function})
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             pass-arg        = { MYFUNC("a") }
             pass-kwarg1     = { MYFUNC("a", kwarg1: 1) }
             pass-kwarg2     = { MYFUNC("a", kwarg2: "other") }
             pass-kwargs     = { MYFUNC("a", kwarg1: 1, kwarg2: "other") }
             pass-user-arg   = { MYFUNC($arg) }
-        """))
+        """)))
 
     def test_defaults(self):
         val, errs = self.ctx.format('pass-arg', {})

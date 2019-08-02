@@ -4,7 +4,7 @@ import unittest
 from datetime import date, datetime
 from decimal import Decimal
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 from fluent.runtime.errors import FluentReferenceError
 from fluent.runtime.types import fluent_date, fluent_number
 
@@ -15,7 +15,7 @@ class TestNumberBuiltin(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             implicit-call    = { 123456 }
             implicit-call2   = { $arg }
             defaults         = { NUMBER(123456) }
@@ -23,7 +23,7 @@ class TestNumberBuiltin(unittest.TestCase):
             currency-style   = { NUMBER(123456, style: "currency", currency: "USD") }
             from-arg         = { NUMBER($arg) }
             merge-params     = { NUMBER($arg, useGrouping: 0) }
-        """))
+        """)))
 
     def test_implicit_call(self):
         val, errs = self.ctx.format('implicit-call', {})
@@ -100,11 +100,11 @@ class TestDatetimeBuiltin(unittest.TestCase):
 
     def setUp(self):
         self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.ctx.add_resource(FluentResource(dedent_ftl("""
             implicit-call    = { $date }
             explicit-call    = { DATETIME($date) }
             call-with-arg    = { DATETIME($date, dateStyle: "long") }
-        """))
+        """)))
 
     def test_implicit_call_date(self):
         val, errs = self.ctx.format('implicit-call', {'date': date(2018, 2, 1)})

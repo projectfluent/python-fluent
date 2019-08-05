@@ -81,7 +81,12 @@ class FluentBundle(object):
         env = ResolverEnvironment(context=self,
                                   current=CurrentEnvironment(args=fluent_args),
                                   errors=errors)
-        return [resolve(env), errors]
+        try:
+            result = resolve(env)
+        except ValueError as e:
+            errors.append(e)
+            result = '{???}'
+        return [result, errors]
 
     def _get_babel_locale(self):
         for l in self.locales:

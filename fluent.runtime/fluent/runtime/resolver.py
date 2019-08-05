@@ -26,10 +26,6 @@ modifyable state in the resolver environment.
 """
 
 
-# Prevent expansion of too long placeables, for memory DOS protection
-MAX_PART_LENGTH = 2500
-
-
 @attr.s
 class CurrentEnvironment(object):
     # The parts of ResolverEnvironment that we want to mutate (and restore)
@@ -85,6 +81,19 @@ class BaseResolver(object):
     def __call__(self, env):
         raise NotImplementedError
 
+    def to_type(self, env):
+        """
+        Resolve this to a FluentType.
+
+        For simple resolvers of one part, this retains the type of that part.
+        For multi-part resolvers, format each part to a string and concat
+        the formatted parts.
+        """
+        parts = list(self(env))
+        if len(parts) == 1:
+            return parts[0]
+        return ''.join(env.context.format_part(part) for part in parts)
+
 
 class Literal(BaseResolver):
     pass
@@ -124,56 +133,43 @@ class Pattern(FTL.Pattern, BaseResolver):
     def __call__(self, env):
         if self in env.active_patterns:
             env.errors.append(FluentCyclicReferenceError("Cyclic reference"))
-            return FluentNone()
+            yield FluentNone()
+            return
         env.active_patterns.add(self)
-        elements = self.elements
-        remaining_parts = self.MAX_PARTS - env.part_count
-        if len(self.elements) > remaining_parts:
-            env.active_patterns.remove(self)
-            raise ValueError("Too many parts in message (> {0}), "
-                             "aborting.".format(self.MAX_PARTS))
-        retval = ''.join(
-            resolve(element(env), env) for element in elements
-        )
-        env.part_count += len(elements)
+        for element in self.elements:
+            for part in element(env):
+                yield part
+                env.part_count += 1
+                if env.part_count > self.MAX_PARTS:
+                    raise ValueError("Too many parts in message (> {0}), "
+                                     "aborting.".format(self.MAX_PARTS))
         env.active_patterns.remove(self)
-        return retval
-
-
-def resolve(fluentish, env):
-    if isinstance(fluentish, FluentType):
-        return fluentish.format(env.context._babel_locale)
-    if isinstance(fluentish, six.string_types):
-        if len(fluentish) > MAX_PART_LENGTH:
-            raise ValueError(
-                "Too many characters in placeable "
-                "({}, max allowed is {})".format(len(fluentish), Pattern.MAX_PARTS)
-            )
-    return fluentish
 
 
 class TextElement(FTL.TextElement, Literal):
     def __call__(self, env):
-        return self.value
-
-
-class Placeable(FTL.Placeable, BaseResolver):
-    def __call__(self, env):
-        inner = resolve(self.expression(env), env)
-        if not env.context.use_isolating:
-            return inner
-        return "\u2068" + inner + "\u2069"
+        yield self.value
 
 
 class NeverIsolatingPlaceable(FTL.Placeable, BaseResolver):
     def __call__(self, env):
-        inner = resolve(self.expression(env), env)
-        return inner
+        for part in self.expression(env):
+            yield part
+
+
+class Placeable(NeverIsolatingPlaceable):
+    def __call__(self, env):
+        if env.context.use_isolating:
+            yield "\u2068"
+        for part in self.expression(env):
+            yield part
+        if env.context.use_isolating:
+            yield "\u2069"
 
 
 class StringLiteral(FTL.StringLiteral, Literal):
     def __call__(self, env):
-        return self.parse()['value']
+        yield self.parse()['value']
 
 
 class NumberLiteral(FTL.NumberLiteral, BaseResolver):
@@ -185,7 +181,7 @@ class NumberLiteral(FTL.NumberLiteral, BaseResolver):
             self.value = FluentInt(self.value)
 
     def __call__(self, env):
-        return self.value
+        yield self.value
 
 
 class EntryReference(BaseResolver):
@@ -196,11 +192,12 @@ class EntryReference(BaseResolver):
                 pattern = entry.attributes[self.attribute.name]
             else:
                 pattern = entry.value
-            return pattern(env)
+            for part in pattern(env):
+                yield part
         except LookupError:
             ref_id = reference_to_id(self)
             env.errors.append(unknown_reference_error_obj(ref_id))
-            return FluentNone('{{{}}}'.format(ref_id))
+            yield FluentNone('{{{}}}'.format(ref_id))
 
 
 class MessageReference(FTL.MessageReference, EntryReference):
@@ -213,11 +210,12 @@ class TermReference(FTL.TermReference, EntryReference):
             if self.arguments.positional:
                 env.errors.append(FluentFormatError("Ignored positional arguments passed to term '{0}'"
                                                     .format(reference_to_id(self))))
-            kwargs = {kwarg.name.name: kwarg.value(env) for kwarg in self.arguments.named}
+            kwargs = {kwarg.name.name: kwarg.value.to_type(env) for kwarg in self.arguments.named}
         else:
             kwargs = None
         with env.modified_for_term_reference(args=kwargs):
-            return super(TermReference, self).__call__(env)
+            for part in super(TermReference, self).__call__(env):
+                yield part
 
 
 class VariableReference(FTL.VariableReference, BaseResolver):
@@ -229,13 +227,16 @@ class VariableReference(FTL.VariableReference, BaseResolver):
             if env.current.error_for_missing_arg:
                 env.errors.append(
                     FluentReferenceError("Unknown external: {0}".format(name)))
-            return FluentNone(name)
+            yield FluentNone(name)
+            return
 
         if isinstance(arg_val, (FluentType, six.text_type)):
-            return arg_val
-        env.errors.append(TypeError("Unsupported external type: {0}, {1}"
-                                    .format(name, type(arg_val))))
-        return FluentNone(name)
+            yield arg_val
+        else:
+            env.errors.append(TypeError(
+                "Unsupported external type: {0}, {1}".format(name, type(arg_val))
+            ))
+            yield FluentNone(name)
 
 
 class Attribute(FTL.Attribute, BaseResolver):
@@ -244,8 +245,9 @@ class Attribute(FTL.Attribute, BaseResolver):
 
 class SelectExpression(FTL.SelectExpression, BaseResolver):
     def __call__(self, env):
-        key = self.selector(env)
-        return self.select_from_select_expression(env, key=key)
+        key = self.selector.to_type(env)
+        for part in self.select_from_select_expression(env, key=key):
+            yield part
 
     def select_from_select_expression(self, env, key):
         default = None
@@ -254,7 +256,7 @@ class SelectExpression(FTL.SelectExpression, BaseResolver):
             if variant.default:
                 default = variant
 
-            if match(key, variant.key(env), env):
+            if match(key, variant.key, env):
                 found = variant
                 break
 
@@ -283,12 +285,14 @@ def match(val1, val2, env):
 
 
 class Variant(FTL.Variant, BaseResolver):
-    pass
+    def __init__(self, key, value, default=False, **kwargs):
+        key = key.to_type(None)
+        super(Variant, self).__init__(key, value, default=default, **kwargs)
 
 
 class Identifier(FTL.Identifier, BaseResolver):
     def __call__(self, env):
-        return self.name
+        yield self.name
 
 
 class CallArguments(FTL.CallArguments, BaseResolver):
@@ -297,21 +301,22 @@ class CallArguments(FTL.CallArguments, BaseResolver):
 
 class FunctionReference(FTL.FunctionReference, BaseResolver):
     def __call__(self, env):
-        args = [arg(env) for arg in self.arguments.positional]
-        kwargs = {kwarg.name.name: kwarg.value(env) for kwarg in self.arguments.named}
+        args = [arg.to_type(env) for arg in self.arguments.positional]
+        kwargs = {kwarg.name.name: kwarg.value.to_type(env) for kwarg in self.arguments.named}
         function_name = self.id.name
         try:
             function = env.context._functions[function_name]
         except LookupError:
             env.errors.append(FluentReferenceError("Unknown function: {0}"
                                                    .format(function_name)))
-            return FluentNone(function_name + "()")
+            yield FluentNone(function_name + "()")
+            return
 
         try:
-            return function(*args, **kwargs)
+            yield function(*args, **kwargs)
         except Exception as e:
             env.errors.append(e)
-            return FluentNone(function_name + "()")
+            yield FluentNone(function_name + "()")
 
 
 class NamedArgument(FTL.NamedArgument, BaseResolver):

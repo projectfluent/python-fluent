@@ -44,5 +44,5 @@ class Compiler(object):
         if len(elements) == 1:
             return elements[0]
         return resolver.TextElement(
-            ''.join(child(None) for child in elements)
+            ''.join(part for child in elements for part in child(None))
         )

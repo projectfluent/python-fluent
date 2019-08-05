@@ -508,11 +508,20 @@ class FluentParser(object):
                 else:
                     raise ParseError('E0018')
 
-            if (
+            elif (
                 isinstance(selector, ast.TermReference)
-                and selector.attribute is None
             ):
-                raise ParseError('E0017')
+                if selector.attribute is None:
+                    raise ParseError('E0017')
+            elif not (
+                isinstance(selector, (
+                    ast.StringLiteral,
+                    ast.NumberLiteral,
+                    ast.VariableReference,
+                    ast.FunctionReference,
+                ))
+            ):
+                raise ParseError('E0029')
 
             ps.next()
             ps.next()

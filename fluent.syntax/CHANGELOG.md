@@ -1,5 +1,12 @@
 # Changelog
 
+## fluent.syntax 0.16 (August 6, 2019)
+
+  - Parser fix for selector expressions being too lenient.
+
+    This includes the fixes for https://github.com/projectfluent/fluent/issues/279.
+
+
 ## fluent.syntax 0.15.1 (August 1, 2019)
 
   - Comment Serializer fix.

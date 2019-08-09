@@ -564,17 +564,21 @@ class FluentParser(object):
                 ps.next()
                 attribute = self.get_identifier(ps)
             arguments = None
-            if ps.current_char == '(':
+            ps.peek_blank()
+            if ps.current_peek == '(':
+                ps.skip_to_peek()
                 arguments = self.get_call_arguments(ps)
             return ast.TermReference(id, attribute, arguments)
 
         if ps.is_identifier_start():
             id = self.get_identifier(ps)
+            ps.peek_blank()
 
-            if ps.current_char == '(':
+            if ps.current_peek == '(':
                 # It's a Function. Ensure it's all upper-case.
                 if not re.match('^[A-Z][A-Z0-9_-]*$', id.name):
                     raise ParseError('E0008')
+                ps.skip_to_peek()
                 args = self.get_call_arguments(ps)
                 return ast.FunctionReference(id, args)
 

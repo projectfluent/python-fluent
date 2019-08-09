@@ -36,7 +36,7 @@ you're a tool author you may be interested in the formal [EBNF grammar][].
 Installation
 ------------
 
-python-fluent consists of two packages:
+python-fluent consists of these packages:
 
 * `fluent.syntax` - includes AST classes and parser. Most end users will not
   need this directly. Documentation coming soon!
@@ -54,6 +54,11 @@ python-fluent consists of two packages:
 
   (The correct version of ``fluent.syntax`` will be installed automatically)
 
+* `fluent.pygments` - a plugin for pygments to add syntax highlighting to Sphinx.
+
+    To install:
+
+        pip install fluent.pygments
 
 PyPI also contains an old `fluent` package which is an older version of just
 `fluent.syntax`.

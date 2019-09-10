@@ -1,8 +1,8 @@
 Changelog
 =========
 
-fluent.runtime 0.2
------------------------------------------------
+fluent.runtime 0.2 (September 10, 2019)
+---------------------------------------
 
 * Support for Fluent spec 1.0 (``fluent.syntax`` 0.17), including parameterized
   terms.

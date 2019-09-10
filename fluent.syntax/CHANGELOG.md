@@ -1,5 +1,12 @@
 # Changelog
 
+## fluent.syntax 0.17 (September 10, 2019)
+
+  - Parser fix for whitespace before call arguments.
+
+    This includes the fixes for https://github.com/projectfluent/fluent/issues/281.
+
+
 ## fluent.syntax 0.16 (August 6, 2019)
 
   - Parser fix for selector expressions being too lenient.

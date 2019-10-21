@@ -11,6 +11,16 @@ from .builtins import BUILTINS
 from .prepare import Compiler
 from .resolver import ResolverEnvironment, CurrentEnvironment
 from .utils import native_to_fluent
+from .fallback import FluentLocalization, AbstractResourceLoader, FluentResourceLoader
+
+
+__all__ = [
+    'FluentLocalization',
+    'AbstractResourceLoader',
+    'FluentResourceLoader',
+    'FluentResource',
+    'FluentBundle',
+]
 
 
 def FluentResource(source):

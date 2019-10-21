@@ -28,4 +28,7 @@ setup(name='fluent.runtime',
           'six',
       ],
       test_suite='tests',
+      tests_require=[
+          'mock',
+      ],
       )

@@ -31,7 +31,7 @@ class TestBillionLaughs(unittest.TestCase):
         """)))
 
     def test_max_length_protection(self):
-        val, errs = self.ctx.format('lolz')
+        val, errs = self.ctx.format_pattern(self.ctx.get_message('lolz').value)
         self.assertEqual(val, '{???}')
         self.assertNotEqual(len(errs), 0)
         self.assertIn('Too many characters', str(errs[-1]))
@@ -39,7 +39,7 @@ class TestBillionLaughs(unittest.TestCase):
     def test_max_expansions_protection(self):
         # Without protection, emptylolz will take a really long time to
         # evaluate, although it generates an empty message.
-        val, errs = self.ctx.format('emptylolz')
+        val, errs = self.ctx.format_pattern(self.ctx.get_message('emptylolz').value)
         self.assertEqual(val, '{???}')
         self.assertEqual(len(errs), 1)
         self.assertIn('Too many parts', str(errs[-1]))

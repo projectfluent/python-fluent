@@ -11,8 +11,8 @@ from ..utils import dedent_ftl
 class TestParameterizedTerms(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             -thing = { $article ->
                   *[definite] the thing
                    [indefinite] a thing
@@ -27,52 +27,52 @@ class TestParameterizedTerms(unittest.TestCase):
         """)))
 
     def test_argument_omitted(self):
-        val, errs = self.ctx.format('thing-no-arg', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('thing-no-arg').value, {})
         self.assertEqual(val, 'the thing')
         self.assertEqual(errs, [])
 
     def test_argument_omitted_alt(self):
-        val, errs = self.ctx.format('thing-no-arg-alt', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('thing-no-arg-alt').value, {})
         self.assertEqual(val, 'the thing')
         self.assertEqual(errs, [])
 
     def test_with_argument(self):
-        val, errs = self.ctx.format('thing-with-arg', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('thing-with-arg').value, {})
         self.assertEqual(val, 'a thing')
         self.assertEqual(errs, [])
 
     def test_positional_arg(self):
-        val, errs = self.ctx.format('thing-positional-arg', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('thing-positional-arg').value, {})
         self.assertEqual(val, 'the thing')
         self.assertEqual(errs, [FluentFormatError("Ignored positional arguments passed to term '-thing'")])
 
     def test_fallback(self):
-        val, errs = self.ctx.format('thing-fallback', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('thing-fallback').value, {})
         self.assertEqual(val, 'the thing')
         self.assertEqual(errs, [])
 
     def test_no_implicit_access_to_external_args(self):
         # The '-thing' term should not get passed article="indefinite"
-        val, errs = self.ctx.format('thing-no-arg', {'article': 'indefinite'})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('thing-no-arg').value, {'article': 'indefinite'})
         self.assertEqual(val, 'the thing')
         self.assertEqual(errs, [])
 
     def test_no_implicit_access_to_external_args_but_term_args_still_passed(self):
-        val, errs = self.ctx.format('thing-with-arg', {'article': 'none'})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('thing-with-arg').value, {'article': 'none'})
         self.assertEqual(val, 'a thing')
         self.assertEqual(errs, [])
 
     def test_bad_term(self):
-        val, errs = self.ctx.format('bad-term', {})
-        self.assertEqual(val, '-missing')
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('bad-term').value, {})
+        self.assertEqual(val, '{-missing}')
         self.assertEqual(errs, [FluentReferenceError('Unknown term: -missing')])
 
 
 class TestParameterizedTermAttributes(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             -brand = Cool Thing
                 .status = { $version ->
                     [v2]     available
@@ -96,22 +96,22 @@ class TestParameterizedTermAttributes(unittest.TestCase):
         """)))
 
     def test_with_argument(self):
-        val, errs = self.ctx.format('attr-with-arg', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('attr-with-arg').value, {})
         self.assertEqual(val, 'Cool Thing is available, yay!')
         self.assertEqual(errs, [])
 
     def test_missing_attr(self):
-        # We should fall back to the parent, and still pass the args.
-        val, errs = self.ctx.format('missing-attr-ref', {})
-        self.assertEqual(val, 'ABC option')
+        # We don't fall back from attributes, get default.
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('missing-attr-ref').value, {})
+        self.assertEqual(val, 'DEF option')
         self.assertEqual(errs, [FluentReferenceError('Unknown attribute: -other.missing')])
 
 
 class TestNestedParameterizedTerms(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             -thing = { $article ->
                 *[definite] { $first-letter ->
                     *[lower] the thing
@@ -130,27 +130,27 @@ class TestNestedParameterizedTerms(unittest.TestCase):
         """)))
 
     def test_both_args(self):
-        val, errs = self.ctx.format('both-args', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('both-args').value, {})
         self.assertEqual(val, 'A thing.')
         self.assertEqual(errs, [])
 
     def test_outer_arg(self):
-        val, errs = self.ctx.format('outer-arg', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('outer-arg').value, {})
         self.assertEqual(val, 'This is a thing.')
         self.assertEqual(errs, [])
 
     def test_inner_arg(self):
-        val, errs = self.ctx.format('inner-arg', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('inner-arg').value, {})
         self.assertEqual(val, 'The thing.')
         self.assertEqual(errs, [])
 
     def test_inner_arg_with_external_args(self):
-        val, errs = self.ctx.format('inner-arg', {'article': 'indefinite'})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('inner-arg').value, {'article': 'indefinite'})
         self.assertEqual(val, 'The thing.')
         self.assertEqual(errs, [])
 
     def test_neither_arg(self):
-        val, errs = self.ctx.format('neither-arg', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('neither-arg').value, {})
         self.assertEqual(val, 'the thing.')
         self.assertEqual(errs, [])
 
@@ -158,8 +158,8 @@ class TestNestedParameterizedTerms(unittest.TestCase):
 class TestTermsCalledFromTerms(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             -foo = {$a} {$b}
             -bar = {-foo(b: 2)}
             -baz = {-foo}
@@ -168,12 +168,12 @@ class TestTermsCalledFromTerms(unittest.TestCase):
         """)))
 
     def test_term_args_isolated_with_call_syntax(self):
-        val, errs = self.ctx.format('ref-bar', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-bar').value, {})
         self.assertEqual(val, 'a 2')
         self.assertEqual(errs, [])
 
     def test_term_args_isolated_without_call_syntax(self):
-        val, errs = self.ctx.format('ref-baz', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-baz').value, {})
         self.assertEqual(val, 'a b')
         self.assertEqual(errs, [])
 
@@ -181,8 +181,8 @@ class TestTermsCalledFromTerms(unittest.TestCase):
 class TestMessagesCalledFromTerms(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             msg = Msg is {$arg}
             -foo = {msg}
             ref-foo = {-foo(arg: 1)}
@@ -191,6 +191,6 @@ class TestMessagesCalledFromTerms(unittest.TestCase):
     def test_messages_inherit_term_args(self):
         # This behaviour may change in future, message calls might be
         # disallowed from inside terms
-        val, errs = self.ctx.format('ref-foo', {'arg': 2})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-foo').value, {'arg': 2})
         self.assertEqual(val, 'Msg is 1')
         self.assertEqual(errs, [])

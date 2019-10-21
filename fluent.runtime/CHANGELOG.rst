@@ -7,6 +7,7 @@ fluent.runtime next
 * Added ``fluent.runtime.FluentResource`` and
   ``fluent.runtime.FluentBundle.add_resource``.
 * Removed ``fluent.runtime.FluentBundle.add_messages``.
+* Replaced ``bundle.format()`` with ``bundle.format_pattern(bundle.get_message().value)``.
 
 fluent.runtime 0.2 (September 10, 2019)
 ---------------------------------------

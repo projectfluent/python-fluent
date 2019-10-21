@@ -3,22 +3,13 @@ from __future__ import absolute_import, unicode_literals
 from datetime import date, datetime
 from decimal import Decimal
 
-from fluent.syntax.ast import Term, TermReference
+from fluent.syntax.ast import TermReference
 
 from .types import FluentInt, FluentFloat, FluentDecimal, FluentDate, FluentDateTime
 from .errors import FluentReferenceError
 
 TERM_SIGIL = '-'
 ATTRIBUTE_SEPARATOR = '.'
-
-
-def ast_to_id(ast):
-    """
-    Returns a string reference for a Term or Message
-    """
-    if isinstance(ast, Term):
-        return TERM_SIGIL + ast.id.name
-    return ast.id.name
 
 
 def native_to_fluent(val):
@@ -39,7 +30,7 @@ def native_to_fluent(val):
     return val
 
 
-def reference_to_id(ref, ignore_attributes=False):
+def reference_to_id(ref):
     """
     Returns a string reference for a MessageReference or TermReference
     AST node.
@@ -55,7 +46,7 @@ def reference_to_id(ref, ignore_attributes=False):
     else:
         start = ref.id.name
 
-    if not ignore_attributes and ref.attribute:
+    if ref.attribute:
         return ''.join([start, ATTRIBUTE_SEPARATOR, ref.attribute.name])
     return start
 

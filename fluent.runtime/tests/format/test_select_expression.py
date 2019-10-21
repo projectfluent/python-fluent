@@ -11,58 +11,58 @@ from ..utils import dedent_ftl
 class TestSelectExpressionWithStrings(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
 
     def test_with_a_matching_selector(self):
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             foo = { "a" ->
                 [a] A
                *[b] B
              }
         """)))
-        val, errs = self.ctx.format('foo', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').value, {})
         self.assertEqual(val, "A")
         self.assertEqual(len(errs), 0)
 
     def test_with_a_non_matching_selector(self):
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             foo = { "c" ->
                 [a] A
                *[b] B
              }
         """)))
-        val, errs = self.ctx.format('foo', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').value, {})
         self.assertEqual(val, "B")
         self.assertEqual(len(errs), 0)
 
     def test_with_a_missing_selector(self):
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             foo = { $none ->
                 [a] A
                *[b] B
              }
         """)))
-        val, errs = self.ctx.format('foo', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').value, {})
         self.assertEqual(val, "B")
         self.assertEqual(errs,
                          [FluentReferenceError("Unknown external: none")])
 
     def test_with_argument_expression(self):
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             foo = { $arg ->
                 [a] A
                *[b] B
              }
         """)))
-        val, errs = self.ctx.format('foo', {'arg': 'a'})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').value, {'arg': 'a'})
         self.assertEqual(val, "A")
 
 
 class TestSelectExpressionWithNumbers(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             foo = { 1 ->
                *[0] A
                 [1] B
@@ -85,39 +85,39 @@ class TestSelectExpressionWithNumbers(unittest.TestCase):
         """)))
 
     def test_selects_the_right_variant(self):
-        val, errs = self.ctx.format('foo', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').value, {})
         self.assertEqual(val, "B")
         self.assertEqual(len(errs), 0)
 
     def test_with_a_non_matching_selector(self):
-        val, errs = self.ctx.format('bar', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('bar').value, {})
         self.assertEqual(val, "A")
         self.assertEqual(len(errs), 0)
 
     def test_with_a_missing_selector(self):
-        val, errs = self.ctx.format('baz', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('baz').value, {})
         self.assertEqual(val, "A")
         self.assertEqual(errs,
                          [FluentReferenceError("Unknown external: num")])
 
     def test_with_argument_int(self):
-        val, errs = self.ctx.format('baz', {'num': 1})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('baz').value, {'num': 1})
         self.assertEqual(val, "B")
 
     def test_with_argument_float(self):
-        val, errs = self.ctx.format('baz', {'num': 1.0})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('baz').value, {'num': 1.0})
         self.assertEqual(val, "B")
 
     def test_with_float(self):
-        val, errs = self.ctx.format('qux', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('qux').value, {})
         self.assertEqual(val, "B")
 
 
 class TestSelectExpressionWithPluralCategories(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             foo = { 1 ->
                 [one] A
                *[other] B
@@ -140,37 +140,37 @@ class TestSelectExpressionWithPluralCategories(unittest.TestCase):
         """)))
 
     def test_selects_the_right_category(self):
-        val, errs = self.ctx.format('foo', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').value, {})
         self.assertEqual(val, "A")
         self.assertEqual(len(errs), 0)
 
     def test_selects_exact_match(self):
-        val, errs = self.ctx.format('bar', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('bar').value, {})
         self.assertEqual(val, "A")
         self.assertEqual(len(errs), 0)
 
     def test_selects_default_with_invalid_selector(self):
-        val, errs = self.ctx.format('baz', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('baz').value, {})
         self.assertEqual(val, "B")
         self.assertEqual(len(errs), 0)
 
     def test_with_a_missing_selector(self):
-        val, errs = self.ctx.format('qux', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('qux').value, {})
         self.assertEqual(val, "B")
         self.assertEqual(errs,
                          [FluentReferenceError("Unknown external: num")])
 
     def test_with_argument_integer(self):
-        val, errs = self.ctx.format('qux', {'num': 1})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('qux').value, {'num': 1})
         self.assertEqual(val, "A")
         self.assertEqual(len(errs), 0)
 
-        val, errs = self.ctx.format('qux', {'num': 2})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('qux').value, {'num': 2})
         self.assertEqual(val, "B")
         self.assertEqual(len(errs), 0)
 
     def test_with_argument_float(self):
-        val, errs = self.ctx.format('qux', {'num': 1.0})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('qux').value, {'num': 1.0})
         self.assertEqual(val, "A")
         self.assertEqual(len(errs), 0)
 
@@ -178,8 +178,8 @@ class TestSelectExpressionWithPluralCategories(unittest.TestCase):
 class TestSelectExpressionWithTerms(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_resource(FluentResource(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             -my-term = term
                  .attr = termattribute
 
@@ -200,17 +200,17 @@ class TestSelectExpressionWithTerms(unittest.TestCase):
         """)))
 
     def test_ref_term_attribute(self):
-        val, errs = self.ctx.format('ref-term-attr')
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-term-attr').value)
         self.assertEqual(val, "Term Attribute")
         self.assertEqual(len(errs), 0)
 
     def test_ref_term_attribute_fallback(self):
-        val, errs = self.ctx.format('ref-term-attr-other')
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-term-attr-other').value)
         self.assertEqual(val, "Other")
         self.assertEqual(len(errs), 0)
 
     def test_ref_term_attribute_missing(self):
-        val, errs = self.ctx.format('ref-term-attr-missing')
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-term-attr-missing').value)
         self.assertEqual(val, "Other")
         self.assertEqual(len(errs), 1)
         self.assertEqual(errs,

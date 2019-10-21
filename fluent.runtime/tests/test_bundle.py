@@ -18,9 +18,9 @@ class TestFluentBundle(unittest.TestCase):
             bar = Bar
             -baz = Baz
         """)))
-        self.assertIn('foo', self.bundle._messages_and_terms)
-        self.assertIn('bar', self.bundle._messages_and_terms)
-        self.assertIn('-baz', self.bundle._messages_and_terms)
+        self.assertIn('foo', self.bundle._messages)
+        self.assertIn('bar', self.bundle._messages)
+        self.assertIn('baz', self.bundle._terms)
 
     def test_has_message(self):
         self.bundle.add_resource(FluentResource(dedent_ftl("""
@@ -80,15 +80,15 @@ class TestFluentBundle(unittest.TestCase):
 
     def test_format_args(self):
         self.bundle.add_resource(FluentResource('foo = Foo'))
-        val, errs = self.bundle.format('foo')
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').value)
         self.assertEqual(val, 'Foo')
 
-        val, errs = self.bundle.format('foo', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').value, {})
         self.assertEqual(val, 'Foo')
 
     def test_format_missing(self):
         self.assertRaises(LookupError,
-                          self.bundle.format,
+                          self.bundle.get_message,
                           'a-missing-message')
 
     def test_format_term(self):
@@ -96,10 +96,10 @@ class TestFluentBundle(unittest.TestCase):
             -foo = Foo
         """)))
         self.assertRaises(LookupError,
-                          self.bundle.format,
+                          self.bundle.get_message,
                           '-foo')
         self.assertRaises(LookupError,
-                          self.bundle.format,
+                          self.bundle.get_message,
                           'foo')
 
     def test_message_and_term_separate(self):
@@ -107,6 +107,6 @@ class TestFluentBundle(unittest.TestCase):
             foo = Refers to { -foo }
             -foo = Foo
         """)))
-        val, errs = self.bundle.format('foo', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').value, {})
         self.assertEqual(val, 'Refers to \u2068Foo\u2069')
         self.assertEqual(errs, [])

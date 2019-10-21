@@ -1,8 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import contextlib
-from datetime import date, datetime
-from decimal import Decimal
 
 import attr
 import six
@@ -92,12 +90,28 @@ class Literal(BaseResolver):
     pass
 
 
-class Message(FTL.Message, BaseResolver):
-    pass
+class EntryResolver(BaseResolver):
+    '''Entries (Messages and Terms) have attributes.
+    In the AST they're a list, the resolver wants a dict. The helper method
+    here should be called from the constructor.
+    '''
+    def _fix_attributes(self):
+        self.attributes = {
+            attr.id.name: attr.value
+            for attr in self.attributes
+        }
 
 
-class Term(FTL.Term, BaseResolver):
-    pass
+class Message(FTL.Message, EntryResolver):
+    def __init__(self, id, **kwargs):
+        super(Message, self).__init__(id, **kwargs)
+        self._fix_attributes()
+
+
+class Term(FTL.Term, EntryResolver):
+    def __init__(self, id, value, **kwargs):
+        super(Term, self).__init__(id, value, **kwargs)
+        self._fix_attributes()
 
 
 class Pattern(FTL.Pattern, BaseResolver):
@@ -174,12 +188,26 @@ class NumberLiteral(FTL.NumberLiteral, BaseResolver):
         return self.value
 
 
-class MessageReference(FTL.MessageReference, BaseResolver):
+class EntryReference(BaseResolver):
     def __call__(self, env):
-        return lookup_reference(self, env)(env)
+        try:
+            entry = env.context._lookup(self.id.name, term=isinstance(self, FTL.TermReference))
+            if self.attribute:
+                pattern = entry.attributes[self.attribute.name]
+            else:
+                pattern = entry.value
+            return pattern(env)
+        except LookupError:
+            ref_id = reference_to_id(self)
+            env.errors.append(unknown_reference_error_obj(ref_id))
+            return FluentNone('{{{}}}'.format(ref_id))
 
 
-class TermReference(FTL.TermReference, BaseResolver):
+class MessageReference(FTL.MessageReference, EntryReference):
+    pass
+
+
+class TermReference(FTL.TermReference, EntryReference):
     def __call__(self, env):
         if self.arguments:
             if self.arguments.positional:
@@ -189,36 +217,7 @@ class TermReference(FTL.TermReference, BaseResolver):
         else:
             kwargs = None
         with env.modified_for_term_reference(args=kwargs):
-            return lookup_reference(self, env)(env)
-
-
-class FluentNoneResolver(FluentNone, BaseResolver):
-    def __call__(self, env):
-        return self.format(env.context._babel_locale)
-
-
-def lookup_reference(ref, env):
-    """
-    Given a MessageReference, TermReference or AttributeExpression, returns the
-    AST node, or FluentNone if not found, including fallback logic
-    """
-    ref_id = reference_to_id(ref)
-    try:
-        return env.context.lookup(ref_id)
-    except LookupError:
-        env.errors.append(unknown_reference_error_obj(ref_id))
-
-        if ref.attribute:
-            # Fallback
-            parent_id = reference_to_id(ref, ignore_attributes=True)
-            try:
-                return env.context.lookup(parent_id)
-            except LookupError:
-                # Don't add error here, because we already added error for the
-                # actual thing we were looking for.
-                pass
-
-    return FluentNoneResolver(ref_id)
+            return super(TermReference, self).__call__(env)
 
 
 class VariableReference(FTL.VariableReference, BaseResolver):
@@ -230,7 +229,7 @@ class VariableReference(FTL.VariableReference, BaseResolver):
             if env.current.error_for_missing_arg:
                 env.errors.append(
                     FluentReferenceError("Unknown external: {0}".format(name)))
-            return FluentNoneResolver(name)
+            return FluentNone(name)
 
         if isinstance(arg_val, (FluentType, six.text_type)):
             return arg_val
@@ -312,7 +311,7 @@ class FunctionReference(FTL.FunctionReference, BaseResolver):
             return function(*args, **kwargs)
         except Exception as e:
             env.errors.append(e)
-            return FluentNoneResolver(function_name + "()")
+            return FluentNone(function_name + "()")
 
 
 class NamedArgument(FTL.NamedArgument, BaseResolver):

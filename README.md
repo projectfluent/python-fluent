@@ -78,7 +78,7 @@ trying to make your app localizable and multilingual, or a hacker looking for
 a project to contribute to, please do get in touch on the mailing list and the
 IRC channel.
 
- - mailing list: https://lists.mozilla.org/listinfo/tools-l10n
+ - Mozilla Discourse: https://discourse.mozilla.org/c/fluent
  - IRC channel: [irc://irc.mozilla.org/l20n](irc://irc.mozilla.org/l20n)
 
 

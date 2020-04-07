@@ -15,4 +15,5 @@ significant changes.
 
    installation
    usage
+   internals
    history

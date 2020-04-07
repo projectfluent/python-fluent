@@ -7,7 +7,7 @@ import sys
 import pytest
 import six
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 
 
 FTL_CONTENT = """
@@ -25,24 +25,24 @@ ten = Ten
 
 @pytest.fixture
 def fluent_bundle():
-    ctx = FluentBundle(['pl'], use_isolating=False)
-    ctx.add_messages(FTL_CONTENT)
-    return ctx
+    bundle = FluentBundle(['pl'], use_isolating=False)
+    bundle.add_resource(FluentResource(FTL_CONTENT))
+    return bundle
 
 
 def fluent_template(bundle):
     return (
         "preface" +
-        bundle.format("one")[0] +
-        bundle.format("two")[0] +
-        bundle.format("three")[0] +
-        bundle.format("four")[0] +
-        bundle.format("five")[0] +
-        bundle.format("six")[0] +
-        bundle.format("seven", {"destination": "Mars"})[0] +
-        bundle.format("eight")[0] +
-        bundle.format("nine")[0] +
-        bundle.format("ten")[0] +
+        bundle.format_pattern(bundle.get_message('one').value)[0] +
+        bundle.format_pattern(bundle.get_message('two').value)[0] +
+        bundle.format_pattern(bundle.get_message('three').value)[0] +
+        bundle.format_pattern(bundle.get_message('four').value)[0] +
+        bundle.format_pattern(bundle.get_message('five').value)[0] +
+        bundle.format_pattern(bundle.get_message('six').value)[0] +
+        bundle.format_pattern(bundle.get_message('seven').value, {"destination": "Mars"})[0] +
+        bundle.format_pattern(bundle.get_message('eight').value)[0] +
+        bundle.format_pattern(bundle.get_message('nine').value)[0] +
+        bundle.format_pattern(bundle.get_message('ten').value)[0] +
         "tail"
     )
 

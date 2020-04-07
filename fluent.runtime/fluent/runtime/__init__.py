@@ -10,17 +10,34 @@ from fluent.syntax.ast import Message, Term
 from .builtins import BUILTINS
 from .prepare import Compiler
 from .resolver import ResolverEnvironment, CurrentEnvironment
-from .utils import ATTRIBUTE_SEPARATOR, TERM_SIGIL, ast_to_id, native_to_fluent
+from .utils import native_to_fluent
+from .fallback import FluentLocalization, AbstractResourceLoader, FluentResourceLoader
+
+
+__all__ = [
+    'FluentLocalization',
+    'AbstractResourceLoader',
+    'FluentResourceLoader',
+    'FluentResource',
+    'FluentBundle',
+]
+
+
+def FluentResource(source):
+    parser = FluentParser()
+    return parser.parse(source)
 
 
 class FluentBundle(object):
     """
-    Message contexts are single-language stores of translations.  They are
-    responsible for parsing translation resources in the Fluent syntax and can
+    Bundles are single-language stores of translations.  They are
+    aggregate parsed Fluent resources in the Fluent syntax and can
     format translation units (entities) to strings.
 
-    Always use `FluentBundle.format` to retrieve translation units from
-    a context.  Translations can contain references to other entities or
+    Always use `FluentBundle.get_message` to retrieve translation units from
+    a bundle. Generate the localized string by using `format_pattern` on
+    `message.value` or `message.attributes['attr']`.
+    Translations can contain references to other entities or
     external arguments, conditional logic in form of select expressions, traits
     which describe their grammatical features, and can use Fluent builtins.
     See the documentation of the Fluent syntax for more information.
@@ -33,41 +50,43 @@ class FluentBundle(object):
             _functions.update(functions)
         self._functions = _functions
         self.use_isolating = use_isolating
-        self._messages_and_terms = {}
+        self._messages = {}
+        self._terms = {}
         self._compiled = {}
         self._compiler = Compiler()
         self._babel_locale = self._get_babel_locale()
         self._plural_form = babel.plural.to_python(self._babel_locale.plural_form)
 
-    def add_messages(self, source):
-        parser = FluentParser()
-        resource = parser.parse(source)
+    def add_resource(self, resource, allow_overrides=False):
         # TODO - warn/error about duplicates
         for item in resource.body:
-            if isinstance(item, (Message, Term)):
-                full_id = ast_to_id(item)
-                if full_id not in self._messages_and_terms:
-                    self._messages_and_terms[full_id] = item
+            if not isinstance(item, (Message, Term)):
+                continue
+            map_ = self._messages if isinstance(item, Message) else self._terms
+            full_id = item.id.name
+            if full_id not in map_ or allow_overrides:
+                map_[full_id] = item
 
     def has_message(self, message_id):
-        if message_id.startswith(TERM_SIGIL) or ATTRIBUTE_SEPARATOR in message_id:
-            return False
-        return message_id in self._messages_and_terms
+        return message_id in self._messages
 
-    def lookup(self, full_id):
-        if full_id not in self._compiled:
-            entry_id = full_id.split(ATTRIBUTE_SEPARATOR, 1)[0]
-            entry = self._messages_and_terms[entry_id]
-            compiled = self._compiler(entry)
-            if compiled.value is not None:
-                self._compiled[entry_id] = compiled.value
-            for attr in compiled.attributes:
-                self._compiled[ATTRIBUTE_SEPARATOR.join([entry_id, attr.id.name])] = attr.value
-        return self._compiled[full_id]
+    def get_message(self, message_id):
+        return self._lookup(message_id)
 
-    def format(self, message_id, args=None):
-        if message_id.startswith(TERM_SIGIL):
-            raise LookupError(message_id)
+    def _lookup(self, entry_id, term=False):
+        if term:
+            compiled_id = '-' + entry_id
+        else:
+            compiled_id = entry_id
+        try:
+            return self._compiled[compiled_id]
+        except LookupError:
+            pass
+        entry = self._terms[entry_id] if term else self._messages[entry_id]
+        self._compiled[compiled_id] = self._compiler(entry)
+        return self._compiled[compiled_id]
+
+    def format_pattern(self, pattern, args=None):
         if args is not None:
             fluent_args = {
                 argname: native_to_fluent(argvalue)
@@ -77,12 +96,11 @@ class FluentBundle(object):
             fluent_args = {}
 
         errors = []
-        resolve = self.lookup(message_id)
         env = ResolverEnvironment(context=self,
                                   current=CurrentEnvironment(args=fluent_args),
                                   errors=errors)
         try:
-            result = resolve(env)
+            result = pattern(env)
         except ValueError as e:
             errors.append(e)
             result = '{???}'

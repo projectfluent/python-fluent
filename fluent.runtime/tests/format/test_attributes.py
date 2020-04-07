@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 
-from fluent.runtime import FluentBundle
+from fluent.runtime import FluentBundle, FluentResource
 from fluent.runtime.errors import FluentReferenceError
 
 from ..utils import dedent_ftl
@@ -11,33 +11,33 @@ from ..utils import dedent_ftl
 class TestAttributesWithStringValues(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             foo = Foo
                 .attr = Foo Attribute
             bar = { foo } Bar
                 .attr = Bar Attribute
             ref-foo = { foo.attr }
             ref-bar = { bar.attr }
-        """))
+        """)))
 
     def test_can_be_referenced_for_entities_with_string_values(self):
-        val, errs = self.ctx.format('ref-foo', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-foo').value, {})
         self.assertEqual(val, 'Foo Attribute')
         self.assertEqual(len(errs), 0)
 
     def test_can_be_referenced_for_entities_with_pattern_values(self):
-        val, errs = self.ctx.format('ref-bar', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-bar').value, {})
         self.assertEqual(val, 'Bar Attribute')
         self.assertEqual(len(errs), 0)
 
     def test_can_be_formatted_directly_for_entities_with_string_values(self):
-        val, errs = self.ctx.format('foo.attr', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').attributes['attr'], {})
         self.assertEqual(val, 'Foo Attribute')
         self.assertEqual(len(errs), 0)
 
     def test_can_be_formatted_directly_for_entities_with_pattern_values(self):
-        val, errs = self.ctx.format('bar.attr', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('bar').attributes['attr'], {})
         self.assertEqual(val, 'Bar Attribute')
         self.assertEqual(len(errs), 0)
 
@@ -45,8 +45,8 @@ class TestAttributesWithStringValues(unittest.TestCase):
 class TestAttributesWithSimplePatternValues(unittest.TestCase):
 
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             foo = Foo
             bar = Bar
                 .attr = { foo } Attribute
@@ -57,43 +57,43 @@ class TestAttributesWithSimplePatternValues(unittest.TestCase):
             ref-bar = { bar.attr }
             ref-baz = { baz.attr }
             ref-qux = { qux.attr }
-        """))
+        """)))
 
     def test_can_be_referenced_for_entities_with_string_values(self):
-        val, errs = self.ctx.format('ref-bar', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-bar').value, {})
         self.assertEqual(val, 'Foo Attribute')
         self.assertEqual(len(errs), 0)
 
     def test_can_be_formatted_directly_for_entities_with_string_values(self):
-        val, errs = self.ctx.format('bar.attr', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('bar').attributes['attr'], {})
         self.assertEqual(val, 'Foo Attribute')
         self.assertEqual(len(errs), 0)
 
     def test_can_be_referenced_for_entities_with_pattern_values(self):
-        val, errs = self.ctx.format('ref-baz', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-baz').value, {})
         self.assertEqual(val, 'Foo Attribute')
         self.assertEqual(len(errs), 0)
 
     def test_can_be_formatted_directly_for_entities_with_pattern_values(self):
-        val, errs = self.ctx.format('baz.attr', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('baz').attributes['attr'], {})
         self.assertEqual(val, 'Foo Attribute')
         self.assertEqual(len(errs), 0)
 
     def test_works_with_self_references(self):
-        val, errs = self.ctx.format('ref-qux', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-qux').value, {})
         self.assertEqual(val, 'Qux Attribute')
         self.assertEqual(len(errs), 0)
 
     def test_works_with_self_references_direct(self):
-        val, errs = self.ctx.format('qux.attr', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('qux').attributes['attr'], {})
         self.assertEqual(val, 'Qux Attribute')
         self.assertEqual(len(errs), 0)
 
 
 class TestMissing(unittest.TestCase):
     def setUp(self):
-        self.ctx = FluentBundle(['en-US'], use_isolating=False)
-        self.ctx.add_messages(dedent_ftl("""
+        self.bundle = FluentBundle(['en-US'], use_isolating=False)
+        self.bundle.add_resource(FluentResource(dedent_ftl("""
             foo = Foo
             bar = Bar
                 .attr = Bar Attribute
@@ -107,49 +107,42 @@ class TestMissing(unittest.TestCase):
             attr-only =
                      .attr  = Attr Only Attribute
             ref-double-missing = { missing.attr }
-        """))
+        """)))
 
-    def test_falls_back_for_msg_with_string_value_and_no_attributes(self):
-        val, errs = self.ctx.format('ref-foo', {})
-        self.assertEqual(val, 'Foo')
+    def test_msg_with_string_value_and_no_attributes(self):
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-foo').value, {})
+        self.assertEqual(val, '{foo.missing}')
         self.assertEqual(errs,
                          [FluentReferenceError(
                              'Unknown attribute: foo.missing')])
 
-    def test_falls_back_for_msg_with_string_value_and_other_attributes(self):
-        val, errs = self.ctx.format('ref-bar', {})
-        self.assertEqual(val, 'Bar')
+    def test_msg_with_string_value_and_other_attributes(self):
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-bar').value, {})
+        self.assertEqual(val, '{bar.missing}')
         self.assertEqual(errs,
                          [FluentReferenceError(
                              'Unknown attribute: bar.missing')])
 
-    def test_falls_back_for_msg_with_pattern_value_and_no_attributes(self):
-        val, errs = self.ctx.format('ref-baz', {})
-        self.assertEqual(val, 'Foo Baz')
+    def test_msg_with_pattern_value_and_no_attributes(self):
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-baz').value, {})
+        self.assertEqual(val, '{baz.missing}')
         self.assertEqual(errs,
                          [FluentReferenceError(
                              'Unknown attribute: baz.missing')])
 
-    def test_falls_back_for_msg_with_pattern_value_and_other_attributes(self):
-        val, errs = self.ctx.format('ref-qux', {})
-        self.assertEqual(val, 'Foo Qux')
+    def test_msg_with_pattern_value_and_other_attributes(self):
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-qux').value, {})
+        self.assertEqual(val, '{qux.missing}')
         self.assertEqual(errs,
                          [FluentReferenceError(
                              'Unknown attribute: qux.missing')])
 
-    def test_attr_only_main(self):
-        # For reference, Javascript implementation returns null for this case.
-        # For Python returning `None` doesn't seem appropriate, since this will
-        # only blow up later if you attempt to add this to a string, so we raise
-        # a LookupError instead, as per entirely missing messages.
-        self.assertRaises(LookupError, self.ctx.format, 'attr-only', {})
-
     def test_attr_only_attribute(self):
-        val, errs = self.ctx.format('attr-only.attr', {})
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('attr-only').attributes['attr'], {})
         self.assertEqual(val, 'Attr Only Attribute')
         self.assertEqual(len(errs), 0)
 
     def test_missing_message_and_attribute(self):
-        val, errs = self.ctx.format('ref-double-missing', {})
-        self.assertEqual(val, 'missing.attr')
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('ref-double-missing').value, {})
+        self.assertEqual(val, '{missing.attr}')
         self.assertEqual(errs, [FluentReferenceError('Unknown attribute: missing.attr')])

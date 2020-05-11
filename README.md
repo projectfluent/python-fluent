@@ -79,7 +79,7 @@ a project to contribute to, please do get in touch on the mailing list and the
 IRC channel.
 
  - Mozilla Discourse: https://discourse.mozilla.org/c/fluent
- - IRC channel: [irc://irc.mozilla.org/l20n](irc://irc.mozilla.org/l20n)
+ - Matrix channel: [#fluent:mozilla.org](https://chat.mozilla.org/#/room/#fluent:mozilla.org)
 
 
 Get Involved

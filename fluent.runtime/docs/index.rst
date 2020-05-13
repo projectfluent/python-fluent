@@ -16,4 +16,5 @@ significant changes.
    installation
    usage
    internals
+   reference
    history

@@ -19,12 +19,17 @@ def is_select_expr(elem):
 
 
 class FluentSerializer(object):
+    """FluentSerializer converts :class:`.ast.SyntaxNode` objects to unicode strings.
+
+    `with_junk` controls if parse errors are written back or not.
+    """
     HAS_ENTRIES = 1
 
     def __init__(self, with_junk=False):
         self.with_junk = with_junk
 
     def serialize(self, resource):
+        "Serialize a :class:`.ast.Resource` to a string."
         if not isinstance(resource, ast.Resource):
             raise Exception('Unknown resource type: {}'.format(type(resource)))
 
@@ -40,6 +45,7 @@ class FluentSerializer(object):
         return "".join(parts)
 
     def serialize_entry(self, entry, state=0):
+        "Serialize an :class:`.ast.Entry` to a string."
         if isinstance(entry, ast.Message):
             return serialize_message(entry)
         if isinstance(entry, ast.Term):

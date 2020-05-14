@@ -15,6 +15,6 @@ provide more fine-grained control and detail.
    :maxdepth: 2
    :caption: Contents:
 
-   parser
+   parsing
    ast
-   serializer
+   serializing

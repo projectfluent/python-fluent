@@ -12,7 +12,7 @@ post-processing of Fluent source files.
    :maxdepth: 2
    :caption: Contents:
 
-   api/index
+   reference
 
 
 Indices and tables

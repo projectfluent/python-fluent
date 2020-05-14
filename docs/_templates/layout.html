@@ -1,0 +1,22 @@
+{% extends "!layout.html" %}
+
+{%- block css %}
+    <link rel="stylesheet" href="{{ root_url + '/_static/' + style|e }}" type="text/css" />
+    <link rel="stylesheet" href="{{ root_url + '/_static/pygments.css' }}" type="text/css" />
+    {%- for css in css_files %}
+    <link rel="stylesheet" href="{{ root_url + '/' + css|e }}" type="text/css" />
+    {%- endfor %}
+{%- endblock %}
+
+{%- block scripts %}
+    <script id="documentation_options" data-url_root="{{ pathto('', 1) }}" src="{{ pathto('_static/documentation_options.js', 1) }}"></script>
+    {%- for js in script_files %}
+    <script src="{{root_url}}/{{js}}"></script>
+    {%- endfor %}
+{%- endblock %}
+
+{%- block footer %}
+    <div class="footer" role="contentinfo">
+        python-fluent documentation is licensed under the APL 2.0.
+    </div>
+{%- endblock %}

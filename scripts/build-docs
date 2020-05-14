@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import subprocess
+
+
+VERSIONS = {
+    'fluent.syntax': '0.17.0',
+    'fluent.runtime': '0.3.0',
+}
+
+
+def main(repo_name):
+    for doc_root in ('.', 'fluent.syntax', 'fluent.runtime'):
+        env = os.environ.copy()
+        version = VERSIONS.get(doc_root)
+        cmd = [
+            'sphinx-build',
+            '-c', 'docs',
+            '-a', '-E',
+            '-A', 'root_url=/' + repo_name,
+        ]
+        if version:
+            env['PYTHONPATH'] = doc_root
+            cmd += [
+                '-D', 'release=' + version,
+                '-D', 'project=' + doc_root,
+            ]
+            build_dir = '_build/' + repo_name + '/' + doc_root + '/stable'
+        else:
+            build_dir = '_build/' + repo_name
+        cmd += [
+            doc_root + '/docs',
+            build_dir,
+        ]
+        subprocess.check_call(' '.join(cmd), env=env, shell=True)
+        if build_dir.endswith('/stable'):
+            with open(build_dir.replace('/stable', '/index.html'), 'w') as index:
+                index.write('<meta http-equiv="refresh" content="0; URL=stable/">\n')
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('repo_name')
+    args = parser.parse_args()
+    main(args.repo_name)

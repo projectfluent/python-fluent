@@ -25,6 +25,6 @@ else:
 if args.coverage:
     cmd = ["-m", "coverage", "run"] + cmd
 
-cmd.insert(0, "python")
+cmd.insert(0, sys.executable)
 
 sys.exit(subprocess.call(cmd))

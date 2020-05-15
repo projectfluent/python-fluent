@@ -2,14 +2,11 @@ from __future__ import unicode_literals
 from six import with_metaclass
 
 import os
-import sys
 import json
 import codecs
 import unittest
 
-sys.path.append('.')
-
-from fluent.syntax import parse, ast as ftl
+from fluent.syntax import parse
 
 
 def read_file(path):

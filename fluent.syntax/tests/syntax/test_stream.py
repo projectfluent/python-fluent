@@ -1,9 +1,7 @@
 import unittest
-import sys
-
-sys.path.append('.')
 
 from fluent.syntax.stream import ParserStream
+
 
 class TestParserStream(unittest.TestCase):
 
@@ -161,7 +159,3 @@ class TestParserStream(unittest.TestCase):
 
         self.assertEqual('d', ps.peek())
         self.assertEqual(None, ps.peek())
-
-
-if __name__ == '__main__':
-    unittest.main()

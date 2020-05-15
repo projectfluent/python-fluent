@@ -76,10 +76,12 @@ class TestTransformer(unittest.TestCase):
 class WordCounter(object):
     def __init__(self):
         self.word_count = 0
+
     def __call__(self, node):
         if isinstance(node, ast.TextElement):
             self.word_count += len(node.value.split())
         return node
+
 
 class VisitorCounter(ast.Visitor):
     def __init__(self):
@@ -177,8 +179,7 @@ test.setUp()
     ]
 
 
-
-if __name__=='__main__':
+if __name__ == '__main__':
     for m in (
         'traverse',
         'visitor',

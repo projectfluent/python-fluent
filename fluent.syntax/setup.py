@@ -21,4 +21,4 @@ setup(name='fluent.syntax',
       # These should also be duplicated in tox.ini and ../.travis.yml
       tests_require=['six'],
       test_suite='tests.syntax'
-)
+      )

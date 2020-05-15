@@ -26,7 +26,7 @@ jobs:
       - name: lint
         working-directory: ./fluent.syntax
         run: |
-          flake8 fluent
+          flake8
 
   runtime:
     name: flake8 runtime

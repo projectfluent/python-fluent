@@ -6,13 +6,19 @@ on:
   push:
     branches:
       - master
+    paths:
+      - .github/workflows/fluent.syntax.yml
+      - fluent.syntax/**.py
   pull_request:
     branches:
       - master
+    paths:
+      - .github/workflows/fluent.syntax.yml
+      - fluent.syntax/**.py
 
 jobs:
   unit:
-    name: Syntax unit tests
+    name: unit tests
     runs-on: ubuntu-latest
     strategy:
       matrix:

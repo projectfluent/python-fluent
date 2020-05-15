@@ -6,9 +6,15 @@ on:
   push:
     branches:
       - master
+    paths:
+      - .github/workflows/fluent.runtime.yml
+      - fluent.runtime/**.py
   pull_request:
     branches:
       - master
+    paths:
+      - .github/workflows/fluent.runtime.yml
+      - fluent.runtime/**.py
 
 jobs:
   unit:
@@ -34,30 +40,6 @@ jobs:
         working-directory: ./fluent.runtime
         run: |
           ./runtests.py
-  integration:
-    name: unit tests
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
-      - name: Install dependencies
-        working-directory: ./fluent.runtime
-        run: |
-          python -m pip install wheel
-          python -m pip install --upgrade pip
-          python -m pip install . mock
-      - name: Install latest fluent.syntax
-        working-directory: ./fluent.syntax
-        run: |
-          python -m pip install .
-      - name: Test
-        working-directory: ./fluent.runtime
-        run: |
-          ./runtests.py
-
   lint:
     name: flake8
     runs-on: ubuntu-latest

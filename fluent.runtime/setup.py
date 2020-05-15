@@ -19,7 +19,7 @@ setup(name='fluent.runtime',
           'Programming Language :: Python :: 3.5',
       ],
       packages=['fluent', 'fluent.runtime'],
-      # These should also be duplicated in tox.ini and ../.travis.yml
+      # These should also be duplicated in tox.ini and /.github/workflows/fluent.runtime.yml
       install_requires=[
           'fluent.syntax>=0.17,<0.18',
           'attrs',

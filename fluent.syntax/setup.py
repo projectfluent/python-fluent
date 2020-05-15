@@ -18,7 +18,7 @@ setup(name='fluent.syntax',
           'Programming Language :: Python :: 3.5',
       ],
       packages=['fluent', 'fluent.syntax'],
-      # These should also be duplicated in tox.ini and ../.travis.yml
+      # These should also be duplicated in tox.ini and /.github/workflow/fluent.syntax.yml
       tests_require=['six'],
       test_suite='tests.syntax'
       )

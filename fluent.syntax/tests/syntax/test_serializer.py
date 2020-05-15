@@ -1,9 +1,7 @@
 from __future__ import unicode_literals
 import unittest
-import sys
 
-sys.path.append('.')
-
+import six
 from tests.syntax import dedent_ftl
 from fluent.syntax import FluentParser, FluentSerializer
 from fluent.syntax.serializer import serialize_expression, serialize_variant_key
@@ -20,10 +18,10 @@ class TestSerializeResource(unittest.TestCase):
     def test_invalid_resource(self):
         serializer = FluentSerializer()
 
-        with self.assertRaisesRegexp(Exception, 'Unknown resource type'):
+        with six.assertRaisesRegex(self, Exception, 'Unknown resource type'):
             serializer.serialize(None)
 
-        with self.assertRaisesRegexp(Exception, 'Unknown resource type'):
+        with six.assertRaisesRegex(self, Exception, 'Unknown resource type'):
             serializer.serialize(object())
 
     def test_simple_message(self):
@@ -430,10 +428,10 @@ class TestSerializeExpression(unittest.TestCase):
         return serialize_expression(expr)
 
     def test_invalid_expression(self):
-        with self.assertRaisesRegexp(Exception, 'Unknown expression type'):
+        with six.assertRaisesRegex(self, Exception, 'Unknown expression type'):
             serialize_expression(None)
 
-        with self.assertRaisesRegexp(Exception, 'Unknown expression type'):
+        with six.assertRaisesRegex(self, Exception, 'Unknown expression type'):
             serialize_expression(object())
 
     def test_string_expression(self):
@@ -491,10 +489,10 @@ class TestSerializeVariantKey(unittest.TestCase):
         return serialize_variant_key(variants[index].key)
 
     def test_invalid_expression(self):
-        with self.assertRaisesRegexp(Exception, 'Unknown variant key type'):
+        with six.assertRaisesRegex(self, Exception, 'Unknown variant key type'):
             serialize_variant_key(None)
 
-        with self.assertRaisesRegexp(Exception, 'Unknown variant key type'):
+        with six.assertRaisesRegex(self, Exception, 'Unknown variant key type'):
             serialize_variant_key(object())
 
     def test_identifiers(self):

@@ -1,8 +1,5 @@
 from __future__ import unicode_literals
 import unittest
-import sys
-
-sys.path.append(".")
 
 from tests.syntax import dedent_ftl
 from fluent.syntax.ast import from_json
@@ -137,7 +134,6 @@ class TestParseEntry(unittest.TestCase):
 
         message = self.parser.parse_entry(dedent_ftl(input))
         self.assertEqual(message.to_json(), output)
-
 
     def test_do_not_ignore_invalid_comments(self):
         input = """\

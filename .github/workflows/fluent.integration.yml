@@ -8,15 +8,19 @@ on:
       - master
     paths:
       - .github/workflows/fluent.integration.yml
-      - fluent.syntax/**.py
-      - fluent.runtime/**.py
+      - 'fluent.syntax/**'
+      - '!fluent.syntax/docs/**'
+      - 'fluent.runtime/**'
+      - '!fluent.runtime/docs/**'
   pull_request:
     branches:
       - master
     paths:
       - .github/workflows/fluent.integration.yml
-      - fluent.syntax/**.py
-      - fluent.runtime/**.py
+      - 'fluent.syntax/**'
+      - '!fluent.syntax/docs/**'
+      - 'fluent.runtime/**'
+      - '!fluent.runtime/docs/**'
 
 jobs:
   integration:

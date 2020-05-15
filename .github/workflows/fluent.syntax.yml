@@ -8,13 +8,15 @@ on:
       - master
     paths:
       - .github/workflows/fluent.syntax.yml
-      - fluent.syntax/**.py
+      - 'fluent.syntax/**'
+      - '!fluent.syntax/docs/**'
   pull_request:
     branches:
       - master
     paths:
       - .github/workflows/fluent.syntax.yml
-      - fluent.syntax/**.py
+      - 'fluent.syntax/**'
+      - '!fluent.syntax/docs/**'
 
 jobs:
   unit:

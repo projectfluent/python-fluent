@@ -8,13 +8,15 @@ on:
       - master
     paths:
       - .github/workflows/fluent.runtime.yml
-      - fluent.runtime/**.py
+      - 'fluent.runtime/**'
+      - '!fluent.runtime/docs/**'
   pull_request:
     branches:
       - master
     paths:
       - .github/workflows/fluent.runtime.yml
-      - fluent.runtime/**.py
+      - 'fluent.runtime/**'
+      - '!fluent.runtime/docs/**'
 
 jobs:
   unit:

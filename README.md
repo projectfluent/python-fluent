@@ -1,8 +1,5 @@
-Project Fluent [![Build Status][travisimage]][travislink]
-=========================================================
-
-[travisimage]: https://travis-ci.org/projectfluent/python-fluent.svg?branch=master
-[travislink]: https://travis-ci.org/projectfluent/python-fluent
+Project Fluent
+==============
 
 This is a Python implementation of Project Fluent, a localization framework
 designed to unleash the entire expressive power of natural language
@@ -32,36 +29,28 @@ you're a tool author you may be interested in the formal [EBNF grammar][].
 [Read the Fluent Syntax Guide]: http://projectfluent.org/fluent/guide/
 [EBNF grammar]: https://github.com/projectfluent/fluent/tree/master/spec
 
-
-Installation
-------------
-
 python-fluent consists of these packages:
 
-* `fluent.syntax` - includes AST classes and parser. Most end users will not
-  need this directly. Documentation coming soon!
+`fluent.syntax` ![fluent.syntax](https://github.com/projectfluent/python-fluent/workflows/fluent.syntax/badge.svg)
+-------------------------------------------------------------------------------------------------------------------------
 
-  To install:
+The syntax package includes the parser, serializer, and traversal utilities
+like Visitor and Transformer. You're looking for this package if you work on tooling
+for Fluent in Python.
 
-        pip install fluent.syntax
 
+`fluent.runtime` ![fluent.runtime](https://github.com/projectfluent/python-fluent/workflows/fluent.runtime/badge.svg)
+---------------------------------------------------------------------------------------------------------------------------
 
-* `fluent.runtime` - methods for generating translations from FTL files.
+This package includes the library required to use Fluent to localize your
+Python application. It comes with a `Localization` class to use, based on
+an implementation of bundle. It uses the tooling parser above to read
+Fluent files.
 
-  To install:
+`fluent.pygments`
+-----------------
 
-        pip install fluent.runtime
-
-  (The correct version of ``fluent.syntax`` will be installed automatically)
-
-* `fluent.pygments` - a plugin for pygments to add syntax highlighting to Sphinx.
-
-    To install:
-
-        pip install fluent.pygments
-
-PyPI also contains an old `fluent` package which is an older version of just
-`fluent.syntax`.
+A plugin for pygments to add syntax highlighting to Sphinx.
 
 Usage
 -----

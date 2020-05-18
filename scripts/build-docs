@@ -69,7 +69,7 @@ if __name__ == "__main__":
         '--to-publish', dest='pre_pub', action='store_true',
         help='Use this to publish to Github. Builds faster without.'
     )
-    default_docs = ['.', 'fluent.syntax', 'fluent.runtime']
+    default_docs = ['.', 'fluent.syntax', 'fluent.pygments', 'fluent.runtime']
     parser.add_argument(
         '--doc', action='append', choices=default_docs,
         help='Only build select documentation roots.'

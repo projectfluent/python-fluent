@@ -1,10 +1,16 @@
 #!/usr/bin/env python
 from setuptools import setup
+import os
+
+this_directory = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(this_directory, 'README.rst'), 'rb') as f:
+    long_description = f.read().decode('utf-8')
 
 
 setup(name='fluent.runtime',
       description='Localization library for expressive translations.',
-      long_description='See https://github.com/projectfluent/python-fluent/ for more info.',
+      long_description=long_description,
+      long_description_content_type='text/x-rst',
       author='Luke Plant',
       author_email='L.Plant.98@cantab.net',
       license='APL 2',

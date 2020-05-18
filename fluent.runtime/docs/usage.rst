@@ -153,7 +153,7 @@ passed through locale aware functions:
 
     >>> from datetime import date
     >>> l10n = DemoLocalization("today-is = Today is { $today }")
-    >>> val = bundle.format_value("today-is", {"today": date.today() })
+    >>> val = l10n.format_value("today-is", {"today": date.today() })
     >>> val
     'Today is Jun 16, 2018'
 

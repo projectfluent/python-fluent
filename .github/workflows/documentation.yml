@@ -1,0 +1,40 @@
+name: documentation
+
+on:
+  # Trigger the workflow on push or pull request,
+  # but only for the master branch
+  push:
+    branches:
+      - master
+    paths:
+      - docs/**
+      - fluent.*/docs/**
+      - fluent.*/setup.cfg
+  pull_request:
+    branches:
+      - master
+    paths:
+      - docs/**
+      - fluent.*/docs/**
+      - fluent.*/setup.cfg
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install dependencies
+        run: |
+          pip install Sphinx
+      - name: sphinx-build
+        run: |
+          ./scripts/build-docs --to-publish python-fluent
+      - name: artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: html
+          path: _build/python-fluent

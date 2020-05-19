@@ -11,14 +11,14 @@ VERSIONS = {
 }
 
 
-def main(repo_name):
-    for doc_root in ('.', 'fluent.syntax', 'fluent.runtime'):
+def build(repo_name, doc_roots):
+    for doc_root in doc_roots:
         env = os.environ.copy()
         version = VERSIONS.get(doc_root)
         cmd = [
             'sphinx-build',
             '-c', 'docs',
-            '-a', '-E',
+            '-a', '-E', '-W',
             '-A', 'root_url=/' + repo_name,
         ]
         if version:
@@ -43,5 +43,9 @@ def main(repo_name):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('repo_name')
+    default_docs = ['.', 'fluent.syntax', 'fluent.runtime']
+    parser.add_argument('--doc', action='append', choices=default_docs)
     args = parser.parse_args()
-    main(args.repo_name)
+    if args.doc is None:
+        args.doc = default_docs
+    build(args.repo_name, args.doc)

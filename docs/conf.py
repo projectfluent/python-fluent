@@ -53,6 +53,11 @@ html_theme = 'nature'
 html_static_path = ['_static']
 html_css_files = ['project-fluent.css']
 
+html_sidebars = {
+    '**': ['globaltoc.html', 'searchbox.html'],
+}
+html_theme_options = {
+}
 
 # -- Extension configuration -------------------------------------------------
 
@@ -65,3 +70,4 @@ intersphinx_mapping = {}
 autodoc_mock_imports = [
      'attr',
 ]
+autodoc_member_order = 'bysource'

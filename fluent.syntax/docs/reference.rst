@@ -17,4 +17,5 @@ provide more fine-grained control and detail.
 
    parsing
    ast
+   visitor
    serializing

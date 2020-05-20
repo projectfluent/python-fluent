@@ -1,5 +1,5 @@
-AST & Tooling
-=============
+AST
+===
 
 
 .. automodule:: fluent.syntax.ast

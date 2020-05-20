@@ -3,7 +3,6 @@ from setuptools import setup
 
 
 setup(name='fluent.runtime',
-      version='0.3',
       description='Localization library for expressive translations.',
       long_description='See https://github.com/projectfluent/python-fluent/ for more info.',
       author='Luke Plant',

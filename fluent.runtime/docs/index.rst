@@ -10,7 +10,7 @@ These are the docs for ``fluent.runtime`` |release|. Check the :doc:`/history` f
 significant changes.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    installation

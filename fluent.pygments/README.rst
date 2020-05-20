@@ -1,7 +1,26 @@
-``fluent.pygments``
--------------------
+fluent.pygments
+===============
 
 A plugin for pygments to add `Fluent`_ syntax highlighting to Sphinx.
+
+Installation
+------------
+
+.. code-block:: bash
+
+   pip install fluent.pygments
+
+
+Usage
+-----
+
+.. code-block:: rst
+
+
+   .. code-block:: fluent
+
+      my-message = a localized string
+
 
 The `documentation`_ is really just an example of Fluent content
 highlighted with ``fluent.pygments``.

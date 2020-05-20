@@ -4,6 +4,25 @@ Fluent Syntax Highlighting
 The :py:mod:`fluent.pygments` library is built to do syntax highlighting
 for `Fluent`_ files in Sphinx.
 
+
+Installation
+------------
+
+.. code-block:: bash
+
+   pip install fluent.pygments
+
+
+Usage
+-----
+
+.. code-block:: rst
+
+
+   .. code-block:: fluent
+
+      my-key = Localize { -brand-name }
+
 Example
 -------
 

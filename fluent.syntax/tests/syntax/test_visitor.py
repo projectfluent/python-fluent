@@ -1,10 +1,7 @@
 from __future__ import unicode_literals
 
-import codecs
 from collections import defaultdict
-import os
 import unittest
-import timeit
 
 from fluent.syntax.parser import FluentParser
 from fluent.syntax import ast
@@ -121,75 +118,3 @@ class ReplaceTransformer(ast.Transformer):
         """Perform find and replace on text values only"""
         node.value = node.value.replace(self.before, self.after)
         return node
-
-
-class TestPerf(unittest.TestCase):
-    def setUp(self):
-        parser = FluentParser()
-        workload = os.path.join(
-            os.path.dirname(__file__), 'fixtures_perf', 'workload-low.ftl'
-        )
-        with codecs.open(workload, encoding='utf-8') as f:
-            self.resource = parser.parse(f.read())
-
-    def test_traverse(self):
-        counter = WordCounter()
-        self.resource.traverse(counter)
-        self.assertEqual(counter.word_count, 277)
-
-    def test_visitor(self):
-        counter = VisitorCounter()
-        counter.visit(self.resource)
-        self.assertEqual(counter.word_count, 277)
-
-    def test_edit_traverse(self):
-        edited = self.resource.traverse(ReplaceText('Tab', 'Reiter'))
-        self.assertEqual(
-            edited.body[4].attributes[0].value.elements[0].value,
-            'New Reiter'
-        )
-
-    def test_edit_transform(self):
-        edited = ReplaceTransformer('Tab', 'Reiter').visit(self.resource)
-        self.assertEqual(
-            edited.body[4].attributes[0].value.elements[0].value,
-            'New Reiter'
-        )
-
-    def test_edit_cloned(self):
-        edited = ReplaceTransformer('Tab', 'Reiter').visit(self.resource.clone())
-        self.assertEqual(
-            edited.body[4].attributes[0].value.elements[0].value,
-            'New Reiter'
-        )
-
-
-def gather_stats(method, repeat=10, number=50):
-    t = timeit.Timer(
-        setup='''
-from tests.syntax import test_visitor
-test = test_visitor.TestPerf('test_{}')
-test.setUp()
-'''.format(method),
-        stmt='test.test_{}()'.format(method)
-    )
-    return [
-        result/number for result in
-        t.repeat(repeat=repeat, number=number)
-    ]
-
-
-if __name__ == '__main__':
-    for m in (
-        'traverse',
-        'visitor',
-        'edit_traverse',
-        'edit_transform',
-        'edit_cloned',
-    ):
-        results = gather_stats(m)
-        try:
-            import statistics
-            print("{}:\t{}".format(m, statistics.mean(results)))
-        except ImportError:
-            print("{}:\t{}".format(m, sum(results)/len(results)))

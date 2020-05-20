@@ -5,10 +5,6 @@ from tests.syntax import dedent_ftl
 from fluent.syntax.parser import FluentParser
 
 
-def identity(node):
-    return node
-
-
 class TestEntryEqualToSelf(unittest.TestCase):
     def setUp(self):
         self.parser = FluentParser()
@@ -22,7 +18,6 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.traverse(identity)))
         self.assertTrue(message1.equals(message1.clone()))
 
     def test_same_selector_message(self):
@@ -38,7 +33,6 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.traverse(identity)))
         self.assertTrue(message1.equals(message1.clone()))
 
     def test_same_complex_placeable_message(self):
@@ -47,7 +41,6 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.traverse(identity)))
         self.assertTrue(message1.equals(message1.clone()))
 
     def test_same_message_with_attribute(self):
@@ -57,7 +50,6 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.traverse(identity)))
         self.assertTrue(message1.equals(message1.clone()))
 
     def test_same_message_with_attributes(self):
@@ -68,7 +60,6 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.traverse(identity)))
         self.assertTrue(message1.equals(message1.clone()))
 
     def test_same_junk(self):
@@ -77,7 +68,6 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """)
 
         self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.traverse(identity)))
         self.assertTrue(message1.equals(message1.clone()))
 
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## fluent.syntax 0.18 (not released)
+
+  - Documentation is now on https://projectfluent.org/python-fluent/fluent.syntax/.
+  - Removal of deprecated `BaseNode.traverse` method.
+
 ## fluent.syntax 0.17 (September 10, 2019)
 
   - Parser fix for whitespace before call arguments.

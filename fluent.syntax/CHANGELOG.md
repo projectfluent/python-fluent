@@ -1,6 +1,6 @@
 # Changelog
 
-## fluent.syntax 0.18 (not released)
+## fluent.syntax 0.18 (May 20, 2020)
 
   - Documentation is now on https://projectfluent.org/python-fluent/fluent.syntax/.
   - Removal of deprecated `BaseNode.traverse` method.

@@ -1,8 +1,11 @@
 Changelog
 =========
 
-fluent.runtime next
--------------------
+fluent.runtime 0.3.1 (May 20, 2020)
+-----------------------------------
+
+* Updated documentation to be hosted on https://projectfluent.org/python-fluent/fluent.runtime/.
+* Updated package metadata.
 
 fluent.runtime 0.3 (October 23, 2019)
 ---------------------------------------

@@ -112,33 +112,6 @@ class BaseNode(object):
     Annotation.  Implements __str__, to_json and traverse.
     """
 
-    def traverse(self, fun):
-        """DEPRECATED. Please use Visitor or Transformer.
-
-        Postorder-traverse this node and apply `fun` to all child nodes.
-
-        Traverse this node depth-first applying `fun` to subnodes and leaves.
-        Children are processed before parents (postorder traversal).
-
-        Return a new instance of the node.
-        """
-
-        def visit(value):
-            """Call `fun` on `value` and its descendants."""
-            if isinstance(value, BaseNode):
-                return value.traverse(fun)
-            if isinstance(value, list):
-                return fun(list(map(visit, value)))
-            else:
-                return fun(value)
-
-        # Use all attributes found on the node as kwargs to the constructor.
-        kwargs = vars(self).items()
-        node = self.__class__(
-            **{name: visit(value) for name, value in kwargs})
-
-        return fun(node)
-
     def clone(self):
         """Create a deep clone of the current node."""
         def visit(value):

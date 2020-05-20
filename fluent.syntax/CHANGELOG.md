@@ -4,6 +4,7 @@
 
   - Documentation is now on https://projectfluent.org/python-fluent/fluent.syntax/.
   - Removal of deprecated `BaseNode.traverse` method.
+  - Refactor `Visitor` and `Transformer` into `fluent.syntax.visitor` (from `.ast`)
 
 ## fluent.syntax 0.17 (September 10, 2019)
 

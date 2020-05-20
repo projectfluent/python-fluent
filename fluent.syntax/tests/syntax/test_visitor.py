@@ -5,10 +5,11 @@ import unittest
 
 from fluent.syntax.parser import FluentParser
 from fluent.syntax import ast
+from fluent.syntax import visitor
 from tests.syntax import dedent_ftl
 
 
-class MockVisitor(ast.Visitor):
+class MockVisitor(visitor.Visitor):
     def __init__(self):
         self.calls = defaultdict(int)
         self.pattern_calls = 0
@@ -80,7 +81,7 @@ class WordCounter(object):
         return node
 
 
-class VisitorCounter(ast.Visitor):
+class VisitorCounter(visitor.Visitor):
     def __init__(self):
         self.word_count = 0
 
@@ -104,7 +105,7 @@ class ReplaceText(object):
         return node
 
 
-class ReplaceTransformer(ast.Transformer):
+class ReplaceTransformer(visitor.Transformer):
     def __init__(self, before, after):
         self.before = before
         self.after = after

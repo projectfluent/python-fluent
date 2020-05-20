@@ -1,0 +1,768 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>fluent.syntax.parser &#8212; fluent.syntax 0.17.0 documentation</title>
+    <link rel="stylesheet" href="/python-fluent/_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/project-fluent.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="/python-fluent/_static/jquery.js"></script>
+    <script src="/python-fluent/_static/underscore.js"></script>
+    <script src="/python-fluent/_static/doctools.js"></script>
+    <script src="/python-fluent/_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">fluent.syntax 0.17.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../syntax.html" accesskey="U">fluent.syntax</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fluent.syntax.parser</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">ast</span>
+<span class="kn">from</span> <span class="nn">.stream</span> <span class="kn">import</span> <span class="n">EOF</span><span class="p">,</span> <span class="n">EOL</span><span class="p">,</span> <span class="n">FluentParserStream</span>
+<span class="kn">from</span> <span class="nn">.errors</span> <span class="kn">import</span> <span class="n">ParseError</span>
+
+
+<span class="k">def</span> <span class="nf">with_span</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">decorated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_spans</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Don&#39;t re-add the span if the node already has it. This may happen</span>
+        <span class="c1"># when one decorated function calls another decorated function.</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">span</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">node</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_span</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">node</span>
+
+    <span class="k">return</span> <span class="n">decorated</span>
+
+
+<div class="viewcode-block" id="FluentParser"><a class="viewcode-back" href="../../../parsing.html#fluent.syntax.parser.FluentParser">[docs]</a><span class="k">class</span> <span class="nc">FluentParser</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class is used to parse Fluent source content.</span>
+
+<span class="sd">    ``with_spans`` enables source information in the form of</span>
+<span class="sd">    :class:`.ast.Span` objects for each :class:`.ast.SyntaxNode`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_spans</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">with_spans</span> <span class="o">=</span> <span class="n">with_spans</span>
+
+<div class="viewcode-block" id="FluentParser.parse"><a class="viewcode-back" href="../../../parsing.html#fluent.syntax.parser.FluentParser.parse">[docs]</a>    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a :class:`.ast.Resource` from a Fluent source.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ps</span> <span class="o">=</span> <span class="n">FluentParserStream</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_block</span><span class="p">()</span>
+
+        <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">last_comment</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">while</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span><span class="p">:</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_entry_or_junk</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="n">blank_lines</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_block</span><span class="p">()</span>
+
+            <span class="c1"># Regular Comments require special logic. Comments may be attached</span>
+            <span class="c1"># to Messages or Terms if they are followed immediately by them.</span>
+            <span class="c1"># However they should parse as standalone when they&#39;re followed by</span>
+            <span class="c1"># Junk. Consequently, we only attach Comments once we know that the</span>
+            <span class="c1"># Message or the Term parsed successfully.</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Comment</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">blank_lines</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> \
+                    <span class="ow">and</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span><span class="p">:</span>
+                <span class="c1"># Stash the comment and decide what to do with it</span>
+                <span class="c1"># in the next pass.</span>
+                <span class="n">last_comment</span> <span class="o">=</span> <span class="n">entry</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">last_comment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Term</span><span class="p">)):</span>
+                    <span class="n">entry</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="n">last_comment</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_spans</span><span class="p">:</span>
+                        <span class="n">entry</span><span class="o">.</span><span class="n">span</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">comment</span><span class="o">.</span><span class="n">span</span><span class="o">.</span><span class="n">start</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">last_comment</span><span class="p">)</span>
+                <span class="c1"># In either case, the stashed comment has been dealt with;</span>
+                <span class="c1"># clear it.</span>
+                <span class="n">last_comment</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">Resource</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_spans</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">add_span</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ps</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="FluentParser.parse_entry"><a class="viewcode-back" href="../../../parsing.html#fluent.syntax.parser.FluentParser.parse_entry">[docs]</a>    <span class="k">def</span> <span class="nf">parse_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse the first :class:`.ast.Entry` in source.</span>
+
+<span class="sd">        Skip all encountered comments and start parsing at the first :class:`.ast.Message`</span>
+<span class="sd">        or :class:`.ast.Term` start. Return :class:`.ast.Junk` if the parsing is not successful.</span>
+
+<span class="sd">        Preceding comments are ignored unless they contain syntax errors</span>
+<span class="sd">        themselves, in which case :class:`.ast.Junk` for the invalid comment is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ps</span> <span class="o">=</span> <span class="n">FluentParserStream</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_block</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
+            <span class="n">skipped</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_entry_or_junk</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">skipped</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Junk</span><span class="p">):</span>
+                <span class="c1"># Don&#39;t skip Junk comments.</span>
+                <span class="k">return</span> <span class="n">skipped</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_block</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_entry_or_junk</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">get_entry_or_junk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">entry_start_pos</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">index</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_entry</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">expect_line_end</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">entry</span>
+        <span class="k">except</span> <span class="n">ParseError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">error_index</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">skip_to_next_entry_start</span><span class="p">(</span><span class="n">entry_start_pos</span><span class="p">)</span>
+            <span class="n">next_entry_start</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">index</span>
+            <span class="k">if</span> <span class="n">next_entry_start</span> <span class="o">&lt;</span> <span class="n">error_index</span><span class="p">:</span>
+                <span class="c1"># The position of the error must be inside of the Junk&#39;s span.</span>
+                <span class="n">error_index</span> <span class="o">=</span> <span class="n">next_entry_start</span>
+
+            <span class="c1"># Create a Junk instance</span>
+            <span class="nb">slice</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">string</span><span class="p">[</span><span class="n">entry_start_pos</span><span class="p">:</span><span class="n">next_entry_start</span><span class="p">]</span>
+            <span class="n">junk</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">Junk</span><span class="p">(</span><span class="nb">slice</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_spans</span><span class="p">:</span>
+                <span class="n">junk</span><span class="o">.</span><span class="n">add_span</span><span class="p">(</span><span class="n">entry_start_pos</span><span class="p">,</span> <span class="n">next_entry_start</span><span class="p">)</span>
+            <span class="n">annot</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">Annotation</span><span class="p">(</span><span class="n">err</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="n">err</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">err</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+            <span class="n">annot</span><span class="o">.</span><span class="n">add_span</span><span class="p">(</span><span class="n">error_index</span><span class="p">,</span> <span class="n">error_index</span><span class="p">)</span>
+            <span class="n">junk</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="n">annot</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">junk</span>
+
+    <span class="k">def</span> <span class="nf">get_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_comment</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_term</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">is_identifier_start</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0002&#39;</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_comment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="c1"># 0 - comment</span>
+        <span class="c1"># 1 - group comment</span>
+        <span class="c1"># 2 - resource comment</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">while</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span> \
+                    <span class="ow">and</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span> <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="n">level</span><span class="p">)):</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">level</span> <span class="o">=</span> <span class="n">i</span>
+
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">!=</span> <span class="n">EOL</span><span class="p">:</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+                <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">take_char</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">EOL</span><span class="p">)</span>
+                <span class="k">while</span> <span class="n">ch</span><span class="p">:</span>
+                    <span class="n">content</span> <span class="o">+=</span> <span class="n">ch</span>
+                    <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">take_char</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">EOL</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">is_next_line_comment</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">):</span>
+                <span class="n">content</span> <span class="o">+=</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">Comment</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">GroupComment</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">ResourceComment</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="nb">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identifier</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_inline</span><span class="p">()</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_get_pattern</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_attributes</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">attrs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0005&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">Message</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+        <span class="nb">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identifier</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_inline</span><span class="p">()</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_get_pattern</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0006&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_attributes</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">Term</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identifier</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_inline</span><span class="p">()</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_get_pattern</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0012&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">Attribute</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">peek_blank</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="n">ps</span><span class="o">.</span><span class="n">is_attribute_start</span><span class="p">():</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">skip_to_peek</span><span class="p">()</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="n">attrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">peek_blank</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">attrs</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_identifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">take_id_start</span><span class="p">()</span>
+        <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">take_id_char</span><span class="p">()</span>
+        <span class="k">while</span> <span class="n">ch</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">+=</span> <span class="n">ch</span>
+            <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">take_id_char</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">Identifier</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_variant_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span>
+
+        <span class="k">if</span> <span class="n">ch</span> <span class="ow">is</span> <span class="n">EOF</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0013&#39;</span><span class="p">)</span>
+
+        <span class="n">cc</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">((</span><span class="n">cc</span> <span class="o">&gt;=</span> <span class="mi">48</span> <span class="ow">and</span> <span class="n">cc</span> <span class="o">&lt;=</span> <span class="mi">57</span><span class="p">)</span> <span class="ow">or</span> <span class="n">cc</span> <span class="o">==</span> <span class="mi">45</span><span class="p">):</span>  <span class="c1"># 0-9, -</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_number</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identifier</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_variant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="n">has_default</span><span class="p">):</span>
+        <span class="n">default_index</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">has_default</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0015&#39;</span><span class="p">)</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="n">default_index</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">)</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_variant_key</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">)</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maybe_get_pattern</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0012&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">Variant</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">default_index</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_variants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">variants</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">has_default</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+        <span class="k">while</span> <span class="n">ps</span><span class="o">.</span><span class="n">is_variant_start</span><span class="p">():</span>
+            <span class="n">variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_variant</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="n">has_default</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">variant</span><span class="o">.</span><span class="n">default</span><span class="p">:</span>
+                <span class="n">has_default</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="n">variants</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">expect_line_end</span><span class="p">()</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variants</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0011&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_default</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0010&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">variants</span>
+
+    <span class="k">def</span> <span class="nf">get_digits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">take_digit</span><span class="p">()</span>
+        <span class="k">while</span> <span class="n">ch</span><span class="p">:</span>
+            <span class="n">num</span> <span class="o">+=</span> <span class="n">ch</span>
+            <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">take_digit</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">num</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0004&#39;</span><span class="p">,</span> <span class="s1">&#39;0-9&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">num</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
+            <span class="n">num</span> <span class="o">+=</span> <span class="s1">&#39;-&#39;</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+
+        <span class="n">num</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_digits</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;.&#39;</span><span class="p">:</span>
+            <span class="n">num</span> <span class="o">+=</span> <span class="s1">&#39;.&#39;</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="n">num</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_digits</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">NumberLiteral</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">maybe_get_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Parse an inline or a block Pattern, or None</span>
+
+<span class="sd">        maybe_get_pattern distinguishes between patterns which start on the</span>
+<span class="sd">        same line as the indentifier (aka inline singleline patterns and inline</span>
+<span class="sd">        multiline patterns), and patterns which start on a new line (aka block</span>
+<span class="sd">        patterns). The distinction is important for the dedentation logic: the</span>
+<span class="sd">        indent of the first line of a block pattern must be taken into account</span>
+<span class="sd">        when calculating the maximum common indent.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">peek_blank_inline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">is_value_start</span><span class="p">():</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">skip_to_peek</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pattern</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="n">is_block</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">peek_blank_block</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">is_value_continuation</span><span class="p">():</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">skip_to_peek</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pattern</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="n">is_block</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="n">is_block</span><span class="p">):</span>
+        <span class="n">elements</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">is_block</span><span class="p">:</span>
+            <span class="c1"># A block pattern is a pattern which starts on a new line. Measure</span>
+            <span class="c1"># the indent of this first line for the dedentation logic.</span>
+            <span class="n">blank_start</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">first_indent</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_inline</span><span class="p">()</span>
+            <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Indent</span><span class="p">(</span><span class="n">first_indent</span><span class="p">,</span> <span class="n">blank_start</span><span class="p">,</span> <span class="n">ps</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+            <span class="n">common_indent_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_indent</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">common_indent_length</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;infinity&#39;</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="n">EOL</span><span class="p">:</span>
+                <span class="n">blank_start</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">index</span>
+                <span class="n">blank_lines</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">peek_blank_block</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">is_value_continuation</span><span class="p">():</span>
+                    <span class="n">ps</span><span class="o">.</span><span class="n">skip_to_peek</span><span class="p">()</span>
+                    <span class="n">indent</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_inline</span><span class="p">()</span>
+                    <span class="n">common_indent_length</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">common_indent_length</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">indent</span><span class="p">))</span>
+                    <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Indent</span><span class="p">(</span><span class="n">blank_lines</span> <span class="o">+</span> <span class="n">indent</span><span class="p">,</span> <span class="n">blank_start</span><span class="p">,</span> <span class="n">ps</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># The end condition for get_pattern&#39;s while loop is a newline</span>
+                <span class="c1"># which is not followed by a valid pattern continuation.</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">reset_peek</span><span class="p">()</span>
+                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;}&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0027&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;{&#39;</span><span class="p">:</span>
+                <span class="n">element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_placeable</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_text_element</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+            <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+
+        <span class="n">dedented</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">common_indent_length</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">Pattern</span><span class="p">(</span><span class="n">dedented</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Indent</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">SyntaxNode</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">FluentParser</span><span class="o">.</span><span class="n">Indent</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_span</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dedent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">common_indent</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Dedent a list of elements by removing the maximum common indent from</span>
+<span class="sd">        the beginning of text lines. The common indent is calculated in</span>
+<span class="sd">        get_pattern.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">trimmed</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Placeable</span><span class="p">):</span>
+                <span class="n">trimmed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Indent</span><span class="p">):</span>
+                <span class="c1"># Strip the common indent.</span>
+                <span class="n">element</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">value</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">-</span> <span class="n">common_indent</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+            <span class="n">prev</span> <span class="o">=</span> <span class="n">trimmed</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trimmed</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prev</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">TextElement</span><span class="p">):</span>
+                <span class="c1"># Join adjacent TextElements by replacing them with their sum.</span>
+                <span class="nb">sum</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">TextElement</span><span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="n">element</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_spans</span><span class="p">:</span>
+                    <span class="nb">sum</span><span class="o">.</span><span class="n">add_span</span><span class="p">(</span><span class="n">prev</span><span class="o">.</span><span class="n">span</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">span</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+                <span class="n">trimmed</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Indent</span><span class="p">):</span>
+                <span class="c1"># If the indent hasn&#39;t been merged into a preceding</span>
+                <span class="c1"># TextElements, convert it into a new TextElement.</span>
+                <span class="n">text_element</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">TextElement</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_spans</span><span class="p">:</span>
+                    <span class="n">text_element</span><span class="o">.</span><span class="n">add_span</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">span</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">span</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+                <span class="n">element</span> <span class="o">=</span> <span class="n">text_element</span>
+
+            <span class="n">trimmed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+
+        <span class="c1"># Trim trailing whitespace from the Pattern.</span>
+        <span class="n">last_element</span> <span class="o">=</span> <span class="n">trimmed</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trimmed</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last_element</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">TextElement</span><span class="p">):</span>
+            <span class="n">last_element</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">last_element</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39; </span><span class="se">\t\n\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">last_element</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">trimmed</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">trimmed</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_text_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="k">while</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span><span class="p">:</span>
+            <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span>
+
+            <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="s1">&#39;{&#39;</span> <span class="ow">or</span> <span class="n">ch</span> <span class="o">==</span> <span class="s1">&#39;}&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">TextElement</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="n">EOL</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">TextElement</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+
+            <span class="n">buf</span> <span class="o">+=</span> <span class="n">ch</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">TextElement</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_escape_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="nb">next</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span>
+
+        <span class="k">if</span> <span class="nb">next</span> <span class="o">==</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="ow">or</span> <span class="nb">next</span> <span class="o">==</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">:</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">next</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">next</span> <span class="o">==</span> <span class="s1">&#39;u&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_unicode_escape_sequence</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="nb">next</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">next</span> <span class="o">==</span> <span class="s1">&#39;U&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_unicode_escape_sequence</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="nb">next</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0025&#39;</span><span class="p">,</span> <span class="nb">next</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_unicode_escape_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">digits</span><span class="p">):</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">digits</span><span class="p">):</span>
+            <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">take_hex_digit</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ch</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0026&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="si">{}{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span><span class="p">))</span>
+            <span class="n">sequence</span> <span class="o">+=</span> <span class="n">ch</span>
+
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">sequence</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_placeable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;{&#39;</span><span class="p">)</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+        <span class="n">expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_expression</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;}&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">Placeable</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">selector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_inline_expression</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">peek</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">:</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">reset_peek</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">selector</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">selector</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">MessageReference</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">selector</span><span class="o">.</span><span class="n">attribute</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0016&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0018&#39;</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">selector</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">TermReference</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">if</span> <span class="n">selector</span><span class="o">.</span><span class="n">attribute</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0017&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">selector</span><span class="p">,</span> <span class="p">(</span>
+                    <span class="n">ast</span><span class="o">.</span><span class="n">StringLiteral</span><span class="p">,</span>
+                    <span class="n">ast</span><span class="o">.</span><span class="n">NumberLiteral</span><span class="p">,</span>
+                    <span class="n">ast</span><span class="o">.</span><span class="n">VariableReference</span><span class="p">,</span>
+                    <span class="n">ast</span><span class="o">.</span><span class="n">FunctionReference</span><span class="p">,</span>
+                <span class="p">))</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0029&#39;</span><span class="p">)</span>
+
+            <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+
+            <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_inline</span><span class="p">()</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">expect_line_end</span><span class="p">()</span>
+
+            <span class="n">variants</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_variants</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">SelectExpression</span><span class="p">(</span><span class="n">selector</span><span class="p">,</span> <span class="n">variants</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">selector</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">TermReference</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">selector</span><span class="o">.</span><span class="n">attribute</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0019&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">selector</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_inline_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;{&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_placeable</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">is_number_start</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_number</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_string</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;$&#39;</span><span class="p">:</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="nb">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identifier</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">VariableReference</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="nb">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identifier</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="n">attribute</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;.&#39;</span><span class="p">:</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+                <span class="n">attribute</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identifier</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="n">arguments</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">peek_blank</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_peek</span> <span class="o">==</span> <span class="s1">&#39;(&#39;</span><span class="p">:</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">skip_to_peek</span><span class="p">()</span>
+                <span class="n">arguments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_call_arguments</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">TermReference</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">arguments</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">is_identifier_start</span><span class="p">():</span>
+            <span class="nb">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identifier</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">peek_blank</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_peek</span> <span class="o">==</span> <span class="s1">&#39;(&#39;</span><span class="p">:</span>
+                <span class="c1"># It&#39;s a Function. Ensure it&#39;s all upper-case.</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;^[A-Z][A-Z0-9_-]*$&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0008&#39;</span><span class="p">)</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">skip_to_peek</span><span class="p">()</span>
+                <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_call_arguments</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionReference</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+
+            <span class="n">attribute</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;.&#39;</span><span class="p">:</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+                <span class="n">attribute</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_identifier</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">MessageReference</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">attribute</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0028&#39;</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_call_argument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_inline_expression</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">!=</span> <span class="s1">&#39;:&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">exp</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">MessageReference</span><span class="p">)</span> <span class="ow">and</span> <span class="n">exp</span><span class="o">.</span><span class="n">attribute</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_literal</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">NamedArgument</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0009&#39;</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_call_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">positional</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">named</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">argument_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;(&#39;</span><span class="p">)</span>
+        <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;)&#39;</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="n">arg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_call_argument</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">NamedArgument</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">argument_names</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0022&#39;</span><span class="p">)</span>
+                <span class="n">named</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+                <span class="n">argument_names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">argument_names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0021&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">positional</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+
+            <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;,&#39;</span><span class="p">:</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+                <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank</span><span class="p">()</span>
+                <span class="k">continue</span>
+
+            <span class="k">break</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;)&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">CallArguments</span><span class="p">(</span><span class="n">positional</span><span class="p">,</span> <span class="n">named</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">take_char</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">!=</span> <span class="s1">&#39;&quot;&#39;</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">EOL</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ch</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_escape_sequence</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">+=</span> <span class="n">ch</span>
+
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="n">EOL</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0020&#39;</span><span class="p">)</span>
+
+        <span class="n">ps</span><span class="o">.</span><span class="n">expect_char</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">StringLiteral</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@with_span</span>
+    <span class="k">def</span> <span class="nf">get_literal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">is_number_start</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_number</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_string</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0014&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../../../index.html">Table of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference.html">API Reference</a></li>
+</ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">fluent.syntax 0.17.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="../syntax.html" >fluent.syntax</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        python-fluent documentation is licensed under the APL 2.0.
+    </div>
+  </body>
+</html>

@@ -9,6 +9,7 @@ on:
     paths:
       - docs/**
       - fluent.*/docs/**
+      - fluent.*/fluent/**
       - fluent.*/setup.cfg
   pull_request:
     branches:
@@ -16,6 +17,7 @@ on:
     paths:
       - docs/**
       - fluent.*/docs/**
+      - fluent.*/fluent/**
       - fluent.*/setup.cfg
 
 jobs:

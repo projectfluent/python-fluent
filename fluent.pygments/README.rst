@@ -22,7 +22,7 @@ Usage
       my-message = a localized string
 
 
-The `documentation`_ is really just an example of Fluent content
+The `documentation`_ has an example of Fluent content
 highlighted with ``fluent.pygments``.
 
 .. _fluent: https://projectfluent.org/

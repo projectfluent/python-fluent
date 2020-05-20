@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Serializing &#8212; fluent.syntax 0.17.0 documentation</title>
+    <title>Visitor &amp; Transformer &#8212; fluent.syntax 0.17.0 documentation</title>
     <link rel="stylesheet" href="/python-fluent/_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="/python-fluent/_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="/python-fluent/_static/project-fluent.css" type="text/css" />
@@ -15,7 +15,8 @@
     <script src="/python-fluent/_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Visitor &amp; Transformer" href="visitor.html" /> 
+    <link rel="next" title="Serializing" href="serializing.html" />
+    <link rel="prev" title="AST" href="ast.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -27,7 +28,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="visitor.html" title="Visitor &amp; Transformer"
+          <a href="serializing.html" title="Serializing"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ast.html" title="AST"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">fluent.syntax 0.17.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="reference.html" accesskey="U">API Reference</a> &#187;</li> 
@@ -39,25 +43,30 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="module-fluent.syntax.serializer">
-<span id="serializing"></span><h1>Serializing<a class="headerlink" href="#module-fluent.syntax.serializer" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-fluent.syntax.visitor">
+<span id="visitor-transformer"></span><h1>Visitor &amp; Transformer<a class="headerlink" href="#module-fluent.syntax.visitor" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
-<dt id="fluent.syntax.serializer.FluentSerializer">
-<em class="property">class </em><code class="sig-prename descclassname">fluent.syntax.serializer.</code><code class="sig-name descname">FluentSerializer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">with_junk</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/serializer.html#FluentSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fluent.syntax.serializer.FluentSerializer" title="Permalink to this definition">¶</a></dt>
-<dd><p>FluentSerializer converts <a class="reference internal" href="ast.html#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">ast.SyntaxNode</span></code></a> objects to unicode strings.</p>
-<p><cite>with_junk</cite> controls if parse errors are written back or not.</p>
-<dl class="py method">
-<dt id="fluent.syntax.serializer.FluentSerializer.serialize">
-<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">resource</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/serializer.html#FluentSerializer.serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fluent.syntax.serializer.FluentSerializer.serialize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Serialize a <a class="reference internal" href="ast.html#fluent.syntax.ast.Resource" title="fluent.syntax.ast.Resource"><code class="xref py py-class docutils literal notranslate"><span class="pre">ast.Resource</span></code></a> to a string.</p>
+<dt id="fluent.syntax.visitor.Visitor">
+<em class="property">class </em><code class="sig-prename descclassname">fluent.syntax.visitor.</code><code class="sig-name descname">Visitor</code><a class="reference internal" href="_modules/fluent/syntax/visitor.html#Visitor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fluent.syntax.visitor.Visitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Read-only visitor pattern.</p>
+<p>Subclass this to gather information from an AST.
+To generally define which nodes not to descend in to, overload
+<cite>generic_visit</cite>.
+To handle specific node types, add methods like <cite>visit_Pattern</cite>.
+If you want to still descend into the children of the node, call
+<cite>generic_visit</cite> of the superclass.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="fluent.syntax.serializer.FluentSerializer.serialize_entry">
-<code class="sig-name descname">serialize_entry</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">entry</span></em>, <em class="sig-param"><span class="n">state</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/serializer.html#FluentSerializer.serialize_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fluent.syntax.serializer.FluentSerializer.serialize_entry" title="Permalink to this definition">¶</a></dt>
-<dd><p>Serialize an <a class="reference internal" href="ast.html#fluent.syntax.ast.Entry" title="fluent.syntax.ast.Entry"><code class="xref py py-class docutils literal notranslate"><span class="pre">ast.Entry</span></code></a> to a string.</p>
-</dd></dl>
-
+<dl class="py class">
+<dt id="fluent.syntax.visitor.Transformer">
+<em class="property">class </em><code class="sig-prename descclassname">fluent.syntax.visitor.</code><code class="sig-name descname">Transformer</code><a class="reference internal" href="_modules/fluent/syntax/visitor.html#Transformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fluent.syntax.visitor.Transformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.visitor.Visitor" title="fluent.syntax.visitor.Visitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.visitor.Visitor</span></code></a></p>
+<p>In-place AST Transformer pattern.</p>
+<p>Subclass this to create an in-place modified variant
+of the given AST.
+If you need to keep the original AST around, pass
+a <cite>node.clone()</cite> to the transformer.</p>
 </dd></dl>
 
 </div>
@@ -75,8 +84,8 @@
 <li class="toctree-l1 current"><a class="reference internal" href="reference.html">API Reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="parsing.html">Parsing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ast.html">AST</a></li>
-<li class="toctree-l2"><a class="reference internal" href="visitor.html">Visitor &amp; Transformer</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Serializing</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Visitor &amp; Transformer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="serializing.html">Serializing</a></li>
 </ul>
 </li>
 </ul>
@@ -105,7 +114,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="visitor.html" title="Visitor &amp; Transformer"
+          <a href="serializing.html" title="Serializing"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ast.html" title="AST"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">fluent.syntax 0.17.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="reference.html" >API Reference</a> &#187;</li> 

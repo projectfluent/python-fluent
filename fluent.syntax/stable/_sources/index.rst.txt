@@ -12,6 +12,7 @@ post-processing of Fluent source files.
    :maxdepth: 2
    :caption: Contents:
 
+   usage
    reference
 
 

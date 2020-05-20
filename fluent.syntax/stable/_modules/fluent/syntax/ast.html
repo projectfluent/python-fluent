@@ -45,67 +45,6 @@
 <span class="kn">import</span> <span class="nn">six</span>
 
 
-<div class="viewcode-block" id="Visitor"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.Visitor">[docs]</a><span class="k">class</span> <span class="nc">Visitor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Read-only visitor pattern.</span>
-
-<span class="sd">    Subclass this to gather information from an AST.</span>
-<span class="sd">    To generally define which nodes not to descend in to, overload</span>
-<span class="sd">    `generic_visit`.</span>
-<span class="sd">    To handle specific node types, add methods like `visit_Pattern`.</span>
-<span class="sd">    If you want to still descend into the children of the node, call</span>
-<span class="sd">    `generic_visit` of the superclass.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">BaseNode</span><span class="p">):</span>
-            <span class="k">return</span>
-        <span class="n">nodename</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="n">visit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;visit_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nodename</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">)</span>
-        <span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">generic_visit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">propname</span><span class="p">,</span> <span class="n">propvalue</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">propvalue</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Transformer"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.Transformer">[docs]</a><span class="k">class</span> <span class="nc">Transformer</span><span class="p">(</span><span class="n">Visitor</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;In-place AST Transformer pattern.</span>
-
-<span class="sd">    Subclass this to create an in-place modified variant</span>
-<span class="sd">    of the given AST.</span>
-<span class="sd">    If you need to keep the original AST around, pass</span>
-<span class="sd">    a `node.clone()` to the transformer.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">BaseNode</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">node</span>
-
-        <span class="n">nodename</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="n">visit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;visit_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nodename</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">generic_visit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">propname</span><span class="p">,</span> <span class="n">propvalue</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">propvalue</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="n">new_vals</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">propvalue</span><span class="p">:</span>
-                    <span class="n">new_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">new_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">new_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_val</span><span class="p">)</span>
-                <span class="c1"># in-place manipulation</span>
-                <span class="n">propvalue</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">new_vals</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">propvalue</span><span class="p">,</span> <span class="n">BaseNode</span><span class="p">):</span>
-                <span class="n">new_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">propvalue</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">new_val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="nb">delattr</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">propname</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="nb">setattr</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">propname</span><span class="p">,</span> <span class="n">new_val</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">node</span></div>
-
-
 <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">BaseNode</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
@@ -150,33 +89,6 @@
 <span class="sd">    All productions described in the ASDL subclass BaseNode, including Span and</span>
 <span class="sd">    Annotation.  Implements __str__, to_json and traverse.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-<div class="viewcode-block" id="BaseNode.traverse"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.BaseNode.traverse">[docs]</a>    <span class="k">def</span> <span class="nf">traverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;DEPRECATED. Please use Visitor or Transformer.</span>
-
-<span class="sd">        Postorder-traverse this node and apply `fun` to all child nodes.</span>
-
-<span class="sd">        Traverse this node depth-first applying `fun` to subnodes and leaves.</span>
-<span class="sd">        Children are processed before parents (postorder traversal).</span>
-
-<span class="sd">        Return a new instance of the node.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Call `fun` on `value` and its descendants.&quot;&quot;&quot;</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">BaseNode</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">traverse</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">fun</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">visit</span><span class="p">,</span> <span class="n">value</span><span class="p">)))</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">fun</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-
-        <span class="c1"># Use all attributes found on the node as kwargs to the constructor.</span>
-        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-        <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
-            <span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">visit</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">})</span>
-
-        <span class="k">return</span> <span class="n">fun</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BaseNode.clone"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.BaseNode.clone">[docs]</a>    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a deep clone of the current node.&quot;&quot;&quot;</span>
@@ -484,6 +396,7 @@
 <h3><a href="../../../index.html">Table of Contents</a></h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Using fluent.syntax</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference.html">API Reference</a></li>
 </ul>
 

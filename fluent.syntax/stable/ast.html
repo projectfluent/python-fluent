@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>AST &amp; Tooling &#8212; fluent.syntax 0.17.0 documentation</title>
+    <title>AST &#8212; fluent.syntax 0.17.0 documentation</title>
     <link rel="stylesheet" href="/python-fluent/_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="/python-fluent/_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="/python-fluent/_static/project-fluent.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script src="/python-fluent/_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Serializing" href="serializing.html" />
+    <link rel="next" title="Visitor &amp; Transformer" href="visitor.html" />
     <link rel="prev" title="Parsing" href="parsing.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -28,7 +28,7 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="serializing.html" title="Serializing"
+          <a href="visitor.html" title="Visitor &amp; Transformer"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="parsing.html" title="Parsing"
@@ -44,31 +44,7 @@
           <div class="body" role="main">
             
   <div class="section" id="module-fluent.syntax.ast">
-<span id="ast-tooling"></span><h1>AST &amp; Tooling<a class="headerlink" href="#module-fluent.syntax.ast" title="Permalink to this headline">¶</a></h1>
-<dl class="py class">
-<dt id="fluent.syntax.ast.Visitor">
-<em class="property">class </em><code class="sig-prename descclassname">fluent.syntax.ast.</code><code class="sig-name descname">Visitor</code><a class="reference internal" href="_modules/fluent/syntax/ast.html#Visitor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fluent.syntax.ast.Visitor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Read-only visitor pattern.</p>
-<p>Subclass this to gather information from an AST.
-To generally define which nodes not to descend in to, overload
-<cite>generic_visit</cite>.
-To handle specific node types, add methods like <cite>visit_Pattern</cite>.
-If you want to still descend into the children of the node, call
-<cite>generic_visit</cite> of the superclass.</p>
-</dd></dl>
-
-<dl class="py class">
-<dt id="fluent.syntax.ast.Transformer">
-<em class="property">class </em><code class="sig-prename descclassname">fluent.syntax.ast.</code><code class="sig-name descname">Transformer</code><a class="reference internal" href="_modules/fluent/syntax/ast.html#Transformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fluent.syntax.ast.Transformer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Visitor" title="fluent.syntax.ast.Visitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Visitor</span></code></a></p>
-<p>In-place AST Transformer pattern.</p>
-<p>Subclass this to create an in-place modified variant
-of the given AST.
-If you need to keep the original AST around, pass
-a <cite>node.clone()</cite> to the transformer.</p>
-</dd></dl>
-
+<span id="ast"></span><h1>AST<a class="headerlink" href="#module-fluent.syntax.ast" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="fluent.syntax.ast.BaseNode">
 <em class="property">class </em><code class="sig-prename descclassname">fluent.syntax.ast.</code><code class="sig-name descname">BaseNode</code><a class="reference internal" href="_modules/fluent/syntax/ast.html#BaseNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fluent.syntax.ast.BaseNode" title="Permalink to this definition">¶</a></dt>
@@ -76,16 +52,6 @@ a <cite>node.clone()</cite> to the transformer.</p>
 <p>Base class for all Fluent AST nodes.</p>
 <p>All productions described in the ASDL subclass BaseNode, including Span and
 Annotation.  Implements __str__, to_json and traverse.</p>
-<dl class="py method">
-<dt id="fluent.syntax.ast.BaseNode.traverse">
-<code class="sig-name descname">traverse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fun</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#BaseNode.traverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fluent.syntax.ast.BaseNode.traverse" title="Permalink to this definition">¶</a></dt>
-<dd><p>DEPRECATED. Please use Visitor or Transformer.</p>
-<p>Postorder-traverse this node and apply <cite>fun</cite> to all child nodes.</p>
-<p>Traverse this node depth-first applying <cite>fun</cite> to subnodes and leaves.
-Children are processed before parents (postorder traversal).</p>
-<p>Return a new instance of the node.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt id="fluent.syntax.ast.BaseNode.clone">
 <code class="sig-name descname">clone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#BaseNode.clone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fluent.syntax.ast.BaseNode.clone" title="Permalink to this definition">¶</a></dt>
@@ -300,9 +266,11 @@ taken into account.</p>
 <h3><a href="index.html">Table of Contents</a></h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using fluent.syntax</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="reference.html">API Reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="parsing.html">Parsing</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">AST &amp; Tooling</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">AST</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visitor.html">Visitor &amp; Transformer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="serializing.html">Serializing</a></li>
 </ul>
 </li>
@@ -332,7 +300,7 @@ taken into account.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="serializing.html" title="Serializing"
+          <a href="visitor.html" title="Visitor &amp; Transformer"
              >next</a> |</li>
         <li class="right" >
           <a href="parsing.html" title="Parsing"

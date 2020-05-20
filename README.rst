@@ -18,7 +18,7 @@ if you work on tooling for Fluent in Python.
 
 The `runtime package <fluent.runtime>`__ includes the library required to use Fluent to localize
 your Python application. It comes with a ``Localization`` class to use,
-based on an implementation of bundle. It uses the tooling parser above
+based on an implementation of ``FluentBundle``. It uses the tooling parser above
 to read Fluent files.
 
 ``fluent.pygments``

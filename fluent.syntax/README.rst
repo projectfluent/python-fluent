@@ -1,7 +1,7 @@
 ``fluent.syntax`` |fluent.syntax|
 ---------------------------------
 
-Process, analyze, and transform `Fluent`_ files.
+Read, write, and transform `Fluent`_ files.
 
 This package includes the parser, serializer, and traversal
 utilities like Visitor and Transformer. You’re looking for this package

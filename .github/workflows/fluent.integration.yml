@@ -45,4 +45,4 @@ jobs:
       - name: Test
         working-directory: ./fluent.runtime
         run: |
-          ./runtests.py
+          ./runtests

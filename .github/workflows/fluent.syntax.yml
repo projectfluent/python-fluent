@@ -39,7 +39,7 @@ jobs:
       - name: Test
         working-directory: ./fluent.syntax
         run: |
-          ./runtests.py
+          ./runtests
   syntax:
     name: flake8
     runs-on: ubuntu-latest

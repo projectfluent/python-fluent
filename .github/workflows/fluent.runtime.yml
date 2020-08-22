@@ -41,7 +41,7 @@ jobs:
       - name: Test
         working-directory: ./fluent.runtime
         run: |
-          ./runtests.py
+          ./runtests
   lint:
     name: flake8
     runs-on: ubuntu-latest

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# This file is symlinked from both fluent.runtime and fluent.syntax directories
-
 import argparse
 import subprocess
 import sys

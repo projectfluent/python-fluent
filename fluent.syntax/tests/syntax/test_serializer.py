@@ -139,9 +139,28 @@ class TestSerializeResource(unittest.TestCase):
         input = """\
             foo = Foo
 
-            # A multiline
+            # A standalone comment
 
             bar = Bar
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+
+    def test_multiline_starting_inline(self):
+        input = """\
+            foo = Foo
+                Bar
+        """
+        output = """\
+            foo =
+                Foo
+                Bar
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
+
+    def test_multiline_starting_inline_with_special_char(self):
+        input = """\
+            foo = *Foo
+                Bar
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
@@ -268,6 +287,15 @@ class TestSerializeResource(unittest.TestCase):
                 }
         """
         self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
+
+    def test_select_expression_in_inline_value_starting_with_special_char(self):
+        input = """\
+            foo = .Foo { $sel ->
+                   *[a] A
+                    [b] B
+                }
+        """
+        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
 
     def test_select_expression_in_multi_multiline(self):
         input = """\

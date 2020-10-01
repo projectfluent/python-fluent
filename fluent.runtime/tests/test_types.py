@@ -12,6 +12,14 @@ from babel import Locale
 from fluent.runtime.types import FluentDateType, FluentNumber, fluent_date, fluent_number
 
 
+def currency(amount, *args, **kwargs):
+    return fluent_number(amount,
+                         *args,
+                         currency='USD',
+                         style='currency',
+                         **kwargs)
+
+
 class TestFluentNumber(unittest.TestCase):
 
     locale = Locale.parse('en_US')
@@ -142,6 +150,44 @@ class TestFluentNumber(unittest.TestCase):
         es_GT = Locale.parse('es_GT')
         self.assertEqual(cur_pos_name.format(es_GT),
                          "dólares estadounidenses 123,456.78")
+
+    def test_currency_use_grouping(self):
+        f1 = currency(123456.78, useGrouping=True)
+        f2 = currency(123456.78, useGrouping=False)
+        self.assertEqual(f1.format(self.locale), "$123,456.78")
+        self.assertEqual(f2.format(self.locale), "$123456.78")
+
+    def test_currency_minimum_integer_digits(self):
+        f = currency(1.23, minimumIntegerDigits=3)
+        self.assertEqual(f.format(self.locale), "$001.23")
+
+    def test_currency_minimum_fraction_digits(self):
+        f = currency(1, minimumFractionDigits=3)
+        self.assertEqual(f.format(self.locale), "$1.000")
+        f = currency(1, minimumFractionDigits=0)
+        self.assertEqual(f.format(self.locale), "$1")
+
+    def test_currency_maximum_fraction_digits(self):
+        f1 = currency(1.23456)
+        self.assertEqual(f1.format(self.locale), "$1.23")
+        f2 = currency(1.23456, maximumFractionDigits=5)
+        self.assertEqual(f2.format(self.locale), "$1.23456")
+        f2 = currency(1.23456, maximumFractionDigits=0)
+        self.assertEqual(f2.format(self.locale), "$1")
+
+    def test_currency_minimum_significant_digits(self):
+        f1 = currency(123, minimumSignificantDigits=5)
+        self.assertEqual(f1.format(self.locale), "$123.00")
+        f2 = currency(12.3, minimumSignificantDigits=5)
+        self.assertEqual(f2.format(self.locale), "$12.300")
+
+    def test_currency_maximum_significant_digits(self):
+        f1 = currency(123456, maximumSignificantDigits=3)
+        self.assertEqual(f1.format(self.locale), "$123,000")
+        f2 = currency(12.3456, maximumSignificantDigits=3)
+        self.assertEqual(f2.format(self.locale), "$12.3")
+        f3 = currency(12, maximumSignificantDigits=5)
+        self.assertEqual(f3.format(self.locale), "$12")
 
     def test_copy_attributes(self):
         f1 = fluent_number(123456.78, useGrouping=False)

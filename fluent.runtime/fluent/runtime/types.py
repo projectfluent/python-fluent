@@ -113,7 +113,7 @@ class FluentNumber(FluentType):
         elif self.options.style == FORMAT_STYLE_CURRENCY:
             base_pattern = locale.currency_formats['standard']
             pattern = self._apply_options(base_pattern)
-            return pattern.apply(self, locale, currency=self.options.currency)
+            return pattern.apply(self, locale, currency=self.options.currency, currency_digits=False)
 
     def _apply_options(self, pattern):
         # We are essentially trying to copy the

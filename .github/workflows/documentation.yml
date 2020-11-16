@@ -40,3 +40,23 @@ jobs:
         with:
           name: html
           path: _build/python-fluent
+
+  publish:
+    name: publish
+    needs: [build]
+    # if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: html
+          path: _build
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@releases/v4
+        with:
+          branch: gh-pages # The branch the action should deploy to.
+          folder: _build # The folder the action should deploy.
+          clean: true # Automatically remove deleted files from the deploy branch
+          dry_run: ${{ github.event_name == 'pull_request' }}

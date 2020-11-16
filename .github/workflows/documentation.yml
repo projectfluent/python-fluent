@@ -31,7 +31,7 @@ jobs:
           python-version: 3.7
       - name: Install dependencies
         run: |
-          pip install Sphinx fluent.pygments
+          pip install Sphinx==3.0.3 fluent.pygments==1.0
       - name: sphinx-build
         run: |
           ./scripts/build-docs --to-publish python-fluent

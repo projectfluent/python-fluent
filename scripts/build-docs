@@ -2,7 +2,7 @@
 
 import argparse
 
-from fluent.docs import build, pre_pub
+from fluent.docs.build import build
 
 
 if __name__ == "__main__":
@@ -10,10 +10,6 @@ if __name__ == "__main__":
     parser.add_argument(
         'repo_name',
         help='URL prefix on the web. Repo name on gh-pages'
-    )
-    parser.add_argument(
-        '--to-publish', dest='pre_pub', action='store_true',
-        help='Use this to publish to Github. Builds faster without.'
     )
     default_docs = ['.', 'fluent.syntax', 'fluent.pygments', 'fluent.runtime']
     parser.add_argument(
@@ -24,5 +20,3 @@ if __name__ == "__main__":
     if args.doc is None:
         args.doc = default_docs
     build(args.repo_name, args.doc)
-    if args.pre_pub:
-        pre_pub(args.repo_name)

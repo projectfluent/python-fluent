@@ -37,7 +37,7 @@ jobs:
           pip install Sphinx==3.0.3 fluent.pygments==1.0 ./fluent.docs
       - name: sphinx-build
         run: |
-          ./scripts/build-docs --to-publish python-fluent
+          ./scripts/build-docs python-fluent
       - name: artifact
         uses: actions/upload-artifact@v2
         with:

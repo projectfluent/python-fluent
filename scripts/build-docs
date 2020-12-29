@@ -2,6 +2,7 @@
 
 import argparse
 
+from fluent.docs import build_root, finalize_builddir
 from fluent.docs.build import build
 
 
@@ -18,5 +19,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     if args.doc is None:
-        args.doc = default_docs
+        args.doc = default_docs[:]
+    if '.' in args.doc:
+        build_root(args.repo_name)
+        args.doc.remove('.')
     build(args.repo_name, args.doc)
+    finalize_builddir(args.repo_name)

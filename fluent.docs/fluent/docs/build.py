@@ -16,20 +16,12 @@ def build(repo_name, doc_roots):
     for doc_root in doc_roots:
         version = get_version(doc_root)
         src_dir = doc_root
-        project = doc_root if doc_root != '.' else None
-        if project is not None:
-            version = get_version(project)
-            builder = ProjectBuilder(repo_name, src_dir, project,  version)
-        else:
-            builder = DocBuilder(repo_name, src_dir)
+        project = doc_root
+        version = get_version(project)
+        builder = ProjectBuilder(repo_name, src_dir, project,  version)
         with builder:
             builder.build()
-    root = Path('_build') / repo_name
-    with open(root / '.nojekyll', 'w') as fh:
-        fh.write('')
     for project in doc_roots:
-        if project == '.':
-            continue
         with open(f'_build/{repo_name}/{project}/index.html', 'w') as index:
             index.write('<meta http-equiv="refresh" content="0; URL=stable/">\n')
 

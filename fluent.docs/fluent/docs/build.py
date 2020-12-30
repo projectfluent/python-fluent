@@ -39,6 +39,8 @@ def build(repo_name, projects, show_releases=True):
         )
     worktree = None
     for tag in tagged_versions:
+        if tag.project not in projects:
+            continue
         if worktree is None:
             worktree = tempfile.mkdtemp()
             subprocess.run([
@@ -52,13 +54,11 @@ def build(repo_name, projects, show_releases=True):
             'checkout',
             f'{tag.project}@{tag.version}'
         ], cwd=worktree)
-        if tag.project not in projects:
-            continue
         with ProjectBuilder(
             repo_name,
             os.path.join(worktree, tag.project),
             tag.project,
-            versions_4_project[project],
+            versions_4_project[tag.project],
             tag.version
         ) as builder:
             builder.build()

@@ -1,3 +1,23 @@
 div.related {
     background-color: #356eb7;
 }
+
+#versions {
+    position: relative;
+    color: #444;
+}
+
+#versions > span {
+    display: none;
+    position: absolute;
+    border: 1px solid;
+    background-color: #eee;
+    white-space: nowrap;
+    border-radius: 3px;
+    /* 5px - border-width */
+    top: calc(5px - 1px);
+}
+
+#versions > span.opened {
+    display: block;
+}

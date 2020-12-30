@@ -1,29 +1,76 @@
-from configparser import ConfigParser
+from collections import defaultdict
+from datetime import date
 import os
 from pathlib import Path
+import shutil
 import subprocess
+import tempfile
+from .tags import get_tag_infos
 
 
-def get_version(root):
-    if root == '.':
-        return
-    cp = ConfigParser()
-    cp.read(Path(root) / 'setup.cfg')
-    return cp.get('metadata', 'version')
-
-
-def build(repo_name, doc_roots):
-    for doc_root in doc_roots:
-        version = get_version(doc_root)
-        src_dir = doc_root
-        project = doc_root
-        version = get_version(project)
-        builder = ProjectBuilder(repo_name, src_dir, project,  version)
+def build(repo_name, projects):
+    tagged_versions = get_tag_infos(date(2020, 5, 1))
+    versions_4_project = defaultdict(list)
+    last_vers = {}
+    for tag in tagged_versions:
+        if tag.project not in projects:
+            continue
+        versions_4_project[tag.project].append(tag.version)
+    for project in projects:
+        if project in versions_4_project:
+            last_vers[project] = versions_4_project[project][0]
+            versions_4_project[project][:0] = ['dev', 'stable']
+        else:
+            last_vers[project] = 'dev'
+            versions_4_project[project].append('dev')
+    for project in projects:
+        src_dir = project
+        builder = ProjectBuilder(
+            repo_name, src_dir, project, versions_4_project[project], 'dev'
+        )
         with builder:
             builder.build()
-    for project in doc_roots:
-        with open(f'_build/{repo_name}/{project}/index.html', 'w') as index:
-            index.write('<meta http-equiv="refresh" content="0; URL=stable/">\n')
+        index = Path(f'_build/{repo_name}/{project}/index.html')
+        target = 'stable' if last_vers[project] != 'dev' else 'dev'
+        index.write_text(
+            f'<meta http-equiv="refresh" content="0; URL={target}/">\n'
+        )
+    worktree = None
+    for tag in tagged_versions:
+        if worktree is None:
+            worktree = tempfile.mkdtemp()
+            subprocess.run([
+                'git',
+                'worktree', 'add',
+                '--detach',
+                worktree
+            ])
+        subprocess.run([
+            'git',
+            'checkout',
+            f'{tag.project}@{tag.version}'
+        ], cwd=worktree)
+        if tag.project not in projects:
+            continue
+        with ProjectBuilder(
+            repo_name,
+            os.path.join(worktree, tag.project),
+            tag.project,
+            versions_4_project[project],
+            tag.version
+        ) as builder:
+            builder.build()
+    if worktree is not None:
+        shutil.rmtree(worktree)
+    for project in projects:
+        if last_vers[project] == 'dev':
+            continue
+        stable = Path(f'_build/{repo_name}/{project}/stable')
+        if stable.is_symlink():
+            stable.unlink()
+        if stable.exists():
+            shutil.rmtree(stable)
+        stable.symlink_to(last_vers[project], target_is_directory=True)
 
 
 class DocBuilder:
@@ -81,9 +128,10 @@ class DocBuilder:
 class ProjectBuilder(DocBuilder):
     '''Builder for individual projects, with project name and version.
     '''
-    def __init__(self, repo_name, src_dir, project_name, version):
+    def __init__(self, repo_name, src_dir, project_name, versions, version):
         super().__init__(repo_name, src_dir)
         self.project_name = project_name
+        self.versions = versions
         self.version = version
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -94,6 +142,10 @@ class ProjectBuilder(DocBuilder):
             if staticfile.name != 'documentation_options.js':
                 staticfile.unlink()
 
+    def build(self):
+        self.create_versions_doc()
+        super().build()
+
     def environ(self):
         env = super().environ()
         env['PYTHONPATH'] = self.src_dir
@@ -101,11 +153,28 @@ class ProjectBuilder(DocBuilder):
 
     @property
     def cmd_opts(self):
-        return [
-                '-D', 'release=' + self.version,
+        opts = [
                 '-D', 'project=' + self.project_name,
+        ]
+        if self.version != 'dev':
+            opts += [
+                '-D', f'release={self.version}',
             ]
+        return opts
 
     @property
     def dest_dir(self):
-        return f'_build/{self.repo_name}/{self.project_name}/stable'
+        return f'_build/{self.repo_name}/{self.project_name}/{self.version}'
+
+    def create_versions_doc(self):
+        target_path = Path(self.src_dir) / 'docs' / '_templates'
+        target_path.mkdir(exist_ok=True)
+        target_path = target_path / 'versions.html'
+        links = ' '.join(
+            f'<a href="/{self.repo_name}/{self.project_name}/{v}">{v}</a>'
+            for v in self.versions
+        )
+        content = f'''<h3>Versions</h3>
+<p id="versions">{self.version}<span>{links}</span></p>
+'''
+        target_path.write_text(content)

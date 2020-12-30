@@ -6,3 +6,4 @@
 _build
 build
 dist
+/fluent.*/docs/_templates/versions.html

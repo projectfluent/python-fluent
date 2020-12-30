@@ -17,11 +17,15 @@ if __name__ == "__main__":
         '--doc', action='append', choices=default_docs,
         help='Only build select documentation roots.'
     )
+    parser.add_argument(
+        '--dev', action='store_false', dest='show_releases',
+        help='Only build development versions of projects'
+    )
     args = parser.parse_args()
     if args.doc is None:
         args.doc = default_docs[:]
     if '.' in args.doc:
         build_root(args.repo_name)
         args.doc.remove('.')
-    build(args.repo_name, args.doc)
+    build(args.repo_name, args.doc, show_releases=args.show_releases)
     finalize_builddir(args.repo_name)

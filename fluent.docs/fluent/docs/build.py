@@ -8,8 +8,10 @@ import tempfile
 from .tags import get_tag_infos
 
 
-def build(repo_name, projects):
-    tagged_versions = get_tag_infos(date(2020, 5, 1))
+def build(repo_name, projects, show_releases=True):
+    tagged_versions = []
+    if show_releases:
+        tagged_versions = get_tag_infos(date(2020, 5, 1))
     versions_4_project = defaultdict(list)
     last_vers = {}
     for tag in tagged_versions:

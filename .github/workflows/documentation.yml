@@ -42,7 +42,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: html
-          path: _build/python-fluent
+          path: |
+            _build/python-fluent
+            !_build/**/.buildinfo
 
   publish:
     name: publish

@@ -57,7 +57,7 @@ jobs:
           name: html
           path: _build
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@releases/v4
+        uses: JamesIves/github-pages-deploy-action@4.0.0
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: _build # The folder the action should deploy.

@@ -6,8 +6,7 @@ $(function() {
     let versions = document.getElementById('versions');
     if (versions) {
         versions.onclick = function(ev) {
-            let popup = this.querySelector('span');
-            popup.classList.toggle('opened')
+            this.classList.toggle('opened');
         }
     }
 })

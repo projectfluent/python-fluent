@@ -177,6 +177,9 @@ class ProjectBuilder(DocBuilder):
             for v in self.versions
         )
         content = f'''<h3>Versions</h3>
-<p id="versions">{self.version}<span>{links}</span></p>
+<p id="versions">
+    <span class="version">{self.version}</span>
+    <span class="links">{links}</span>
+</p>
 '''
         target_path.write_text(content)

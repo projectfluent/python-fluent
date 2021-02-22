@@ -1,5 +1,4 @@
 from collections import defaultdict
-from datetime import date
 import os
 from pathlib import Path
 import shutil
@@ -8,23 +7,33 @@ import tempfile
 from .tags import get_tag_infos
 
 
-def build(repo_name, projects, show_releases=True):
+def build(repo_name, projects, releases_after=None):
+    '''Build documentation for projects.
+
+    Build the given projects in _build/repo_name.
+    Create versioned documentations for tags after ``releases_after``,
+    if given.
+    '''
     tagged_versions = []
-    if show_releases:
-        tagged_versions = get_tag_infos(date(2020, 5, 1))
+    if releases_after:
+        tagged_versions = [
+            tag for tag in get_tag_infos(releases_after)
+            if tag.project in projects
+        ]
+    # List of versions we have for each project
     versions_4_project = defaultdict(list)
-    last_vers = {}
     for tag in tagged_versions:
-        if tag.project not in projects:
-            continue
         versions_4_project[tag.project].append(tag.version)
+    last_vers = {}
     for project in projects:
         if project in versions_4_project:
             last_vers[project] = versions_4_project[project][0]
             versions_4_project[project][:0] = ['dev', 'stable']
         else:
+            # No releases yet, just dev
             last_vers[project] = 'dev'
             versions_4_project[project].append('dev')
+    # Build current dev version for each project
     for project in projects:
         src_dir = project
         builder = ProjectBuilder(
@@ -32,6 +41,7 @@ def build(repo_name, projects, show_releases=True):
         )
         with builder:
             builder.build()
+        # Create redirect page from project to stable release or dev
         index = Path(f'_build/{repo_name}/{project}/index.html')
         target = 'stable' if last_vers[project] != 'dev' else 'dev'
         index.write_text(
@@ -39,8 +49,6 @@ def build(repo_name, projects, show_releases=True):
         )
     worktree = None
     for tag in tagged_versions:
-        if tag.project not in projects:
-            continue
         if worktree is None:
             worktree = tempfile.mkdtemp()
             subprocess.run([
@@ -78,7 +86,6 @@ def build(repo_name, projects, show_releases=True):
 class DocBuilder:
     '''Builder for the top-level documentation.
     '''
-    build_dir = '_build/doctrees'
 
     def __init__(self, repo_name, src_dir):
         self.repo_name = repo_name
@@ -143,6 +150,7 @@ class ProjectBuilder(DocBuilder):
             # The options are project-specific.
             if staticfile.name != 'documentation_options.js':
                 staticfile.unlink()
+        return False
 
     def build(self):
         self.create_versions_doc()

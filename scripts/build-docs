@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from datetime import date
 
 from fluent.docs import build_root, finalize_builddir
 from fluent.docs.build import build
@@ -27,5 +28,9 @@ if __name__ == "__main__":
     if '.' in args.doc:
         build_root(args.repo_name)
         args.doc.remove('.')
-    build(args.repo_name, args.doc, show_releases=args.show_releases)
+    releases_after = None
+    if args.show_releases:
+        # python-fluent had descent docs since May 2020
+        releases_after = date(2020, 5, 1)
+    build(args.repo_name, args.doc, releases_after)
     finalize_builddir(args.repo_name)

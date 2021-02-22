@@ -49,7 +49,6 @@ jobs:
   publish:
     name: publish
     needs: [build]
-    # if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

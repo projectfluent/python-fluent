@@ -28,7 +28,7 @@ jobs:
         fluent-syntax: [0.18.1]
         include:
           - python-version: 3.9
-            fluent-syntax: [0.17.0]
+            fluent-syntax: 0.17.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2

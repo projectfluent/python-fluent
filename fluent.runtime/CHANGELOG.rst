@@ -1,6 +1,12 @@
 Changelog
 =========
 
+fluent.runtime 0.4 (TBD)
+-----------------------------------
+
+* Drop support for Python 2.7 and 3.5
+* Add support for Python 3.6 through 3.9
+
 fluent.runtime 0.3.1 (May 20, 2020)
 -----------------------------------
 

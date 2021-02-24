@@ -1,10 +1,7 @@
-# coding=utf-8
-from __future__ import unicode_literals, absolute_import
-
 from .ast import BaseNode
 
 
-class Visitor(object):
+class Visitor:
     '''Read-only visitor pattern.
 
     Subclass this to gather information from an AST.
@@ -22,7 +19,7 @@ class Visitor(object):
         if not isinstance(node, BaseNode):
             return
         nodename = type(node).__name__
-        visit = getattr(self, 'visit_{}'.format(nodename), self.generic_visit)
+        visit = getattr(self, f'visit_{nodename}', self.generic_visit)
         visit(node)
 
     def generic_visit(self, node):
@@ -43,7 +40,7 @@ class Transformer(Visitor):
             return node
 
         nodename = type(node).__name__
-        visit = getattr(self, 'visit_{}'.format(nodename), self.generic_visit)
+        visit = getattr(self, f'visit_{nodename}', self.generic_visit)
         return visit(node)
 
     def generic_visit(self, node):

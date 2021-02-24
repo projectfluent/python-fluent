@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from . import ast
 
 
@@ -32,7 +31,7 @@ def should_start_on_new_line(pattern):
     return False
 
 
-class FluentSerializer(object):
+class FluentSerializer:
     """FluentSerializer converts :class:`.ast.SyntaxNode` objects to unicode strings.
 
     `with_junk` controls if parse errors are written back or not.
@@ -83,11 +82,11 @@ class FluentSerializer(object):
 
 def serialize_comment(comment, prefix="#"):
     prefixed = "\n".join([
-        prefix if len(line) == 0 else "{} {}".format(prefix, line)
+        prefix if len(line) == 0 else f"{prefix} {line}"
         for line in comment.content.split("\n")
     ])
     # Add the trailing line break.
-    return '{}\n'.format(prefixed)
+    return f'{prefixed}\n'
 
 
 def serialize_junk(junk):
@@ -100,7 +99,7 @@ def serialize_message(message):
     if message.comment:
         parts.append(serialize_comment(message.comment))
 
-    parts.append("{} =".format(message.id.name))
+    parts.append(f"{message.id.name} =")
 
     if message.value:
         parts.append(serialize_pattern(message.value))
@@ -119,7 +118,7 @@ def serialize_term(term):
     if term.comment:
         parts.append(serialize_comment(term.comment))
 
-    parts.append("-{} =".format(term.id.name))
+    parts.append(f"-{term.id.name} =")
     parts.append(serialize_pattern(term.value))
 
     if term.attributes:
@@ -142,9 +141,9 @@ def serialize_pattern(pattern):
     content = indent_except_first_line(content)
 
     if should_start_on_new_line(pattern):
-        return '\n    {}'.format(content)
+        return f'\n    {content}'
 
-    return ' {}'.format(content)
+    return f' {content}'
 
 
 def serialize_element(element):
@@ -169,32 +168,32 @@ def serialize_placeable(placeable):
 
 def serialize_expression(expression):
     if isinstance(expression, ast.StringLiteral):
-        return '"{}"'.format(expression.value)
+        return f'"{expression.value}"'
     if isinstance(expression, ast.NumberLiteral):
         return expression.value
     if isinstance(expression, ast.VariableReference):
-        return "${}".format(expression.id.name)
+        return f"${expression.id.name}"
     if isinstance(expression, ast.TermReference):
-        out = "-{}".format(expression.id.name)
+        out = f"-{expression.id.name}"
         if expression.attribute is not None:
-            out += ".{}".format(expression.attribute.name)
+            out += f".{expression.attribute.name}"
         if expression.arguments is not None:
             out += serialize_call_arguments(expression.arguments)
         return out
     if isinstance(expression, ast.MessageReference):
         out = expression.id.name
         if expression.attribute is not None:
-            out += ".{}".format(expression.attribute.name)
+            out += f".{expression.attribute.name}"
         return out
     if isinstance(expression, ast.FunctionReference):
         args = serialize_call_arguments(expression.arguments)
-        return "{}{}".format(expression.id.name, args)
+        return f"{expression.id.name}{args}"
     if isinstance(expression, ast.SelectExpression):
         out = "{} ->".format(
             serialize_expression(expression.selector))
         for variant in expression.variants:
             out += serialize_variant(variant)
-        return "{}\n".format(out)
+        return f"{out}\n"
     if isinstance(expression, ast.Placeable):
         return serialize_placeable(expression)
     raise Exception('Unknown expression type: {}'.format(type(expression)))
@@ -214,7 +213,7 @@ def serialize_call_arguments(expr):
     named = ", ".join(
         serialize_named_argument(arg) for arg in expr.named)
     if len(expr.positional) > 0 and len(expr.named) > 0:
-        return '({}, {})'.format(positional, named)
+        return f'({positional}, {named})'
     return '({})'.format(positional or named)
 
 

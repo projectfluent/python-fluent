@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import re
 from . import ast
 from .stream import EOF, EOL, FluentParserStream
@@ -25,7 +24,7 @@ def with_span(fn):
     return decorated
 
 
-class FluentParser(object):
+class FluentParser:
     """This class is used to parse Fluent source content.
 
     ``with_spans`` enables source information in the form of
@@ -469,7 +468,7 @@ class FluentParser(object):
 
         if next == '\\' or next == '"':
             ps.next()
-            return '\\{}'.format(next)
+            return f'\\{next}'
 
         if next == 'u':
             return self.get_unicode_escape_sequence(ps, next, 4)
@@ -485,10 +484,10 @@ class FluentParser(object):
         for _ in range(digits):
             ch = ps.take_hex_digit()
             if not ch:
-                raise ParseError('E0026', '\\{}{}{}'.format(u, sequence, ps.current_char))
+                raise ParseError('E0026', f'\\{u}{sequence}{ps.current_char}')
             sequence += ch
 
-        return '\\{}{}'.format(u, sequence)
+        return f'\\{u}{sequence}'
 
     @with_span
     def get_placeable(self, ps):

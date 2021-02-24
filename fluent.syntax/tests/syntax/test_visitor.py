@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from collections import defaultdict
 import unittest
 
@@ -16,7 +14,7 @@ class MockVisitor(visitor.Visitor):
 
     def generic_visit(self, node):
         self.calls[type(node).__name__] += 1
-        super(MockVisitor, self).generic_visit(node)
+        super().generic_visit(node)
 
     def visit_Pattern(self, node):
         self.pattern_calls += 1
@@ -71,7 +69,7 @@ class TestTransformer(unittest.TestCase):
         )
 
 
-class WordCounter(object):
+class WordCounter:
     def __init__(self):
         self.word_count = 0
 
@@ -87,13 +85,13 @@ class VisitorCounter(visitor.Visitor):
 
     def generic_visit(self, node):
         if not isinstance(node, (ast.Span, ast.Annotation)):
-            super(VisitorCounter, self).generic_visit(node)
+            super().generic_visit(node)
 
     def visit_TextElement(self, node):
         self.word_count += len(node.value.split())
 
 
-class ReplaceText(object):
+class ReplaceText:
     def __init__(self, before, after):
         self.before = before
         self.after = after
@@ -113,7 +111,7 @@ class ReplaceTransformer(visitor.Transformer):
     def generic_visit(self, node):
         if isinstance(node, (ast.Span, ast.Annotation)):
             return node
-        return super(ReplaceTransformer, self).generic_visit(node)
+        return super().generic_visit(node)
 
     def visit_TextElement(self, node):
         """Perform find and replace on text values only"""

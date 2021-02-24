@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -53,7 +51,7 @@ def reference_to_id(ref):
 
 def unknown_reference_error_obj(ref_id):
     if ATTRIBUTE_SEPARATOR in ref_id:
-        return FluentReferenceError("Unknown attribute: {0}".format(ref_id))
+        return FluentReferenceError(f"Unknown attribute: {ref_id}")
     if ref_id.startswith(TERM_SIGIL):
-        return FluentReferenceError("Unknown term: {0}".format(ref_id))
-    return FluentReferenceError("Unknown message: {0}".format(ref_id))
+        return FluentReferenceError(f"Unknown term: {ref_id}")
+    return FluentReferenceError(f"Unknown message: {ref_id}")

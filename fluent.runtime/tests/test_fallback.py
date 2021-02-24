@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import unittest
-import mock
+from unittest import mock
 import io
 import os
 

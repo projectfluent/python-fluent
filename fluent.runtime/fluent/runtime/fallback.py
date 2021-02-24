@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-
 import codecs
 import os
 
 
-class FluentLocalization(object):
+class FluentLocalization:
     """
     Generic API for Fluent applications.
 
@@ -66,7 +64,7 @@ class FluentLocalization(object):
                 yield bundle
 
 
-class AbstractResourceLoader(object):
+class AbstractResourceLoader:
     """
     Interface to implement for resource loaders.
     """

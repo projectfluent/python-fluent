@@ -3,8 +3,8 @@ from __future__ import absolute_import, unicode_literals
 
 import unittest
 import mock
+import io
 import os
-import six
 
 from fluent.runtime import (
     FluentLocalization,
@@ -33,7 +33,7 @@ class TestLocalization(unittest.TestCase):
             'en/two.ftl': 'five = exists',
         }
         isfile.side_effect = lambda p: p in data or ISFILE(p)
-        codecs_open.side_effect = lambda p, _, __: six.StringIO(data[p])
+        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[p])
         l10n = FluentLocalization(
             ['de', 'fr', 'en'],
             ['one.ftl', 'two.ftl'],
@@ -67,7 +67,7 @@ class TestResourceLoader(unittest.TestCase):
             'en/two.ftl': 'two = exists',
         }
         isfile.side_effect = lambda p: p in data
-        codecs_open.side_effect = lambda p, _, __: six.StringIO(data[p])
+        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[p])
         loader = FluentResourceLoader('{locale}')
         resources_list = list(loader.resources('en', ['one.ftl', 'two.ftl']))
         self.assertEqual(len(resources_list), 1)
@@ -79,7 +79,7 @@ class TestResourceLoader(unittest.TestCase):
             'en/two.ftl': 'two = exists',
         }
         isfile.side_effect = lambda p: p in data
-        codecs_open.side_effect = lambda p, _, __: six.StringIO(data[p])
+        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[p])
         loader = FluentResourceLoader('{locale}')
         resources_list = list(loader.resources('en', ['one.ftl', 'two.ftl']))
         self.assertEqual(len(resources_list), 1)
@@ -89,7 +89,7 @@ class TestResourceLoader(unittest.TestCase):
     def test_none_exist(self, codecs_open, isfile):
         data = {}
         isfile.side_effect = lambda p: p in data
-        codecs_open.side_effect = lambda p, _, __: six.StringIO(data[p])
+        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[p])
         loader = FluentResourceLoader('{locale}')
         resources_list = list(loader.resources('en', ['one.ftl', 'two.ftl']))
         self.assertEqual(len(resources_list), 0)

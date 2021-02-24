@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 import contextlib
 
 import attr
-import six
 
 from fluent.syntax import ast as FTL
 from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
@@ -143,7 +142,7 @@ class Pattern(FTL.Pattern, BaseResolver):
 def resolve(fluentish, env):
     if isinstance(fluentish, FluentType):
         return fluentish.format(env.context._babel_locale)
-    if isinstance(fluentish, six.string_types):
+    if isinstance(fluentish, str):
         if len(fluentish) > MAX_PART_LENGTH:
             raise ValueError(
                 "Too many characters in placeable "
@@ -231,7 +230,7 @@ class VariableReference(FTL.VariableReference, BaseResolver):
                     FluentReferenceError("Unknown external: {0}".format(name)))
             return FluentNone(name)
 
-        if isinstance(arg_val, (FluentType, six.text_type)):
+        if isinstance(arg_val, (FluentType, str)):
             return arg_val
         env.errors.append(TypeError("Unsupported external type: {0}, {1}"
                                     .format(name, type(arg_val))))

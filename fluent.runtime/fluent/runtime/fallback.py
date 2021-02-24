@@ -2,7 +2,6 @@
 
 import codecs
 import os
-import six
 
 
 class FluentLocalization(object):
@@ -97,7 +96,7 @@ class FluentResourceLoader(AbstractResourceLoader):
         Create a resource loader. The roots may be a string for a single
         location on disk, or a list of strings.
         """
-        self.roots = [roots] if isinstance(roots, six.text_type) else roots
+        self.roots = [roots] if isinstance(roots, str) else roots
         from fluent.runtime import FluentResource
         self.Resource = FluentResource
 

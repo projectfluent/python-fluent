@@ -33,9 +33,7 @@ setup(name='fluent.runtime',
           'attrs',
           'babel',
           'pytz',
+          'six',
       ],
       test_suite='tests',
-      tests_require=[
-          'mock',
-      ],
       )

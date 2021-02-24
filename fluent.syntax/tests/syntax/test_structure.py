@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from six import with_metaclass
 
 import os
 import json
@@ -49,5 +48,5 @@ class TestStructureMeta(type):
         return type.__new__(mcs, name, bases, attrs)
 
 
-class TestStructure(with_metaclass(TestStructureMeta, unittest.TestCase)):
+class TestStructure(unittest.TestCase, metaclass=TestStructureMeta):
     maxDiff = None

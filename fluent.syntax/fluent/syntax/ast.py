@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import re
 import sys
 import json
-import six
 
 
 def to_json(value, fn=None):
@@ -206,7 +205,7 @@ class StringLiteral(Literal):
                 return c
             codepoint = int(codepoint4 or codepoint6, 16)
             if codepoint <= 0xD7FF or 0xE000 <= codepoint:
-                return six.unichr(codepoint)
+                return chr(codepoint)
             # Escape sequences reresenting surrogate code points are
             # well-formed but invalid in Fluent. Replace them with U+FFFD
             # REPLACEMENT CHARACTER.

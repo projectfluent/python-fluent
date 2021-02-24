@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from six import with_metaclass
 
 import os
 import json
@@ -60,5 +59,5 @@ class TestReferenceMeta(type):
         return type.__new__(mcs, name, bases, attrs)
 
 
-class TestReference(with_metaclass(TestReferenceMeta, unittest.TestCase)):
+class TestReference(unittest.TestCase, metaclass=TestReferenceMeta):
     maxDiff = None

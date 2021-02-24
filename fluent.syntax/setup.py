@@ -26,7 +26,5 @@ setup(name='fluent.syntax',
           'Programming Language :: Python :: 3 :: Only',
       ],
       packages=['fluent', 'fluent.syntax'],
-      # These should also be duplicated in tox.ini and /.github/workflow/fluent.syntax.yml
-      tests_require=['six'],
       test_suite='tests.syntax'
       )

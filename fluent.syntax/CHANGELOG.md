@@ -1,5 +1,10 @@
 # Changelog
 
+## fluent.syntax 0.19 (TBD)
+
+  - Drop support for Python 2.7 and 3.5
+  - Add support for Python 3.6 through 3.9
+
 ## fluent.syntax 0.18.1 (September 15, 2020)
 
   - Fix serialization of multiline patterns starting with special characters. (#156)

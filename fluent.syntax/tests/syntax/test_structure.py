@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-from six import with_metaclass
-
 import os
 import json
 import codecs
@@ -43,11 +40,11 @@ class TestStructureMeta(type):
             if ext != '.ftl':
                 continue
 
-            test_name = 'test_{}'.format(file_name)
+            test_name = f'test_{file_name}'
             attrs[test_name] = gen_test(file_name)
 
         return type.__new__(mcs, name, bases, attrs)
 
 
-class TestStructure(with_metaclass(TestStructureMeta, unittest.TestCase)):
+class TestStructure(unittest.TestCase, metaclass=TestStructureMeta):
     maxDiff = None

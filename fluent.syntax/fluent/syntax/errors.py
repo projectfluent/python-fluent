@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-
-
 class ParseError(Exception):
     def __init__(self, code, *args):
         self.code = code

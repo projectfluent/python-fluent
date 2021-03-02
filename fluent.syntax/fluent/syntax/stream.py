@@ -1,8 +1,7 @@
-from __future__ import unicode_literals
 from .errors import ParseError
 
 
-class ParserStream(object):
+class ParserStream:
     def __init__(self, string):
         self.string = string
         self.index = 0

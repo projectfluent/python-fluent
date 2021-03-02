@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-from six import with_metaclass
-
 import os
 import json
 import codecs
@@ -54,11 +51,11 @@ class TestReferenceMeta(type):
             if file_name in ('leading_dots', 'variant_lists'):
                 continue
 
-            test_name = 'test_{}'.format(file_name)
+            test_name = f'test_{file_name}'
             attrs[test_name] = gen_test(file_name)
 
         return type.__new__(mcs, name, bases, attrs)
 
 
-class TestReference(with_metaclass(TestReferenceMeta, unittest.TestCase)):
+class TestReference(unittest.TestCase, metaclass=TestReferenceMeta):
     maxDiff = None

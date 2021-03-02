@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [2.7, 3.5, 3.6, 3.7, 3.8, pypy2, pypy3]
+        python-version: [3.6, 3.7, 3.8, 3.9, pypy3]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -35,7 +35,6 @@ jobs:
         run: |
           python -m pip install wheel
           python -m pip install --upgrade pip
-          python -m pip install six
       - name: Test
         working-directory: ./fluent.syntax
         run: |
@@ -47,7 +46,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.9
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

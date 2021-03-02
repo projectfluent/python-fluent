@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+import six
+
 import babel
 import babel.numbers
 import babel.plural
@@ -9,7 +11,7 @@ from fluent.syntax.ast import Message, Term
 
 from .builtins import BUILTINS
 from .prepare import Compiler
-from .resolver import ResolverEnvironment, CurrentEnvironment
+from .resolver import ResolverEnvironment, CurrentEnvironment, TextElement
 from .utils import native_to_fluent
 from .fallback import FluentLocalization, AbstractResourceLoader, FluentResourceLoader
 
@@ -86,7 +88,10 @@ class FluentBundle(object):
         self._compiled[compiled_id] = self._compiler(entry)
         return self._compiled[compiled_id]
 
-    def format_pattern(self, pattern, args=None):
+    def format_to_parts(self, pattern, errors, args=None):
+        if isinstance(pattern, TextElement):
+            yield pattern.value
+            return
         if args is not None:
             fluent_args = {
                 argname: native_to_fluent(argvalue)
@@ -95,16 +100,25 @@ class FluentBundle(object):
         else:
             fluent_args = {}
 
-        errors = []
         env = ResolverEnvironment(context=self,
                                   current=CurrentEnvironment(args=fluent_args),
                                   errors=errors)
+        for part in pattern(env):
+            yield part
+
+    def format_pattern(self, pattern, args=None):
+        errors = []
         try:
-            result = pattern(env)
+            result = ''.join(self.format_part(part) for part in self.format_to_parts(pattern, errors, args=args))
         except ValueError as e:
             errors.append(e)
             result = '{???}'
         return [result, errors]
+
+    def format_part(self, fluentish):
+        if isinstance(fluentish, six.string_types):
+            return fluentish
+        return fluentish.format(self._babel_locale)
 
     def _get_babel_locale(self):
         for l in self.locales:

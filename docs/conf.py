@@ -34,6 +34,13 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
+# Add src_dir/docs/_templates in a hook as we only have the src_dir then.
+def setup(app):
+    app.connect('config-inited', add_templates)
+
+def add_templates(app, config):
+    config.templates_path.insert(0, f'{app.srcdir}/_templates')
+
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
@@ -52,9 +59,10 @@ html_theme = 'nature'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_css_files = ['project-fluent.css']
+html_js_files = ['versions.js']
 
 html_sidebars = {
-    '**': ['globaltoc.html', 'searchbox.html'],
+    '**': ['globaltoc.html', 'versions.html', 'searchbox.html'],
 }
 html_theme_options = {
 }

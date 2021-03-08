@@ -1,6 +1,7 @@
 name: documentation
 
 on:
+  workflow_dispatch:
   # Trigger the workflow on push or pull request,
   # but only for the master branch
   push:
@@ -26,17 +27,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
       - name: Install dependencies
         run: |
-          pip install Sphinx fluent.pygments
+          pip install -r docs/requirements.txt
+          pip install ./fluent.docs
       - name: sphinx-build
         run: |
-          ./scripts/build-docs --to-publish python-fluent
+          ./scripts/build-docs python-fluent
       - name: artifact
         uses: actions/upload-artifact@v2
         with:
           name: html
-          path: _build/python-fluent
+          path: |
+            _build/python-fluent
+            !_build/**/.buildinfo
+
+  publish:
+    name: publish
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: html
+          path: _build
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@4.0.0
+        with:
+          branch: gh-pages # The branch the action should deploy to.
+          folder: _build # The folder the action should deploy.
+          clean: true # Automatically remove deleted files from the deploy branch
+          dry-run: ${{ github.event_name == 'pull_request' }}

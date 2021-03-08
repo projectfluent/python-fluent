@@ -1,0 +1,3 @@
+Sphinx==3.5.1
+fluent.pygments==1.0
+wheel

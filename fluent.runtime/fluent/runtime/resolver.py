@@ -1,9 +1,6 @@
-from __future__ import absolute_import, unicode_literals
-
 import contextlib
 
 import attr
-import six
 
 from fluent.syntax import ast as FTL
 from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
@@ -31,7 +28,7 @@ MAX_PART_LENGTH = 2500
 
 
 @attr.s
-class CurrentEnvironment(object):
+class CurrentEnvironment:
     # The parts of ResolverEnvironment that we want to mutate (and restore)
     # temporarily for some parts of a call chain.
 
@@ -48,7 +45,7 @@ class CurrentEnvironment(object):
 
 
 @attr.s
-class ResolverEnvironment(object):
+class ResolverEnvironment:
     context = attr.ib()
     errors = attr.ib()
     part_count = attr.ib(default=0, init=False)
@@ -73,7 +70,7 @@ class ResolverEnvironment(object):
                              error_for_missing_arg=False)
 
 
-class BaseResolver(object):
+class BaseResolver:
     """
     Abstract base class of all partially evaluated resolvers.
 
@@ -104,13 +101,13 @@ class EntryResolver(BaseResolver):
 
 class Message(FTL.Message, EntryResolver):
     def __init__(self, id, **kwargs):
-        super(Message, self).__init__(id, **kwargs)
+        super().__init__(id, **kwargs)
         self._fix_attributes()
 
 
 class Term(FTL.Term, EntryResolver):
     def __init__(self, id, value, **kwargs):
-        super(Term, self).__init__(id, value, **kwargs)
+        super().__init__(id, value, **kwargs)
         self._fix_attributes()
 
 
@@ -119,7 +116,7 @@ class Pattern(FTL.Pattern, BaseResolver):
     MAX_PARTS = 1000
 
     def __init__(self, *args, **kwargs):
-        super(Pattern, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, env):
         if self in env.active_patterns:
@@ -130,7 +127,7 @@ class Pattern(FTL.Pattern, BaseResolver):
         remaining_parts = self.MAX_PARTS - env.part_count
         if len(self.elements) > remaining_parts:
             env.active_patterns.remove(self)
-            raise ValueError("Too many parts in message (> {0}), "
+            raise ValueError("Too many parts in message (> {}), "
                              "aborting.".format(self.MAX_PARTS))
         retval = ''.join(
             resolve(element(env), env) for element in elements
@@ -143,7 +140,7 @@ class Pattern(FTL.Pattern, BaseResolver):
 def resolve(fluentish, env):
     if isinstance(fluentish, FluentType):
         return fluentish.format(env.context._babel_locale)
-    if isinstance(fluentish, six.string_types):
+    if isinstance(fluentish, str):
         if len(fluentish) > MAX_PART_LENGTH:
             raise ValueError(
                 "Too many characters in placeable "
@@ -178,7 +175,7 @@ class StringLiteral(FTL.StringLiteral, Literal):
 
 class NumberLiteral(FTL.NumberLiteral, BaseResolver):
     def __init__(self, value, **kwargs):
-        super(NumberLiteral, self).__init__(value, **kwargs)
+        super().__init__(value, **kwargs)
         if '.' in self.value:
             self.value = FluentFloat(self.value)
         else:
@@ -200,7 +197,7 @@ class EntryReference(BaseResolver):
         except LookupError:
             ref_id = reference_to_id(self)
             env.errors.append(unknown_reference_error_obj(ref_id))
-            return FluentNone('{{{}}}'.format(ref_id))
+            return FluentNone(f'{{{ref_id}}}')
 
 
 class MessageReference(FTL.MessageReference, EntryReference):
@@ -211,13 +208,13 @@ class TermReference(FTL.TermReference, EntryReference):
     def __call__(self, env):
         if self.arguments:
             if self.arguments.positional:
-                env.errors.append(FluentFormatError("Ignored positional arguments passed to term '{0}'"
+                env.errors.append(FluentFormatError("Ignored positional arguments passed to term '{}'"
                                                     .format(reference_to_id(self))))
             kwargs = {kwarg.name.name: kwarg.value(env) for kwarg in self.arguments.named}
         else:
             kwargs = None
         with env.modified_for_term_reference(args=kwargs):
-            return super(TermReference, self).__call__(env)
+            return super().__call__(env)
 
 
 class VariableReference(FTL.VariableReference, BaseResolver):
@@ -228,12 +225,12 @@ class VariableReference(FTL.VariableReference, BaseResolver):
         except LookupError:
             if env.current.error_for_missing_arg:
                 env.errors.append(
-                    FluentReferenceError("Unknown external: {0}".format(name)))
+                    FluentReferenceError(f"Unknown external: {name}"))
             return FluentNone(name)
 
-        if isinstance(arg_val, (FluentType, six.text_type)):
+        if isinstance(arg_val, (FluentType, str)):
             return arg_val
-        env.errors.append(TypeError("Unsupported external type: {0}, {1}"
+        env.errors.append(TypeError("Unsupported external type: {}, {}"
                                     .format(name, type(arg_val))))
         return FluentNone(name)
 
@@ -303,7 +300,7 @@ class FunctionReference(FTL.FunctionReference, BaseResolver):
         try:
             function = env.context._functions[function_name]
         except LookupError:
-            env.errors.append(FluentReferenceError("Unknown function: {0}"
+            env.errors.append(FluentReferenceError("Unknown function: {}"
                                                    .format(function_name)))
             return FluentNone(function_name + "()")
 

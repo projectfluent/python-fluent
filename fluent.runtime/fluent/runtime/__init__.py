@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import babel
 import babel.numbers
 import babel.plural
@@ -28,7 +26,7 @@ def FluentResource(source):
     return parser.parse(source)
 
 
-class FluentBundle(object):
+class FluentBundle:
     """
     Bundles are single-language stores of translations.  They are
     aggregate parsed Fluent resources in the Fluent syntax and can

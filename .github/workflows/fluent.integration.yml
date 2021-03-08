@@ -37,7 +37,7 @@ jobs:
         run: |
           python -m pip install wheel
           python -m pip install --upgrade pip
-          python -m pip install . mock
+          python -m pip install .
       - name: Install latest fluent.syntax
         working-directory: ./fluent.syntax
         run: |

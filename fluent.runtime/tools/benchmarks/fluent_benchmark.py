@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 
 import sys
 import pytest
-import six
 
 from fluent.runtime import FluentBundle, FluentResource
 

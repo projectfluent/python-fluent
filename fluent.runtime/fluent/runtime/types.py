@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import warnings
 from datetime import date, datetime
 from decimal import Decimal
@@ -13,39 +10,39 @@ from babel.numbers import NumberPattern, parse_pattern
 FORMAT_STYLE_DECIMAL = "decimal"
 FORMAT_STYLE_CURRENCY = "currency"
 FORMAT_STYLE_PERCENT = "percent"
-FORMAT_STYLE_OPTIONS = set([
+FORMAT_STYLE_OPTIONS = {
     FORMAT_STYLE_DECIMAL,
     FORMAT_STYLE_CURRENCY,
     FORMAT_STYLE_PERCENT,
-])
+}
 
 CURRENCY_DISPLAY_SYMBOL = "symbol"
 CURRENCY_DISPLAY_CODE = "code"
 CURRENCY_DISPLAY_NAME = "name"
-CURRENCY_DISPLAY_OPTIONS = set([
+CURRENCY_DISPLAY_OPTIONS = {
     CURRENCY_DISPLAY_SYMBOL,
     CURRENCY_DISPLAY_CODE,
     CURRENCY_DISPLAY_NAME,
-])
+}
 
-DATE_STYLE_OPTIONS = set([
+DATE_STYLE_OPTIONS = {
     "full",
     "long",
     "medium",
     "short",
     None,
-])
+}
 
-TIME_STYLE_OPTIONS = set([
+TIME_STYLE_OPTIONS = {
     "full",
     "long",
     "medium",
     "short",
     None,
-])
+}
 
 
-class FluentType(object):
+class FluentType:
     def format(self, locale):
         raise NotImplementedError()
 
@@ -62,7 +59,7 @@ class FluentNone(FluentType):
 
 
 @attr.s
-class NumberFormatOptions(object):
+class NumberFormatOptions:
     # We follow the Intl.NumberFormat parameter names here,
     # rather than using underscores as per PEP8, so that
     # we can stick to Fluent spec more easily.
@@ -88,7 +85,7 @@ class FluentNumber(FluentType):
     def __new__(cls,
                 value,
                 **kwargs):
-        self = super(FluentNumber, cls).__new__(cls, value)
+        self = super().__new__(cls, value)
         return self._init(value, kwargs)
 
     def _init(self, value, kwargs):
@@ -144,7 +141,7 @@ class FluentNumber(FluentType):
                 # https://github.com/python-babel/babel/issues/578 But it's
                 # better to display something than crash or a generic fallback
                 # string, so we just issue a warning and carry on for now.
-                warnings.warn("Unsupported currencyDisplayValue {0}, falling back to {1}"
+                warnings.warn("Unsupported currencyDisplayValue {}, falling back to {}"
                               .format(CURRENCY_DISPLAY_NAME,
                                       CURRENCY_DISPLAY_SYMBOL))
         if (self.options.minimumSignificantDigits is not None
@@ -228,7 +225,7 @@ def fluent_number(number, **kwargs):
     elif isinstance(number, FluentNone):
         return number
     else:
-        raise TypeError("Can't use fluent_number with object {0} for type {1}"
+        raise TypeError("Can't use fluent_number with object {} for type {}"
                         .format(number, type(number)))
 
 
@@ -247,7 +244,7 @@ def clone_pattern(pattern):
 
 
 @attr.s
-class DateFormatOptions(object):
+class DateFormatOptions:
     # Parameters.
     # See https://projectfluent.org/fluent/guide/functions.html#datetime
 
@@ -290,7 +287,7 @@ class FluentDateType(FluentType):
                                      kwargs)
         for k in kwargs:
             if k not in _SUPPORTED_DATETIME_OPTIONS:
-                warnings.warn("FluentDateType option {0} is not yet supported".format(k))
+                warnings.warn(f"FluentDateType option {k} is not yet supported")
 
     def format(self, locale):
         if isinstance(self, datetime):
@@ -359,5 +356,5 @@ def fluent_date(dt, **kwargs):
     elif isinstance(dt, FluentNone):
         return dt
     else:
-        raise TypeError("Can't use fluent_date with object {0} of type {1}"
+        raise TypeError("Can't use fluent_date with object {} of type {}"
                         .format(dt, type(dt)))

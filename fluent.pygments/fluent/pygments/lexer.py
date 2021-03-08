@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function, unicode_literals
-
 from fluent.syntax import ast as FTL
 from fluent.syntax import parse
 
@@ -38,7 +36,7 @@ ATOMIC = {
 }
 
 
-class Tokenizer(object):
+class Tokenizer:
     def __init__(self, text):
         self.text = text
         self.ast = parse(text)
@@ -49,21 +47,18 @@ class Tokenizer(object):
         if isinstance(node, (FTL.Annotation, FTL.Span)):
             return
         if isinstance(node, FTL.SyntaxNode):
-            for token in self.tokenize_node(node):
-                yield token
+            yield from self.tokenize_node(node)
         elif isinstance(node, list):
             for child in node:
-                for token in self.tokenize(child):
-                    yield token
+                yield from self.tokenize(child)
 
     def tokenize_node(self, node):
         nodename = type(node).__name__
         if nodename in ATOMIC:
             yield self._token(node, ATOMIC[nodename])
         else:
-            tokenize = getattr(self, 'tokenize_{}'.format(nodename), self.generic_tokenize)
-            for token in tokenize(node):
-                yield token
+            tokenize = getattr(self, f'tokenize_{nodename}', self.generic_tokenize)
+            yield from tokenize(node)
 
     def generic_tokenize(self, node):
         children = [
@@ -74,13 +69,11 @@ class Tokenizer(object):
             key=lambda child: child.span.start if isinstance(child, FTL.SyntaxNode) else child[0].span.start
         )
         for child in children:
-            for token in self.tokenize(child):
-                yield token
+            yield from self.tokenize(child)
 
     def tokenize_Variant(self, node):
         yield self._token(node.key, Token.Name.Attribute)
-        for token in self.tokenize(node.value):
-            yield token
+        yield from self.tokenize(node.value)
 
     def _token(self, node, token):
         return (

@@ -1,9 +1,8 @@
-from __future__ import absolute_import, unicode_literals
 from fluent.syntax import ast as FTL
 from . import resolver
 
 
-class Compiler(object):
+class Compiler:
     def __call__(self, item):
         if isinstance(item, FTL.BaseNode):
             return self.compile(item)

@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Changelog &#8212; fluent.runtime  documentation</title>
+    <link rel="stylesheet" href="/python-fluent/_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/project-fluent.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="/python-fluent/_static/jquery.js"></script>
+    <script src="/python-fluent/_static/underscore.js"></script>
+    <script src="/python-fluent/_static/doctools.js"></script>
+    <script src="/python-fluent/_static/versions.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="API Reference" href="reference.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="API Reference"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.runtime  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Changelog</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="fluent-runtime-0-4-tbd">
+<h2>fluent.runtime 0.4 (TBD)<a class="headerlink" href="#fluent-runtime-0-4-tbd" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Drop support for Python 2.7 and 3.5</p></li>
+<li><p>Add support for Python 3.6 through 3.9</p></li>
+</ul>
+</div>
+<div class="section" id="fluent-runtime-0-3-1-may-20-2020">
+<h2>fluent.runtime 0.3.1 (May 20, 2020)<a class="headerlink" href="#fluent-runtime-0-3-1-may-20-2020" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Updated documentation to be hosted on <a class="reference external" href="https://projectfluent.org/python-fluent/fluent.runtime/">https://projectfluent.org/python-fluent/fluent.runtime/</a>.</p></li>
+<li><p>Updated package metadata.</p></li>
+</ul>
+</div>
+<div class="section" id="fluent-runtime-0-3-october-23-2019">
+<h2>fluent.runtime 0.3 (October 23, 2019)<a class="headerlink" href="#fluent-runtime-0-3-october-23-2019" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">fluent.runtime.FluentResource</span></code> and
+<code class="docutils literal notranslate"><span class="pre">fluent.runtime.FluentBundle.add_resource</span></code>.</p></li>
+<li><p>Removed <code class="docutils literal notranslate"><span class="pre">fluent.runtime.FluentBundle.add_messages</span></code>.</p></li>
+<li><p>Replaced <code class="docutils literal notranslate"><span class="pre">bundle.format()</span></code> with <code class="docutils literal notranslate"><span class="pre">bundle.format_pattern(bundle.get_message().value)</span></code>.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">fluent.runtime.FluentLocalization</span></code> as main entrypoint for applications.</p></li>
+</ul>
+</div>
+<div class="section" id="fluent-runtime-0-2-september-10-2019">
+<h2>fluent.runtime 0.2 (September 10, 2019)<a class="headerlink" href="#fluent-runtime-0-2-september-10-2019" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Support for Fluent spec 1.0 (<code class="docutils literal notranslate"><span class="pre">fluent.syntax</span></code> 0.17), including parameterized
+terms.</p></li>
+</ul>
+</div>
+<div class="section" id="fluent-runtime-0-1-january-21-2019">
+<h2>fluent.runtime 0.1 (January 21, 2019)<a class="headerlink" href="#fluent-runtime-0-1-january-21-2019" title="Permalink to this headline">¶</a></h2>
+<p>First release to PyPI of <code class="docutils literal notranslate"><span class="pre">fluent.runtime</span></code>. This release contains a
+<code class="docutils literal notranslate"><span class="pre">FluentBundle</span></code> implementation that can generate translations from FTL
+messages. It targets the <a class="reference external" href="https://github.com/projectfluent/fluent/releases/tag/v0.7.0">Fluent 0.7 spec</a>.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using fluent.runtime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="internals.html">Internals of fluent.runtime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">API Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a></li>
+</ul>
+<h3>Versions</h3>
+<p id="versions">
+    <span class="version">dev</span>
+    <span class="links"><a href="/python-fluent/fluent.runtime/dev">dev</a> <a href="/python-fluent/fluent.runtime/stable">stable</a> <a href="/python-fluent/fluent.runtime/0.3.1">0.3.1</a></span>
+</p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="API Reference"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.runtime  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Changelog</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        python-fluent documentation is licensed under the APL 2.0.
+    </div>
+  </body>
+</html>

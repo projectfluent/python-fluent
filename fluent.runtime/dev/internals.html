@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Internals of fluent.runtime &#8212; fluent.runtime  documentation</title>
+    <link rel="stylesheet" href="/python-fluent/_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/project-fluent.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="/python-fluent/_static/jquery.js"></script>
+    <script src="/python-fluent/_static/underscore.js"></script>
+    <script src="/python-fluent/_static/doctools.js"></script>
+    <script src="/python-fluent/_static/versions.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="reference.html" />
+    <link rel="prev" title="Using fluent.runtime" href="usage.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="API Reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="usage.html" title="Using fluent.runtime"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.runtime  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Internals of fluent.runtime</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="internals-of-fluent-runtime">
+<h1>Internals of fluent.runtime<a class="headerlink" href="#internals-of-fluent-runtime" title="Permalink to this headline">¶</a></h1>
+<p>The application-facing API for <code class="docutils literal notranslate"><span class="pre">fluent.runtime</span></code> is <code class="docutils literal notranslate"><span class="pre">FluentLocalization</span></code>.
+This is the binding providing basic functionality for using Fluent in a
+project. <code class="docutils literal notranslate"><span class="pre">FluentLocalization</span></code> builds on top of <code class="docutils literal notranslate"><span class="pre">FluentBundle</span></code> on top of
+<code class="docutils literal notranslate"><span class="pre">FluentResource</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">FluentLocalization</span></code> handles</p>
+<ul class="simple">
+<li><p>Basic binding as an application-level API</p></li>
+<li><p>Language fallback</p></li>
+<li><p>uses resource loaders like <code class="docutils literal notranslate"><span class="pre">FluentResourceLoader</span></code> to create <code class="docutils literal notranslate"><span class="pre">FluentResource</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">FluentBundle</span></code> handles</p>
+<ul class="simple">
+<li><p>Internationalization with plurals, number formatting, and date formatting</p></li>
+<li><p>Aggregating multiple Fluent resources with message and term references</p></li>
+<li><p>Functions exposed to Select and Call Expressions</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">FluentResource</span></code> handles parsing of Fluent syntax.</p>
+<p>Determining which language to use, and which languages to fall back to is
+outside of the scope of the <code class="docutils literal notranslate"><span class="pre">fluent.runtime</span></code> package. A concrete
+application stack might have functionality for that. Otherwise it needs to
+be built, <a class="reference external" href="http://babel.pocoo.org/en/latest/">Babel</a> has
+<a class="reference external" href="http://babel.pocoo.org/en/latest/api/core.html#babel.core.negotiate_locale">helpers</a>
+for that. <code class="docutils literal notranslate"><span class="pre">fluent.runtime</span></code> uses Babel internally for the international
+functionality.</p>
+<p>These bindings benefit from being adapted to the stack. Say,
+a Django project would configure the localization binding through
+<code class="docutils literal notranslate"><span class="pre">django.conf.settings</span></code>, and load Fluent files from the installed apps.</p>
+<div class="section" id="subclassing-fluentlocalization">
+<h2>Subclassing FluentLocalization<a class="headerlink" href="#subclassing-fluentlocalization" title="Permalink to this headline">¶</a></h2>
+<p>In the <a class="reference internal" href="usage.html"><span class="doc">Using fluent.runtime</span></a> documentation, we used <code class="docutils literal notranslate"><span class="pre">DemoLocalization</span></code>, which we’ll
+use here to exemplify how to subclass <code class="docutils literal notranslate"><span class="pre">FluentLocalization</span></code> for the needs
+of specific stacks.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fluent.runtime</span> <span class="kn">import</span> <span class="n">FluentLocalization</span><span class="p">,</span> <span class="n">FluentResource</span>
+<span class="k">class</span> <span class="nc">DemoLocalization</span><span class="p">(</span><span class="n">FluentLocalization</span><span class="p">):</span>
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fluent_content</span><span class="p">,</span> <span class="n">locale</span><span class="o">=</span><span class="s1">&#39;en&#39;</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># Call super() with one locale, no resources nor loader</span>
+    <span class="nb">super</span><span class="p">(</span><span class="n">DemoLocalization</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">([</span><span class="n">locale</span><span class="p">],</span> <span class="p">[],</span> <span class="kc">None</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="n">functions</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="o">=</span> <span class="n">FluentResource</span><span class="p">(</span><span class="n">fluent_content</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This set up the custom class, passing <code class="docutils literal notranslate"><span class="pre">locale</span></code> and <code class="docutils literal notranslate"><span class="pre">functions</span></code> to the
+base implementation. What’s left to do is to customize the resource loading.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_bundles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+  <span class="n">bundle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_bundle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locales</span><span class="p">)</span>
+  <span class="n">bundle</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span>
+  <span class="k">yield</span> <span class="n">bundle</span>
+</pre></div>
+</div>
+<p>That’s all that we need for our demo purposes.</p>
+</div>
+<div class="section" id="using-fluentbundle">
+<h2>Using FluentBundle<a class="headerlink" href="#using-fluentbundle" title="Permalink to this headline">¶</a></h2>
+<p>The actual interaction with Fluent content is implemented in <code class="docutils literal notranslate"><span class="pre">FluentBundle</span></code>.
+Optimizations between the parsed content in <code class="docutils literal notranslate"><span class="pre">FluentResource</span></code> and a
+representation suitable for the resolving of Patterns is also handled inside
+<code class="docutils literal notranslate"><span class="pre">FluentBundle</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fluent.runtime</span> <span class="kn">import</span> <span class="n">FluentBundle</span><span class="p">,</span> <span class="n">FluentResource</span>
+</pre></div>
+</div>
+<p>You pass a list of locales to the constructor - the first being the
+desired locale, with fallbacks after that:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bundle</span> <span class="o">=</span> <span class="n">FluentBundle</span><span class="p">([</span><span class="s2">&quot;en-US&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>The passed locales are used for internationalization purposes inside Fluent,
+being plural forms, as well as formatting of values. The locales passed in
+don’t affect the loaded messages, handling multiple localizations and the
+fallback from one to the other is done in the <code class="docutils literal notranslate"><span class="pre">FluentLocalization</span></code> class.</p>
+<p>You must then add messages. These would normally come from a <code class="docutils literal notranslate"><span class="pre">.ftl</span></code>
+file stored on disk, here we will just add them directly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">resource</span> <span class="o">=</span> <span class="n">FluentResource</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="gp">... </span><span class="s2">welcome = Welcome to this great app!</span>
+<span class="gp">... </span><span class="s2">greet-by-name = Hello, { $name }!</span>
+<span class="gp">... </span><span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bundle</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To generate translations, use the <code class="docutils literal notranslate"><span class="pre">get_message</span></code> method to retrieve
+a message from the bundle. This returns an object with <code class="docutils literal notranslate"><span class="pre">value</span></code> and
+<code class="docutils literal notranslate"><span class="pre">attributes</span></code> properties. The <code class="docutils literal notranslate"><span class="pre">value</span></code> can be <code class="docutils literal notranslate"><span class="pre">None</span></code> or an abstract pattern.
+<code class="docutils literal notranslate"><span class="pre">attributes</span></code> is a dictionary mapping attribute names to abstract patterns.
+If the the message ID is not found, a <code class="docutils literal notranslate"><span class="pre">LookupError</span></code> is raised. An abstract
+pattern is an implementation-dependent representation of a Pattern in the
+Fluent syntax. Then use the <code class="docutils literal notranslate"><span class="pre">format_pattern</span></code> method, passing the message value
+or one of its attributes and an optional dictionary of substitution parameters.
+You should only pass patterns to <code class="docutils literal notranslate"><span class="pre">format_pattern</span></code> that you got from that same
+bundle. As per the Fluent philosophy, the implementation tries hard to recover
+from any formatting errors and generate the most human readable representation
+of the value. The <code class="docutils literal notranslate"><span class="pre">format_pattern</span></code> method thereforereturns a tuple containing
+<code class="docutils literal notranslate"><span class="pre">(translated</span> <span class="pre">string,</span> <span class="pre">errors)</span></code>, as below.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">welcome</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s1">&#39;welcome&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">translated</span><span class="p">,</span> <span class="n">errs</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">format_pattern</span><span class="p">(</span><span class="n">welcome</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">translated</span>
+<span class="go">&quot;Welcome to this great app!&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">errs</span>
+<span class="go">[]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">greet</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="s1">&#39;greet-by-name&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">translated</span><span class="p">,</span> <span class="n">errs</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">format_pattern</span><span class="p">(</span><span class="n">greet</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Jane&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">translated</span>
+<span class="go">&#39;Hello, \u2068Jane\u2069!&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">translated</span><span class="p">,</span> <span class="n">errs</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">format_pattern</span><span class="p">(</span><span class="n">greet</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="p">{})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">translated</span>
+<span class="go">&#39;Hello, \u2068{$name}\u2069!&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">errs</span>
+<span class="go">[FluentReferenceError(&#39;Unknown external: name&#39;)]</span>
+</pre></div>
+</div>
+<p>You will notice the extra characters <code class="docutils literal notranslate"><span class="pre">\u2068</span></code> and <code class="docutils literal notranslate"><span class="pre">\u2069</span></code> in the
+output. These are Unicode bidi isolation characters that help to ensure
+that the interpolated strings are handled correctly in the situation
+where the text direction of the substitution might not match the text
+direction of the localized text. These characters can be disabled if you
+are sure that is not possible for your app by passing
+<code class="docutils literal notranslate"><span class="pre">use_isolating=False</span></code> to the <code class="docutils literal notranslate"><span class="pre">FluentBundle</span></code> constructor.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using fluent.runtime</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Internals of fluent.runtime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">Changelog</a></li>
+</ul>
+<h3>Versions</h3>
+<p id="versions">
+    <span class="version">dev</span>
+    <span class="links"><a href="/python-fluent/fluent.runtime/dev">dev</a> <a href="/python-fluent/fluent.runtime/stable">stable</a> <a href="/python-fluent/fluent.runtime/0.3.1">0.3.1</a></span>
+</p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="API Reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="usage.html" title="Using fluent.runtime"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.runtime  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Internals of fluent.runtime</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        python-fluent documentation is licensed under the APL 2.0.
+    </div>
+  </body>
+</html>

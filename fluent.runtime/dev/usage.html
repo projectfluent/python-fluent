@@ -1,0 +1,352 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Using fluent.runtime &#8212; fluent.runtime  documentation</title>
+    <link rel="stylesheet" href="/python-fluent/_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/project-fluent.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="/python-fluent/_static/jquery.js"></script>
+    <script src="/python-fluent/_static/underscore.js"></script>
+    <script src="/python-fluent/_static/doctools.js"></script>
+    <script src="/python-fluent/_static/versions.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Internals of fluent.runtime" href="internals.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="internals.html" title="Internals of fluent.runtime"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.runtime  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Using fluent.runtime</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="using-fluent-runtime">
+<h1>Using fluent.runtime<a class="headerlink" href="#using-fluent-runtime" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="learn-the-ftl-syntax">
+<h2>Learn the FTL syntax<a class="headerlink" href="#learn-the-ftl-syntax" title="Permalink to this headline">¶</a></h2>
+<p>FTL is a localization file format used for describing translation
+resources. FTL stands for <em>Fluent Translation List</em>.</p>
+<p>FTL is designed to be simple to read, but at the same time allows to
+represent complex concepts from natural languages like gender, plurals,
+conjugations, and others.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>hello-user = Hello, { $username }!
+</pre></div>
+</div>
+<p>In order to use fluent.runtime, you will need to create FTL files. <a class="reference external" href="http://projectfluent.org/fluent/guide/">Read the
+Fluent Syntax Guide</a> in order to
+learn more about the syntax.</p>
+</div>
+<div class="section" id="using-fluentlocalization">
+<h2>Using FluentLocalization<a class="headerlink" href="#using-fluentlocalization" title="Permalink to this headline">¶</a></h2>
+<p>Once you have some FTL files, you can generate translations using the
+<code class="docutils literal notranslate"><span class="pre">fluent.runtime</span></code> package. You start with the <code class="docutils literal notranslate"><span class="pre">FluentLocalization</span></code> class:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fluent.runtime</span> <span class="kn">import</span> <span class="n">FluentLocalization</span><span class="p">,</span> <span class="n">FluentResourceLoader</span>
+</pre></div>
+</div>
+<p>The Fluent files of your application are loaded with a <code class="docutils literal notranslate"><span class="pre">FluentResourceLoader</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">loader</span> <span class="o">=</span> <span class="n">FluentResourceLoader</span><span class="p">(</span><span class="s2">&quot;l10n/</span><span class="si">{locale}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The main entrypoint for your application is a <code class="docutils literal notranslate"><span class="pre">FluentLocalization</span></code>.
+You pass a list of locales to the constructor - the first being the
+desired locale, with fallbacks after that - as well as resource IDs and your
+loader.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span> <span class="o">=</span> <span class="n">FluentLocalization</span><span class="p">([</span><span class="s2">&quot;de&quot;</span><span class="p">,</span> <span class="s2">&quot;en-US&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;main.ftl&quot;</span><span class="p">],</span> <span class="n">loader</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">val</span> <span class="o">=</span> <span class="n">l10n</span><span class="o">.</span><span class="n">format_value</span><span class="p">(</span><span class="s2">&quot;my-first-string&quot;</span><span class="p">)</span>
+<span class="go">&quot;Fluent can be easy&quot;</span>
+</pre></div>
+</div>
+<p>This assumes that you have a directory layout like so</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">l10n</span><span class="o">/</span>
+  <span class="n">de</span><span class="o">/</span>
+    <span class="n">main</span><span class="o">.</span><span class="n">ftl</span>
+  <span class="n">en</span><span class="o">-</span><span class="n">US</span><span class="o">/</span>
+    <span class="n">main</span><span class="o">.</span><span class="n">ftl</span>
+</pre></div>
+</div>
+<p>and <code class="docutils literal notranslate"><span class="pre">l10n/de/main.ftl</span></code> with:</p>
+<div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="no">second-string</span><span class="p"> = </span><span class="l">Eine Übersetzung</span><span class="p"></span>
+</pre></div>
+</div>
+<p>as well as <code class="docutils literal notranslate"><span class="pre">l10n/en-US/main.ftl</span></code> with:</p>
+<div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="no">my-first-string</span><span class="p"> = </span><span class="l">Fluent can be easy</span><span class="p"></span>
+<span class="no">second-string</span><span class="p"> = </span><span class="l">An original string</span><span class="p"></span>
+</pre></div>
+</div>
+<p>As you can see, our first example returned the English string, as that’s on
+our fallback list. When retrieving an existing translation, you get the
+translated results as expected:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span><span class="o">.</span><span class="n">format_value</span><span class="p">(</span><span class="s2">&quot;second-string&quot;</span><span class="p">)</span>
+<span class="go">&quot;Eine Übersetzung&quot;</span>
+</pre></div>
+</div>
+<div class="section" id="python-2">
+<h3>Python 2<a class="headerlink" href="#python-2" title="Permalink to this headline">¶</a></h3>
+<p>The above examples assume Python 3. Since Fluent uses unicode everywhere
+internally (and doesn’t accept bytestrings), if you are using Python 2
+you will need to make adjustments to the above example code. Either add
+<code class="docutils literal notranslate"><span class="pre">u</span></code> unicode literal markers to strings or add this at the top of the
+module or the start of your repl session:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="demolocalization">
+<h3>DemoLocalization<a class="headerlink" href="#demolocalization" title="Permalink to this headline">¶</a></h3>
+<p>To make the documentation easier to read, we’re using a <code class="docutils literal notranslate"><span class="pre">DemoLocalization</span></code>,
+that just uses a single literal Fluent resource. Find out more about the
+details in the <a class="reference internal" href="internals.html"><span class="doc">Internals of fluent.runtime</span></a> section.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span> <span class="o">=</span> <span class="n">DemoLocalization</span><span class="p">(</span><span class="s2">&quot;key = A localization&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pl</span> <span class="o">=</span> <span class="n">DemoLocalization</span><span class="p">(</span><span class="s2">&quot;key = A localization&quot;</span><span class="p">,</span> <span class="n">locale</span><span class="o">=</span><span class="s2">&quot;pl&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="numbers">
+<h3>Numbers<a class="headerlink" href="#numbers" title="Permalink to this headline">¶</a></h3>
+<p>When rendering translations, Fluent passes any numeric arguments (<code class="docutils literal notranslate"><span class="pre">int</span></code>,
+<code class="docutils literal notranslate"><span class="pre">float</span></code> or <code class="docutils literal notranslate"><span class="pre">Decimal</span></code>) through locale-aware formatting functions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span> <span class="o">=</span> <span class="n">DemoLocalization</span><span class="p">(</span>
+<span class="gp">... </span><span class="s2">&quot;show-total-points = You have { $points } points.&quot;</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">val</span> <span class="o">=</span> <span class="n">l10n</span><span class="o">.</span><span class="n">format_value</span><span class="p">(</span><span class="s2">&quot;show-total-points&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="mi">1234567</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">val</span>
+<span class="go">&#39;You have 1,234,567 points.&#39;</span>
+</pre></div>
+</div>
+<p>You can specify your own formatting options on the arguments passed in
+by wrapping your numeric arguments with
+<code class="docutils literal notranslate"><span class="pre">fluent.runtime.types.fluent_number</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fluent.runtime.types</span> <span class="kn">import</span> <span class="n">fluent_number</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">points</span> <span class="o">=</span> <span class="n">fluent_number</span><span class="p">(</span><span class="mi">1234567</span><span class="p">,</span> <span class="n">useGrouping</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span><span class="o">.</span><span class="n">format_value</span><span class="p">(</span><span class="s2">&quot;show-total-points&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="mi">1234567</span><span class="p">})</span>
+<span class="go">&#39;You have 1234567 points.&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">amount</span> <span class="o">=</span> <span class="n">fluent_number</span><span class="p">(</span><span class="mf">1234.56</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;currency&quot;</span><span class="p">,</span> <span class="n">currency</span><span class="o">=</span><span class="s2">&quot;USD&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span> <span class="o">=</span> <span class="n">DemoLocalization</span><span class="p">(</span>
+<span class="gp">... </span><span class="s2">&quot;your-balance = Your balance is { $amount }&quot;</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span><span class="o">.</span><span class="n">format_value</span><span class="p">(</span><span class="n">balance</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;amount&#39;</span><span class="p">:</span> <span class="n">amount</span><span class="p">})</span>
+<span class="go">&#39;Your balance is $1,234.56&#39;</span>
+</pre></div>
+</div>
+<p>The options available are defined in the Fluent spec for
+<a class="reference external" href="https://projectfluent.org/fluent/guide/functions.html#number">NUMBER</a>.
+Some of these options can also be defined in the FTL files, as described
+in the Fluent spec, and the options will be merged.</p>
+</div>
+<div class="section" id="date-and-time">
+<h3>Date and Time<a class="headerlink" href="#date-and-time" title="Permalink to this headline">¶</a></h3>
+<p>Python <code class="docutils literal notranslate"><span class="pre">datetime.datetime</span></code> and <code class="docutils literal notranslate"><span class="pre">datetime.date</span></code> objects are also
+passed through locale aware functions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span> <span class="o">=</span> <span class="n">DemoLocalization</span><span class="p">(</span><span class="s2">&quot;today-is = Today is { $today }&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">val</span> <span class="o">=</span> <span class="n">l10n</span><span class="o">.</span><span class="n">format_value</span><span class="p">(</span><span class="s2">&quot;today-is&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;today&quot;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">val</span>
+<span class="go">&#39;Today is Jun 16, 2018&#39;</span>
+</pre></div>
+</div>
+<p>You can explicitly call the <code class="docutils literal notranslate"><span class="pre">DATETIME</span></code> builtin to specify options:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span> <span class="o">=</span> <span class="n">DemoLocalization</span><span class="p">(</span>
+<span class="gp">... </span><span class="s1">&#39;today-is = Today is { DATETIME($today, dateStyle: &quot;short&quot;) }&#39;</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See the <a class="reference external" href="https://projectfluent.org/fluent/guide/functions.html#datetime">DATETIME
+docs</a>.
+However, currently the only supported options to <code class="docutils literal notranslate"><span class="pre">DATETIME</span></code> are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">timeZone</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dateStyle</span></code> and <code class="docutils literal notranslate"><span class="pre">timeStyle</span></code> which are <a class="reference external" href="https://github.com/tc39/proposal-ecma402-datetime-style">proposed
+additions</a>
+to the ECMA i18n spec.</p></li>
+</ul>
+<p>To specify options from Python code, use
+<code class="docutils literal notranslate"><span class="pre">fluent.runtime.types.fluent_date</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fluent.runtime.types</span> <span class="kn">import</span> <span class="n">fluent_date</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">today</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">short_today</span> <span class="o">=</span> <span class="n">fluent_date</span><span class="p">(</span><span class="n">today</span><span class="p">,</span> <span class="n">dateStyle</span><span class="o">=</span><span class="s1">&#39;short&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">val</span> <span class="o">=</span> <span class="n">l10n</span><span class="o">.</span><span class="n">format_value</span><span class="p">(</span><span class="s2">&quot;today-is&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;today&quot;</span><span class="p">:</span> <span class="n">short_today</span> <span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">val</span>
+<span class="go">&#39;Today is 6/17/18&#39;</span>
+</pre></div>
+</div>
+<p>You can also specify timezone for displaying <code class="docutils literal notranslate"><span class="pre">datetime</span></code> objects in two
+ways:</p>
+<ul>
+<li><p>Create timezone aware <code class="docutils literal notranslate"><span class="pre">datetime</span></code> objects, and pass these to the
+<code class="docutils literal notranslate"><span class="pre">format</span></code> call e.g.:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pytz</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">utcnow</span> <span class="o">=</span> <span class="n">datime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">moscow_timezone</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Europe/Moscow&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">now_in_moscow</span> <span class="o">=</span> <span class="n">utcnow</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">moscow_timezone</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Or, use timezone naive <code class="docutils literal notranslate"><span class="pre">datetime</span></code> objects, or ones with a UTC
+timezone, and pass the <code class="docutils literal notranslate"><span class="pre">timeZone</span></code> argument to <code class="docutils literal notranslate"><span class="pre">fluent_date</span></code> as a
+string:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">utcnow</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">utcnow</span>
+<span class="go">datetime.datetime(2018, 6, 17, 12, 15, 5, 677597)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span> <span class="o">=</span> <span class="n">DemoLocalization</span><span class="p">(</span><span class="s2">&quot;now-is = Now is { $now }&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">val</span> <span class="o">=</span> <span class="n">bundle</span><span class="o">.</span><span class="n">format_pattern</span><span class="p">(</span><span class="s2">&quot;now-is&quot;</span><span class="p">,</span>
+<span class="gp">... </span>   <span class="p">{</span><span class="s2">&quot;now&quot;</span><span class="p">:</span> <span class="n">fluent_date</span><span class="p">(</span><span class="n">utcnow</span><span class="p">,</span>
+<span class="gp">... </span>                       <span class="n">timeZone</span><span class="o">=</span><span class="s2">&quot;Europe/Moscow&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                       <span class="n">dateStyle</span><span class="o">=</span><span class="s2">&quot;medium&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                       <span class="n">timeStyle</span><span class="o">=</span><span class="s2">&quot;medium&quot;</span><span class="p">)})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">val</span>
+<span class="go">&#39;Now is Jun 17, 2018, 3:15:05 PM&#39;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="custom-functions">
+<h3>Custom functions<a class="headerlink" href="#custom-functions" title="Permalink to this headline">¶</a></h3>
+<p>You can add functions to the ones available to FTL authors by passing a
+<code class="docutils literal notranslate"><span class="pre">functions</span></code> dictionary to the <code class="docutils literal notranslate"><span class="pre">FluentLocalization</span></code> constructor:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">platform</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">os_name</span><span class="p">():</span>
+<span class="gp">... </span>   <span class="sd">&quot;&quot;&quot;Returns linux/mac/windows/other&quot;&quot;&quot;</span>
+<span class="gp">... </span>   <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Linux&#39;</span><span class="p">:</span> <span class="s1">&#39;linux&#39;</span><span class="p">,</span>
+<span class="gp">... </span>           <span class="s1">&#39;Darwin&#39;</span><span class="p">:</span> <span class="s1">&#39;mac&#39;</span><span class="p">,</span>
+<span class="gp">... </span>           <span class="s1">&#39;Windows&#39;</span><span class="p">:</span> <span class="s1">&#39;windows&#39;</span><span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">(),</span> <span class="s1">&#39;other&#39;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span> <span class="o">=</span> <span class="n">FluentLocalization</span><span class="p">([</span><span class="s1">&#39;en-US&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;os.ftl&#39;</span><span class="p">],</span> <span class="n">loader</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;OS&#39;</span><span class="p">:</span> <span class="n">os_name</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span><span class="o">.</span><span class="n">format_value</span><span class="p">(</span><span class="s1">&#39;welcome&#39;</span><span class="p">)</span>
+<span class="go">Welcome to Linux</span>
+</pre></div>
+</div>
+<p>That’s with <code class="docutils literal notranslate"><span class="pre">l10n/en-US/os.ftl</span></code> as:</p>
+<div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="no">welcome</span><span class="p"> = { </span><span class="no">OS</span><span class="p">() -&gt;</span>
+<span class="p">   [</span><span class="na">linux</span><span class="p">]    </span><span class="l">Welcome to Linux</span><span class="p"></span>
+<span class="p">   [</span><span class="na">mac</span><span class="p">]      </span><span class="l">Welcome to Mac</span><span class="p"></span>
+<span class="p">   [</span><span class="na">windows</span><span class="p">]  </span><span class="l">Welcome to Windows</span><span class="p"></span>
+<span class="p">  *[</span><span class="na">other</span><span class="p">]    </span><span class="l">Welcome</span><span class="p"></span>
+<span class="p">  }</span>
+</pre></div>
+</div>
+<p>These functions can accept positional and keyword arguments (like the
+<code class="docutils literal notranslate"><span class="pre">NUMBER</span></code> and <code class="docutils literal notranslate"><span class="pre">DATETIME</span></code> builtins), and in this case must accept the
+following types of arguments:</p>
+<ul class="simple">
+<li><p>unicode strings (i.e. <code class="docutils literal notranslate"><span class="pre">unicode</span></code> on Python 2, <code class="docutils literal notranslate"><span class="pre">str</span></code> on Python 3)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fluent.runtime.types.FluentType</span></code> subclasses, namely:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FluentNumber</span></code> - <code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">float</span></code> or <code class="docutils literal notranslate"><span class="pre">Decimal</span></code> objects passed
+in externally, or expressed as literals, are wrapped in these. Note
+that these objects also subclass builtin <code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">float</span></code> or
+<code class="docutils literal notranslate"><span class="pre">Decimal</span></code>, so can be used as numbers in the normal way.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FluentDateType</span></code> - <code class="docutils literal notranslate"><span class="pre">date</span></code> or <code class="docutils literal notranslate"><span class="pre">datetime</span></code> objects passed in are
+wrapped in these. Again, these classes also subclass <code class="docutils literal notranslate"><span class="pre">date</span></code> or
+<code class="docutils literal notranslate"><span class="pre">datetime</span></code>, and can be used as such.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FluentNone</span></code> - in error conditions, such as a message referring to
+an argument that hasn’t been passed in, objects of this type are
+passed in.</p></li>
+</ul>
+<p>Custom functions should not throw errors, but return <code class="docutils literal notranslate"><span class="pre">FluentNone</span></code>
+instances to indicate an error or missing data. Otherwise they should
+return unicode strings, or instances of a <code class="docutils literal notranslate"><span class="pre">FluentType</span></code> subclass as
+above.</p>
+</div>
+<div class="section" id="known-limitations-and-bugs">
+<h3>Known limitations and bugs<a class="headerlink" href="#known-limitations-and-bugs" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>We do not yet support <code class="docutils literal notranslate"><span class="pre">NUMBER(...,</span> <span class="pre">currencyDisplay=&quot;name&quot;)</span></code> - see
+<a class="reference external" href="https://github.com/python-babel/babel/pull/585">this python-babel pull
+request</a> which
+needs to be merged and released.</p></li>
+<li><p>Most options to <code class="docutils literal notranslate"><span class="pre">DATETIME</span></code> are not yet supported. See the <a class="reference external" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DateTimeFormat">MDN docs for
+Intl.DateTimeFormat</a>,
+the <a class="reference external" href="http://www.ecma-international.org/ecma-402/1.0/#BasicFormatMatcher">ECMA spec for BasicFormatMatcher</a> and the
+<a class="reference external" href="https://github.com/andyearnshaw/Intl.js/blob/master/src/12.datetimeformat.js">Intl.js polyfill</a>.</p></li>
+</ul>
+<p>Help with the above would be welcome!</p>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using fluent.runtime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="internals.html">Internals of fluent.runtime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">Changelog</a></li>
+</ul>
+<h3>Versions</h3>
+<p id="versions">
+    <span class="version">dev</span>
+    <span class="links"><a href="/python-fluent/fluent.runtime/dev">dev</a> <a href="/python-fluent/fluent.runtime/stable">stable</a> <a href="/python-fluent/fluent.runtime/0.3.1">0.3.1</a></span>
+</p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="internals.html" title="Internals of fluent.runtime"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.runtime  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Using fluent.runtime</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        python-fluent documentation is licensed under the APL 2.0.
+    </div>
+  </body>
+</html>

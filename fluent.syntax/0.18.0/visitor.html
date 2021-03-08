@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visitor &amp; Transformer &#8212; fluent.syntax 0.18.0 documentation</title>
+    <link rel="stylesheet" href="/python-fluent/_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/project-fluent.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="/python-fluent/_static/jquery.js"></script>
+    <script src="/python-fluent/_static/underscore.js"></script>
+    <script src="/python-fluent/_static/doctools.js"></script>
+    <script src="/python-fluent/_static/versions.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Serializing" href="serializing.html" />
+    <link rel="prev" title="AST" href="ast.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="serializing.html" title="Serializing"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ast.html" title="AST"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.syntax 0.18.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="reference.html" accesskey="U">API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Visitor &amp; Transformer</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-fluent.syntax.visitor">
+<span id="visitor-transformer"></span><h1>Visitor &amp; Transformer<a class="headerlink" href="#module-fluent.syntax.visitor" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="fluent.syntax.visitor.Visitor">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.visitor.</span></code><code class="sig-name descname"><span class="pre">Visitor</span></code><a class="reference internal" href="_modules/fluent/syntax/visitor.html#Visitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.visitor.Visitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Read-only visitor pattern.</p>
+<p>Subclass this to gather information from an AST.
+To generally define which nodes not to descend in to, overload
+<cite>generic_visit</cite>.
+To handle specific node types, add methods like <cite>visit_Pattern</cite>.
+If you want to still descend into the children of the node, call
+<cite>generic_visit</cite> of the superclass.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.visitor.Transformer">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.visitor.</span></code><code class="sig-name descname"><span class="pre">Transformer</span></code><a class="reference internal" href="_modules/fluent/syntax/visitor.html#Transformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.visitor.Transformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.visitor.Visitor" title="fluent.syntax.visitor.Visitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.visitor.Visitor</span></code></a></p>
+<p>In-place AST Transformer pattern.</p>
+<p>Subclass this to create an in-place modified variant
+of the given AST.
+If you need to keep the original AST around, pass
+a <cite>node.clone()</cite> to the transformer.</p>
+</dd></dl>
+
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using fluent.syntax</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="reference.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="parsing.html">Parsing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ast.html">AST</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Visitor &amp; Transformer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="serializing.html">Serializing</a></li>
+</ul>
+</li>
+</ul>
+<h3>Versions</h3>
+<p id="versions">
+    <span class="version">0.18.0</span>
+    <span class="links"><a href="/python-fluent/fluent.syntax/dev">dev</a> <a href="/python-fluent/fluent.syntax/stable">stable</a> <a href="/python-fluent/fluent.syntax/0.18.1">0.18.1</a> <a href="/python-fluent/fluent.syntax/0.18.0">0.18.0</a></span>
+</p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="serializing.html" title="Serializing"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ast.html" title="AST"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.syntax 0.18.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="reference.html" >API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Visitor &amp; Transformer</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        python-fluent documentation is licensed under the APL 2.0.
+    </div>
+  </body>
+</html>

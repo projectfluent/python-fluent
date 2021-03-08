@@ -1,0 +1,324 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AST &#8212; fluent.syntax  documentation</title>
+    <link rel="stylesheet" href="/python-fluent/_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/project-fluent.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="/python-fluent/_static/jquery.js"></script>
+    <script src="/python-fluent/_static/underscore.js"></script>
+    <script src="/python-fluent/_static/doctools.js"></script>
+    <script src="/python-fluent/_static/versions.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Visitor &amp; Transformer" href="visitor.html" />
+    <link rel="prev" title="Parsing" href="parsing.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="visitor.html" title="Visitor &amp; Transformer"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="parsing.html" title="Parsing"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.syntax  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="reference.html" accesskey="U">API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AST</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-fluent.syntax.ast">
+<span id="ast"></span><h1>AST<a class="headerlink" href="#module-fluent.syntax.ast" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="fluent.syntax.ast.BaseNode">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">BaseNode</span></code><a class="reference internal" href="_modules/fluent/syntax/ast.html#BaseNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.BaseNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for all Fluent AST nodes.</p>
+<p>All productions described in the ASDL subclass BaseNode, including Span and
+Annotation.  Implements __str__, to_json and traverse.</p>
+<dl class="py method">
+<dt id="fluent.syntax.ast.BaseNode.clone">
+<code class="sig-name descname"><span class="pre">clone</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#BaseNode.clone"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.BaseNode.clone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a deep clone of the current node.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fluent.syntax.ast.BaseNode.equals">
+<code class="sig-name descname"><span class="pre">equals</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignored_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['span']</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#BaseNode.equals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.BaseNode.equals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare two nodes.</p>
+<p>Nodes are deeply compared on a field by field basis. If possible, False
+is returned early. When comparing attributes and variants in
+SelectExpressions, the order doesn’t matter. By default, spans are not
+taken into account.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.SyntaxNode">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">SyntaxNode</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#SyntaxNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.SyntaxNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.BaseNode" title="fluent.syntax.ast.BaseNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.BaseNode</span></code></a></p>
+<p>Base class for AST nodes which can have Spans.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Resource">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Resource</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">body</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Resource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Resource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Entry">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Entry</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Entry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+<p>An abstract base class for useful elements of Resource.body.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Message">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Message</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Entry" title="fluent.syntax.ast.Entry"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Entry</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Term">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Term</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Term" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Entry" title="fluent.syntax.ast.Entry"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Entry</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Pattern">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Pattern</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Pattern"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.PatternElement">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">PatternElement</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#PatternElement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.PatternElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+<p>An abstract base class for elements of Patterns.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.TextElement">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">TextElement</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#TextElement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.TextElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.PatternElement" title="fluent.syntax.ast.PatternElement"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.PatternElement</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Placeable">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Placeable</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Placeable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Placeable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.PatternElement" title="fluent.syntax.ast.PatternElement"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.PatternElement</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Expression">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Expression</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">span</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Expression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Expression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+<p>An abstract base class for expressions.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Literal">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Literal</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Literal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Literal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Expression" title="fluent.syntax.ast.Expression"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Expression</span></code></a></p>
+<p>An abstract base class for literals.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.StringLiteral">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">StringLiteral</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#StringLiteral"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.StringLiteral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Literal" title="fluent.syntax.ast.Literal"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Literal</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.NumberLiteral">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">NumberLiteral</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#NumberLiteral"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.NumberLiteral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Literal" title="fluent.syntax.ast.Literal"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Literal</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.MessageReference">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">MessageReference</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#MessageReference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.MessageReference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Expression" title="fluent.syntax.ast.Expression"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Expression</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.TermReference">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">TermReference</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arguments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#TermReference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.TermReference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Expression" title="fluent.syntax.ast.Expression"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Expression</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.VariableReference">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">VariableReference</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#VariableReference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.VariableReference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Expression" title="fluent.syntax.ast.Expression"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Expression</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.FunctionReference">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">FunctionReference</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arguments</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#FunctionReference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.FunctionReference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Expression" title="fluent.syntax.ast.Expression"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Expression</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.SelectExpression">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">SelectExpression</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">selector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variants</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#SelectExpression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.SelectExpression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Expression" title="fluent.syntax.ast.Expression"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Expression</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.CallArguments">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">CallArguments</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">named</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#CallArguments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.CallArguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Attribute">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Attribute</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Attribute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Variant">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Variant</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Variant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Variant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.NamedArgument">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">NamedArgument</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#NamedArgument"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.NamedArgument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Identifier">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Identifier</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Identifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Identifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.BaseComment">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">BaseComment</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#BaseComment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.BaseComment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.Entry" title="fluent.syntax.ast.Entry"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Entry</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Comment">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Comment</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Comment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Comment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.BaseComment" title="fluent.syntax.ast.BaseComment"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.BaseComment</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.GroupComment">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">GroupComment</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#GroupComment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.GroupComment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.BaseComment" title="fluent.syntax.ast.BaseComment"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.BaseComment</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.ResourceComment">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">ResourceComment</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#ResourceComment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.ResourceComment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.BaseComment" title="fluent.syntax.ast.BaseComment"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.BaseComment</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Junk">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Junk</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Junk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Junk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Span">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Span</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Span"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Span" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.BaseNode" title="fluent.syntax.ast.BaseNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.BaseNode</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fluent.syntax.ast.Annotation">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fluent.syntax.ast.</span></code><code class="sig-name descname"><span class="pre">Annotation</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arguments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluent/syntax/ast.html#Annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluent.syntax.ast.Annotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fluent.syntax.ast.SyntaxNode" title="fluent.syntax.ast.SyntaxNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.SyntaxNode</span></code></a></p>
+</dd></dl>
+
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using fluent.syntax</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="reference.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="parsing.html">Parsing</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">AST</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visitor.html">Visitor &amp; Transformer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="serializing.html">Serializing</a></li>
+</ul>
+</li>
+</ul>
+<h3>Versions</h3>
+<p id="versions">
+    <span class="version">dev</span>
+    <span class="links"><a href="/python-fluent/fluent.syntax/dev">dev</a> <a href="/python-fluent/fluent.syntax/stable">stable</a> <a href="/python-fluent/fluent.syntax/0.18.1">0.18.1</a> <a href="/python-fluent/fluent.syntax/0.18.0">0.18.0</a></span>
+</p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="visitor.html" title="Visitor &amp; Transformer"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="parsing.html" title="Parsing"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.syntax  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="reference.html" >API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">AST</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        python-fluent documentation is licensed under the APL 2.0.
+    </div>
+  </body>
+</html>

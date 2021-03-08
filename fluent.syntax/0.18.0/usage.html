@@ -1,0 +1,234 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Using fluent.syntax &#8212; fluent.syntax 0.18.0 documentation</title>
+    <link rel="stylesheet" href="/python-fluent/_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="/python-fluent/_static/project-fluent.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="/python-fluent/_static/jquery.js"></script>
+    <script src="/python-fluent/_static/underscore.js"></script>
+    <script src="/python-fluent/_static/doctools.js"></script>
+    <script src="/python-fluent/_static/versions.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="reference.html" />
+    <link rel="prev" title="Fluent Syntax" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="API Reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Fluent Syntax"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.syntax 0.18.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Using fluent.syntax</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="using-fluent-syntax">
+<h1>Using fluent.syntax<a class="headerlink" href="#using-fluent-syntax" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">fluent.syntax</span></code> package provides a parser, a serializer, and libraries
+for analysis and processing of Fluent files.</p>
+<div class="section" id="parsing">
+<h2>Parsing<a class="headerlink" href="#parsing" title="Permalink to this headline">¶</a></h2>
+<p>To parse a full resource, you can use the <a class="reference internal" href="reference.html#fluent.syntax.parse" title="fluent.syntax.parse"><code class="xref py py-func docutils literal notranslate"><span class="pre">fluent.syntax.parse()</span></code></a>
+shorthand:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fluent.syntax</span> <span class="kn">import</span> <span class="n">parse</span>
+<span class="n">resource</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">### Fluent resource comment</span>
+
+<span class="s2">first = creating a { $thing }</span>
+<span class="s2">second = more content</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To parse a single <a class="reference internal" href="ast.html#fluent.syntax.ast.Message" title="fluent.syntax.ast.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Message</span></code></a> or <a class="reference internal" href="ast.html#fluent.syntax.ast.Term" title="fluent.syntax.ast.Term"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.ast.Term</span></code></a>, use
+<a class="reference internal" href="parsing.html#fluent.syntax.parser.FluentParser.parse_entry" title="fluent.syntax.parser.FluentParser.parse_entry"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fluent.syntax.parser.FluentParser.parse_entry()</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fluent.syntax.parser</span> <span class="kn">import</span> <span class="n">FluentParser</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">FluentParser</span><span class="p">()</span>
+<span class="n">key_message</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_entry</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">### Fluent resource comment</span>
+
+<span class="s2">key = value</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="serialization">
+<h2>Serialization<a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
+<p>To create Fluent syntax from AST objects, use <a class="reference internal" href="reference.html#fluent.syntax.serialize" title="fluent.syntax.serialize"><code class="xref py py-func docutils literal notranslate"><span class="pre">fluent.syntax.serialize()</span></code></a> or
+<a class="reference internal" href="serializing.html#fluent.syntax.serializer.FluentSerializer" title="fluent.syntax.serializer.FluentSerializer"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.serializer.FluentSerializer</span></code></a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fluent.syntax</span> <span class="kn">import</span> <span class="n">serialize</span>
+<span class="kn">from</span> <span class="nn">fluent.syntax.serializer</span> <span class="kn">import</span> <span class="n">FluentSerializer</span>
+<span class="n">serialize</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+<span class="n">serializer</span> <span class="o">=</span> <span class="n">FluentSerializer</span><span class="p">()</span>
+<span class="n">serializer</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+<span class="n">serializer</span><span class="o">.</span><span class="n">serialize_entry</span><span class="p">(</span><span class="n">key_message</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="analysis-visitor">
+<h2>Analysis (Visitor)<a class="headerlink" href="#analysis-visitor" title="Permalink to this headline">¶</a></h2>
+<p>To analyze an AST tree in a read-only fashion, you can subclass
+<a class="reference internal" href="visitor.html#fluent.syntax.visitor.Visitor" title="fluent.syntax.visitor.Visitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.visitor.Visitor</span></code></a>.</p>
+<p>You overload individual <code class="xref py py-func docutils literal notranslate"><span class="pre">visit_NodeName()</span></code> methods to
+handle nodes of that type, and then call into :py:func`self.generic_visit`
+to continue iteration.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fluent.syntax</span> <span class="kn">import</span> <span class="n">visitor</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="k">class</span> <span class="nc">WordCounter</span><span class="p">(</span><span class="n">visitor</span><span class="o">.</span><span class="n">Visitor</span><span class="p">):</span>
+    <span class="n">COUNTER</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;[\w,.-]+&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">wordcounter</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="n">wordcounter</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wordcounter</span><span class="o">.</span><span class="n">word_count</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">word_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">def</span> <span class="nf">visit_TextElement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">word_count</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">COUNTER</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+<span class="n">WordCounter</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+<span class="n">WordCounter</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">key_message</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="in-place-modification-transformer">
+<h2>In-place Modification (Transformer)<a class="headerlink" href="#in-place-modification-transformer" title="Permalink to this headline">¶</a></h2>
+<p>Manipulation of an AST tree can be done in-place with a subclass of
+<a class="reference internal" href="visitor.html#fluent.syntax.visitor.Transformer" title="fluent.syntax.visitor.Transformer"><code class="xref py py-class docutils literal notranslate"><span class="pre">fluent.syntax.visitor.Transformer</span></code></a>. The coding pattern matches that
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">visitor.Visitor</span></code>, but you can modify the node in-place.
+You can even return different types, or remove nodes alltogether.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Skeleton</span><span class="p">(</span><span class="n">visitor</span><span class="o">.</span><span class="n">Transformer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">visit_SelectExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="c1"># This should do more checks, good enough for docs</span>
+        <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">variants</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">variant</span><span class="o">.</span><span class="n">default</span><span class="p">:</span>
+                <span class="n">default_variant</span> <span class="o">=</span> <span class="n">variant</span>
+                <span class="k">break</span>
+        <span class="n">template_variant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">default_variant</span><span class="p">)</span>
+        <span class="n">template_variant</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">variants</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;one&#39;</span><span class="p">,</span> <span class="s1">&#39;few&#39;</span><span class="p">,</span> <span class="s1">&#39;many&#39;</span><span class="p">):</span>
+            <span class="n">variant</span> <span class="o">=</span> <span class="n">template_variant</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="n">variant</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">key</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">variants</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">variants</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">node</span>
+    <span class="k">def</span> <span class="nf">visit_TextElement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+      <span class="k">return</span> <span class="kc">None</span>
+
+<span class="n">skeleton</span> <span class="o">=</span> <span class="n">Skeleton</span><span class="p">()</span>
+<span class="n">skeleton</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">key_message</span><span class="p">)</span>
+<span class="n">WordCounter</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">key_message</span><span class="p">)</span>
+<span class="c1"># Returns 0.</span>
+<span class="n">new_plural</span> <span class="o">=</span> <span class="n">skeleton</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_entry</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">with-plural = { $num -&gt;</span>
+<span class="s2">  [one] Using { -one-term-reference } to hide</span>
+<span class="s2"> *[other] Using { $num } {-term-reference} as template</span>
+<span class="s2">}</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">serializer</span><span class="o">.</span><span class="n">serialize_entry</span><span class="p">(</span><span class="n">new_plural</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This returns</p>
+<div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="no">with-plural</span><span class="p"> =</span>
+<span class="p">    { </span><span class="nv">$num</span><span class="p"> -&gt;</span>
+<span class="p">        [</span><span class="na">one</span><span class="p">] { </span><span class="nv">$num</span><span class="p"> }{ -</span><span class="no">term-reference</span><span class="p"> }</span>
+<span class="p">        [</span><span class="na">few</span><span class="p">] { </span><span class="nv">$num</span><span class="p"> }{ -</span><span class="no">term-reference</span><span class="p"> }</span>
+<span class="p">       *[</span><span class="na">many</span><span class="p">] { </span><span class="nv">$num</span><span class="p"> }{ -</span><span class="no">term-reference</span><span class="p"> }</span>
+<span class="p">    }</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Serializing an AST tree that was created like this might not produce
+valid Fluent content.</p>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using fluent.syntax</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#parsing">Parsing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#serialization">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#analysis-visitor">Analysis (Visitor)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#in-place-modification-transformer">In-place Modification (Transformer)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">API Reference</a></li>
+</ul>
+<h3>Versions</h3>
+<p id="versions">
+    <span class="version">0.18.0</span>
+    <span class="links"><a href="/python-fluent/fluent.syntax/dev">dev</a> <a href="/python-fluent/fluent.syntax/stable">stable</a> <a href="/python-fluent/fluent.syntax/0.18.1">0.18.1</a> <a href="/python-fluent/fluent.syntax/0.18.0">0.18.0</a></span>
+</p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference.html" title="API Reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Fluent Syntax"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluent.syntax 0.18.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Using fluent.syntax</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        python-fluent documentation is licensed under the APL 2.0.
+    </div>
+  </body>
+</html>

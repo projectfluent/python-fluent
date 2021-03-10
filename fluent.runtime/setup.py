@@ -28,7 +28,7 @@ setup(name='fluent.runtime',
       packages=find_namespace_packages(include=['fluent.*']),
       # These should also be duplicated in tox.ini and /.github/workflows/fluent.runtime.yml
       install_requires=[
-          'fluent.syntax>=0.17,<0.19',
+          'fluent.syntax>=0.17,<0.20',
           'attrs',
           'babel',
           'pytz',

@@ -39,7 +39,8 @@
           <div class="body" role="main">
             
   <h1>Source code for fluent.syntax.serializer</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">ast</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">ast</span>
 
 
 <span class="k">def</span> <span class="nf">indent_except_first_line</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
@@ -72,7 +73,7 @@
     <span class="k">return</span> <span class="kc">False</span>
 
 
-<div class="viewcode-block" id="FluentSerializer"><a class="viewcode-back" href="../../../serializing.html#fluent.syntax.serializer.FluentSerializer">[docs]</a><span class="k">class</span> <span class="nc">FluentSerializer</span><span class="p">:</span>
+<div class="viewcode-block" id="FluentSerializer"><a class="viewcode-back" href="../../../serializing.html#fluent.syntax.serializer.FluentSerializer">[docs]</a><span class="k">class</span> <span class="nc">FluentSerializer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;FluentSerializer converts :class:`.ast.SyntaxNode` objects to unicode strings.</span>
 
 <span class="sd">    `with_junk` controls if parse errors are written back or not.</span>
@@ -123,11 +124,11 @@
 
 <span class="k">def</span> <span class="nf">serialize_comment</span><span class="p">(</span><span class="n">comment</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;#&quot;</span><span class="p">):</span>
     <span class="n">prefixed</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
-        <span class="n">prefix</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">prefix</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">comment</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="p">])</span>
     <span class="c1"># Add the trailing line break.</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">prefixed</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefixed</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">serialize_junk</span><span class="p">(</span><span class="n">junk</span><span class="p">):</span>
@@ -140,7 +141,7 @@
     <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">comment</span><span class="p">:</span>
         <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">serialize_comment</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">comment</span><span class="p">))</span>
 
-    <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> =&quot;</span><span class="p">)</span>
+    <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> =&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
         <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">serialize_pattern</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
@@ -159,7 +160,7 @@
     <span class="k">if</span> <span class="n">term</span><span class="o">.</span><span class="n">comment</span><span class="p">:</span>
         <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">serialize_comment</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">comment</span><span class="p">))</span>
 
-    <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-</span><span class="si">{</span><span class="n">term</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> =&quot;</span><span class="p">)</span>
+    <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;-</span><span class="si">{}</span><span class="s2"> =&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
     <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">serialize_pattern</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">term</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span>
@@ -182,9 +183,9 @@
     <span class="n">content</span> <span class="o">=</span> <span class="n">indent_except_first_line</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">should_start_on_new_line</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">    </span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">    </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39; </span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">return</span> <span class="s1">&#39; </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">serialize_element</span><span class="p">(</span><span class="n">element</span><span class="p">):</span>
@@ -209,32 +210,32 @@
 
 <span class="k">def</span> <span class="nf">serialize_expression</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">StringLiteral</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">expression</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+        <span class="k">return</span> <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">NumberLiteral</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">expression</span><span class="o">.</span><span class="n">value</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">VariableReference</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;$</span><span class="si">{</span><span class="n">expression</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;$</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">TermReference</span><span class="p">):</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;-</span><span class="si">{</span><span class="n">expression</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">expression</span><span class="o">.</span><span class="n">attribute</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">out</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;.</span><span class="si">{</span><span class="n">expression</span><span class="o">.</span><span class="n">attribute</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">out</span> <span class="o">+=</span> <span class="s2">&quot;.</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">attribute</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">expression</span><span class="o">.</span><span class="n">arguments</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">out</span> <span class="o">+=</span> <span class="n">serialize_call_arguments</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">out</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">MessageReference</span><span class="p">):</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">expression</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span>
         <span class="k">if</span> <span class="n">expression</span><span class="o">.</span><span class="n">attribute</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">out</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;.</span><span class="si">{</span><span class="n">expression</span><span class="o">.</span><span class="n">attribute</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">out</span> <span class="o">+=</span> <span class="s2">&quot;.</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">attribute</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">out</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionReference</span><span class="p">):</span>
         <span class="n">args</span> <span class="o">=</span> <span class="n">serialize_call_arguments</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">expression</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">args</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">SelectExpression</span><span class="p">):</span>
         <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> -&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="n">serialize_expression</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">selector</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">expression</span><span class="o">.</span><span class="n">variants</span><span class="p">:</span>
             <span class="n">out</span> <span class="o">+=</span> <span class="n">serialize_variant</span><span class="p">(</span><span class="n">variant</span><span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">out</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Placeable</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">serialize_placeable</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Unknown expression type: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">expression</span><span class="p">)))</span>
@@ -254,7 +255,7 @@
     <span class="n">named</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
         <span class="n">serialize_named_argument</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">named</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">positional</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">named</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">positional</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">named</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">return</span> <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">positional</span><span class="p">,</span> <span class="n">named</span><span class="p">)</span>
     <span class="k">return</span> <span class="s1">&#39;(</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">positional</span> <span class="ow">or</span> <span class="n">named</span><span class="p">)</span>
 
 

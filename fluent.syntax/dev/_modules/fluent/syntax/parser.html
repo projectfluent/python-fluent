@@ -39,7 +39,8 @@
           <div class="body" role="main">
             
   <h1>Source code for fluent.syntax.parser</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">ast</span>
 <span class="kn">from</span> <span class="nn">.stream</span> <span class="kn">import</span> <span class="n">EOF</span><span class="p">,</span> <span class="n">EOL</span><span class="p">,</span> <span class="n">FluentParserStream</span>
 <span class="kn">from</span> <span class="nn">.errors</span> <span class="kn">import</span> <span class="n">ParseError</span>
@@ -65,7 +66,7 @@
     <span class="k">return</span> <span class="n">decorated</span>
 
 
-<div class="viewcode-block" id="FluentParser"><a class="viewcode-back" href="../../../parsing.html#fluent.syntax.parser.FluentParser">[docs]</a><span class="k">class</span> <span class="nc">FluentParser</span><span class="p">:</span>
+<div class="viewcode-block" id="FluentParser"><a class="viewcode-back" href="../../../parsing.html#fluent.syntax.parser.FluentParser">[docs]</a><span class="k">class</span> <span class="nc">FluentParser</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This class is used to parse Fluent source content.</span>
 
 <span class="sd">    ``with_spans`` enables source information in the form of</span>
@@ -509,7 +510,7 @@
 
         <span class="k">if</span> <span class="nb">next</span> <span class="o">==</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="ow">or</span> <span class="nb">next</span> <span class="o">==</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">:</span>
             <span class="n">ps</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\\</span><span class="si">{</span><span class="nb">next</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">next</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">next</span> <span class="o">==</span> <span class="s1">&#39;u&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_unicode_escape_sequence</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="nb">next</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
@@ -525,10 +526,10 @@
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">digits</span><span class="p">):</span>
             <span class="n">ch</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">take_hex_digit</span><span class="p">()</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">ch</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0026&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\\</span><span class="si">{</span><span class="n">u</span><span class="si">}{</span><span class="n">sequence</span><span class="si">}{</span><span class="n">ps</span><span class="o">.</span><span class="n">current_char</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ParseError</span><span class="p">(</span><span class="s1">&#39;E0026&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="si">{}{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">ps</span><span class="o">.</span><span class="n">current_char</span><span class="p">))</span>
             <span class="n">sequence</span> <span class="o">+=</span> <span class="n">ch</span>
 
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\\</span><span class="si">{</span><span class="n">u</span><span class="si">}{</span><span class="n">sequence</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">sequence</span><span class="p">)</span>
 
     <span class="nd">@with_span</span>
     <span class="k">def</span> <span class="nf">get_placeable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>

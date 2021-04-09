@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 import os
 
 this_directory = os.path.abspath(os.path.dirname(__file__))
@@ -25,6 +24,6 @@ setup(name='fluent.syntax',
           'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3 :: Only',
       ],
-      packages=['fluent', 'fluent.syntax'],
+      packages=find_namespace_packages(include=['fluent.*']),
       test_suite='tests.syntax'
       )

@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 import os
 
 this_directory = os.path.abspath(os.path.dirname(__file__))
@@ -26,10 +25,10 @@ setup(name='fluent.runtime',
           'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3 :: Only',
       ],
-      packages=['fluent', 'fluent.runtime'],
+      packages=find_namespace_packages(include=['fluent.*']),
       # These should also be duplicated in tox.ini and /.github/workflows/fluent.runtime.yml
       install_requires=[
-          'fluent.syntax>=0.17,<0.19',
+          'fluent.syntax>=0.17,<0.20',
           'attrs',
           'babel',
           'pytz',

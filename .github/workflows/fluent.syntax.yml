@@ -2,17 +2,17 @@ name: fluent.syntax
 
 on:
   # Trigger the workflow on push or pull request,
-  # but only for the master branch
+  # but only for the main branch
   push:
     branches:
-      - master
+      - main
     paths:
       - .github/workflows/fluent.syntax.yml
       - "fluent.syntax/**"
       - "!fluent.syntax/docs/**"
   pull_request:
     branches:
-      - master
+      - main
     paths:
       - .github/workflows/fluent.syntax.yml
       - "fluent.syntax/**"

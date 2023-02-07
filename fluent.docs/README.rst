@@ -9,7 +9,7 @@ can surf it locally via ``python3 -m http.server `` in ``_build``.
 
 The documentation is created for each tagged version after May 2020,
 at which point we had good docs. The current branch (PR tips or
-master) is versioned as *dev*, and *stable* is a symlink to the latest
+main) is versioned as *dev*, and *stable* is a symlink to the latest
 release. The releases are in a dir with their corresponding version number.
 
 When cutting a new release, manually run the documentation workflow

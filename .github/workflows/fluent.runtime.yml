@@ -8,30 +8,30 @@ on:
       - master
     paths:
       - .github/workflows/fluent.runtime.yml
-      - 'fluent.runtime/**'
-      - '!fluent.runtime/docs/**'
+      - "fluent.runtime/**"
+      - "!fluent.runtime/docs/**"
   pull_request:
     branches:
       - master
     paths:
       - .github/workflows/fluent.runtime.yml
-      - 'fluent.runtime/**'
-      - '!fluent.runtime/docs/**'
+      - "fluent.runtime/**"
+      - "!fluent.runtime/docs/**"
 
 jobs:
   unit:
     name: unit tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04 # https://github.com/actions/setup-python/issues/544
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, pypy3]
+        python-version: [3.6, 3.7, 3.8, 3.9, pypy3.9]
         fluent-syntax: [0.18.1]
         include:
           - python-version: 3.9
             fluent-syntax: 0.17.0
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -49,16 +49,16 @@ jobs:
     name: flake8
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - name: Install dependencies
         run: |
           python -m pip install wheel
           python -m pip install --upgrade pip
-          python -m pip install flake8==3.7.9
+          python -m pip install flake8==6
       - name: lint
         working-directory: ./fluent.runtime
         run: |
-          flake8 fluent
+          python -m flake8

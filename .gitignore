@@ -1,7 +1,5 @@
-.tox
-.vscode
+.*
 *.pyc
-.eggs/
 *.egg-info/
 _build
 build

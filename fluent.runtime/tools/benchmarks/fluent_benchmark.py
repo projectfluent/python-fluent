@@ -22,6 +22,7 @@ nine = Nine
 ten = Ten
 """
 
+
 @pytest.fixture
 def fluent_bundle():
     bundle = FluentBundle(['pl'], use_isolating=False)
@@ -48,7 +49,7 @@ def fluent_template(bundle):
 
 class TestBenchmark(object):
     def test_template(self, fluent_bundle, benchmark):
-        result = benchmark(lambda: fluent_template(fluent_bundle))
+        benchmark(lambda: fluent_template(fluent_bundle))
 
     def test_bundle(self, benchmark):
         def test_bundles():
@@ -61,7 +62,7 @@ class TestBenchmark(object):
             # prune cached imports
             fluent_deps = [
                 k for k in sys.modules.keys()
-                if k.split('.', 1)[0] in ('babel','fluent','pytz')
+                if k.split('.', 1)[0] in ('babel', 'fluent', 'pytz')
             ]
             for k in fluent_deps:
                 del sys.modules[k]

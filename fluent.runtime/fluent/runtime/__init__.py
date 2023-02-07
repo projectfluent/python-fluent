@@ -105,9 +105,9 @@ class FluentBundle:
         return [result, errors]
 
     def _get_babel_locale(self):
-        for l in self.locales:
+        for lc in self.locales:
             try:
-                return babel.Locale.parse(l.replace('-', '_'))
+                return babel.Locale.parse(lc.replace('-', '_'))
             except babel.UnknownLocaleError:
                 continue
         # TODO - log error

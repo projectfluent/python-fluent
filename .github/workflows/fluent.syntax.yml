@@ -8,15 +8,15 @@ on:
       - master
     paths:
       - .github/workflows/fluent.syntax.yml
-      - 'fluent.syntax/**'
-      - '!fluent.syntax/docs/**'
+      - "fluent.syntax/**"
+      - "!fluent.syntax/docs/**"
   pull_request:
     branches:
       - master
     paths:
       - .github/workflows/fluent.syntax.yml
-      - 'fluent.syntax/**'
-      - '!fluent.syntax/docs/**'
+      - "fluent.syntax/**"
+      - "!fluent.syntax/docs/**"
 
 jobs:
   unit:
@@ -50,8 +50,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install flake8==3.7.9
+          python -m pip install flake8==6
       - name: lint
         working-directory: ./fluent.syntax
         run: |
-          flake8
+          python -m flake8

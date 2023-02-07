@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-20.04 # https://github.com/actions/setup-python/issues/544
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, pypy3]
+        python-version: [3.6, 3.7, 3.8, 3.9, pypy3.9]
         fluent-syntax: [0.18.1]
         include:
           - python-version: 3.9

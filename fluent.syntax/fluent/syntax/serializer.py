@@ -1,23 +1,24 @@
+from typing import List, Union
 from . import ast
 
 
-def indent_except_first_line(content):
+def indent_except_first_line(content: str) -> str:
     return "    ".join(
         content.splitlines(True)
     )
 
 
-def includes_new_line(elem):
+def includes_new_line(elem: Union[ast.TextElement, ast.Placeable]) -> bool:
     return isinstance(elem, ast.TextElement) and "\n" in elem.value
 
 
-def is_select_expr(elem):
+def is_select_expr(elem: Union[ast.TextElement, ast.Placeable]) -> bool:
     return (
         isinstance(elem, ast.Placeable) and
         isinstance(elem.expression, ast.SelectExpression))
 
 
-def should_start_on_new_line(pattern):
+def should_start_on_new_line(pattern: ast.Pattern) -> bool:
     is_multiline = any(is_select_expr(elem) for elem in pattern.elements) \
         or any(includes_new_line(elem) for elem in pattern.elements)
 
@@ -38,17 +39,17 @@ class FluentSerializer:
     """
     HAS_ENTRIES = 1
 
-    def __init__(self, with_junk=False):
+    def __init__(self, with_junk: bool = False):
         self.with_junk = with_junk
 
-    def serialize(self, resource):
+    def serialize(self, resource: ast.Resource) -> str:
         "Serialize a :class:`.ast.Resource` to a string."
         if not isinstance(resource, ast.Resource):
             raise Exception('Unknown resource type: {}'.format(type(resource)))
 
         state = 0
 
-        parts = []
+        parts: List[str] = []
         for entry in resource.body:
             if not isinstance(entry, ast.Junk) or self.with_junk:
                 parts.append(self.serialize_entry(entry, state))
@@ -57,7 +58,7 @@ class FluentSerializer:
 
         return "".join(parts)
 
-    def serialize_entry(self, entry, state=0):
+    def serialize_entry(self, entry: ast.EntryType, state: int = 0) -> str:
         "Serialize an :class:`.ast.Entry` to a string."
         if isinstance(entry, ast.Message):
             return serialize_message(entry)
@@ -80,7 +81,7 @@ class FluentSerializer:
         raise Exception('Unknown entry type: {}'.format(type(entry)))
 
 
-def serialize_comment(comment, prefix="#"):
+def serialize_comment(comment: Union[ast.Comment, ast.GroupComment, ast.ResourceComment], prefix: str = "#") -> str:
     prefixed = "\n".join([
         prefix if len(line) == 0 else f"{prefix} {line}"
         for line in comment.content.split("\n")
@@ -89,12 +90,12 @@ def serialize_comment(comment, prefix="#"):
     return f'{prefixed}\n'
 
 
-def serialize_junk(junk):
+def serialize_junk(junk: ast.Junk) -> str:
     return junk.content
 
 
-def serialize_message(message):
-    parts = []
+def serialize_message(message: ast.Message) -> str:
+    parts: List[str] = []
 
     if message.comment:
         parts.append(serialize_comment(message.comment))
@@ -112,8 +113,8 @@ def serialize_message(message):
     return ''.join(parts)
 
 
-def serialize_term(term):
-    parts = []
+def serialize_term(term: ast.Term) -> str:
+    parts: List[str] = []
 
     if term.comment:
         parts.append(serialize_comment(term.comment))
@@ -129,14 +130,14 @@ def serialize_term(term):
     return ''.join(parts)
 
 
-def serialize_attribute(attribute):
+def serialize_attribute(attribute: ast.Attribute) -> str:
     return "\n    .{} ={}".format(
         attribute.id.name,
         indent_except_first_line(serialize_pattern(attribute.value))
     )
 
 
-def serialize_pattern(pattern):
+def serialize_pattern(pattern: ast.Pattern) -> str:
     content = "".join(serialize_element(elem) for elem in pattern.elements)
     content = indent_except_first_line(content)
 
@@ -146,7 +147,7 @@ def serialize_pattern(pattern):
     return f' {content}'
 
 
-def serialize_element(element):
+def serialize_element(element: ast.PatternElement) -> str:
     if isinstance(element, ast.TextElement):
         return element.value
     if isinstance(element, ast.Placeable):
@@ -154,7 +155,7 @@ def serialize_element(element):
     raise Exception('Unknown element type: {}'.format(type(element)))
 
 
-def serialize_placeable(placeable):
+def serialize_placeable(placeable: ast.Placeable) -> str:
     expr = placeable.expression
     if isinstance(expr, ast.Placeable):
         return "{{{}}}".format(serialize_placeable(expr))
@@ -166,7 +167,7 @@ def serialize_placeable(placeable):
         return "{{ {} }}".format(serialize_expression(expr))
 
 
-def serialize_expression(expression):
+def serialize_expression(expression: Union[ast.Expression, ast.Placeable]) -> str:
     if isinstance(expression, ast.StringLiteral):
         return f'"{expression.value}"'
     if isinstance(expression, ast.NumberLiteral):
@@ -199,7 +200,7 @@ def serialize_expression(expression):
     raise Exception('Unknown expression type: {}'.format(type(expression)))
 
 
-def serialize_variant(variant):
+def serialize_variant(variant: ast.Variant) -> str:
     return "\n{}[{}]{}".format(
         "   *" if variant.default else "    ",
         serialize_variant_key(variant.key),
@@ -207,7 +208,7 @@ def serialize_variant(variant):
     )
 
 
-def serialize_call_arguments(expr):
+def serialize_call_arguments(expr: ast.CallArguments) -> str:
     positional = ", ".join(
         serialize_expression(arg) for arg in expr.positional)
     named = ", ".join(
@@ -217,14 +218,14 @@ def serialize_call_arguments(expr):
     return '({})'.format(positional or named)
 
 
-def serialize_named_argument(arg):
+def serialize_named_argument(arg: ast.NamedArgument) -> str:
     return "{}: {}".format(
         arg.name.name,
         serialize_expression(arg.value)
     )
 
 
-def serialize_variant_key(key):
+def serialize_variant_key(key: Union[ast.Identifier, ast.NumberLiteral]) -> str:
     if isinstance(key, ast.Identifier):
         return key.name
     if isinstance(key, ast.NumberLiteral):

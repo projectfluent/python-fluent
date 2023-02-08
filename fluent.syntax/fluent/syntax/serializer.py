@@ -82,6 +82,9 @@ class FluentSerializer:
 
 
 def serialize_comment(comment: Union[ast.Comment, ast.GroupComment, ast.ResourceComment], prefix: str = "#") -> str:
+    if not comment.content:
+        return f'{prefix}\n'
+
     prefixed = "\n".join([
         prefix if len(line) == 0 else f"{prefix} {line}"
         for line in comment.content.split("\n")
@@ -91,7 +94,7 @@ def serialize_comment(comment: Union[ast.Comment, ast.GroupComment, ast.Resource
 
 
 def serialize_junk(junk: ast.Junk) -> str:
-    return junk.content
+    return junk.content or ''
 
 
 def serialize_message(message: ast.Message) -> str:
@@ -165,6 +168,7 @@ def serialize_placeable(placeable: ast.Placeable) -> str:
         return "{{ {}}}".format(serialize_expression(expr))
     if isinstance(expr, ast.Expression):
         return "{{ {} }}".format(serialize_expression(expr))
+    raise Exception('Unknown expression type: {}'.format(type(expr)))
 
 
 def serialize_expression(expression: Union[ast.Expression, ast.Placeable]) -> str:

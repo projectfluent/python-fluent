@@ -123,7 +123,7 @@ class FluentParser:
             junk = ast.Junk(slice)
             if self.with_spans:
                 junk.add_span(entry_start_pos, next_entry_start)
-            annot = ast.Annotation(err.code, err.args, err.message)
+            annot = ast.Annotation(err.code, list(err.args) if err.args else None, err.message)
             annot.add_span(error_index, error_index)
             junk.add_annotation(annot)
             return junk
@@ -240,6 +240,9 @@ class FluentParser:
     @with_span
     def get_identifier(self, ps: FluentParserStream) -> ast.Identifier:
         name = ps.take_id_start()
+        if name is None:
+            raise ParseError('E0004', 'a-zA-Z')
+
         ch = ps.take_id_char()
         while ch:
             name += ch

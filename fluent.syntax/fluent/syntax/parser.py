@@ -439,7 +439,7 @@ class FluentParser:
         # Trim trailing whitespace from the Pattern.
         last_element = trimmed[-1] if len(trimmed) > 0 else None
         if isinstance(last_element, ast.TextElement):
-            last_element.value = last_element.value.rstrip(' \t\n\r')
+            last_element.value = last_element.value.rstrip(' \n\r')
             if last_element.value == "":
                 trimmed.pop()
 

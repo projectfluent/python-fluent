@@ -4,8 +4,10 @@ from decimal import Decimal
 
 import attr
 import pytz
+from babel import Locale
 from babel.dates import format_date, format_time, get_datetime_format, get_timezone
 from babel.numbers import NumberPattern, parse_pattern
+from typing import Any, Dict, Literal, Type, TypeVar, Union, cast
 
 FORMAT_STYLE_DECIMAL = "decimal"
 FORMAT_STYLE_CURRENCY = "currency"
@@ -43,18 +45,18 @@ TIME_STYLE_OPTIONS = {
 
 
 class FluentType:
-    def format(self, locale):
+    def format(self, locale: Locale) -> str:
         raise NotImplementedError()
 
 
 class FluentNone(FluentType):
-    def __init__(self, name=None):
+    def __init__(self, name: Union[str, None] = None):
         self.name = name
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return isinstance(other, FluentNone) and self.name == other.name
 
-    def format(self, locale):
+    def format(self, locale: Locale) -> str:
         return self.name or "???"
 
 
@@ -65,17 +67,19 @@ class NumberFormatOptions:
     # we can stick to Fluent spec more easily.
 
     # See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NumberFormat
-    style = attr.ib(default=FORMAT_STYLE_DECIMAL,
-                    validator=attr.validators.in_(FORMAT_STYLE_OPTIONS))
-    currency = attr.ib(default=None)
-    currencyDisplay = attr.ib(default=CURRENCY_DISPLAY_SYMBOL,
-                              validator=attr.validators.in_(CURRENCY_DISPLAY_OPTIONS))
-    useGrouping = attr.ib(default=True)
-    minimumIntegerDigits = attr.ib(default=None)
-    minimumFractionDigits = attr.ib(default=None)
-    maximumFractionDigits = attr.ib(default=None)
-    minimumSignificantDigits = attr.ib(default=None)
-    maximumSignificantDigits = attr.ib(default=None)
+    style: Literal['decimal', 'currency', 'percent'] = attr.ib(
+        default=FORMAT_STYLE_DECIMAL,
+        validator=attr.validators.in_(FORMAT_STYLE_OPTIONS))
+    currency: Union[str, None] = attr.ib(default=None)
+    currencyDisplay: Literal['symbol', 'code', 'name'] = attr.ib(
+        default=CURRENCY_DISPLAY_SYMBOL,
+        validator=attr.validators.in_(CURRENCY_DISPLAY_OPTIONS))
+    useGrouping: bool = attr.ib(default=True)
+    minimumIntegerDigits: Union[int, None] = attr.ib(default=None)
+    minimumFractionDigits: Union[int, None] = attr.ib(default=None)
+    maximumFractionDigits: Union[int, None] = attr.ib(default=None)
+    minimumSignificantDigits: Union[int, None] = attr.ib(default=None)
+    maximumSignificantDigits: Union[int, None] = attr.ib(default=None)
 
 
 class FluentNumber(FluentType):
@@ -83,12 +87,14 @@ class FluentNumber(FluentType):
     default_number_format_options = NumberFormatOptions()
 
     def __new__(cls,
-                value,
-                **kwargs):
-        self = super().__new__(cls, value)
+                value: Union[int, float, Decimal, 'FluentNumber'],
+                **kwargs: Any) -> 'FluentNumber':
+        self = super().__new__(cls, value)  # type: ignore
         return self._init(value, kwargs)
 
-    def _init(self, value, kwargs):
+    def _init(self,
+              value: Union[int, float, Decimal, 'FluentNumber'],
+              kwargs: Dict[str, Any]) -> 'FluentNumber':
         self.options = merge_options(NumberFormatOptions,
                                      getattr(value, 'options', self.default_number_format_options),
                                      kwargs)
@@ -98,21 +104,22 @@ class FluentNumber(FluentType):
 
         return self
 
-    def format(self, locale):
+    def format(self, locale: Locale) -> str:
+        selfnum = cast(float, self)
         if self.options.style == FORMAT_STYLE_DECIMAL:
-            base_pattern = locale.decimal_formats.get(None)
+            base_pattern = cast(NumberPattern, locale.decimal_formats.get(None))
             pattern = self._apply_options(base_pattern)
-            return pattern.apply(self, locale)
+            return pattern.apply(selfnum, locale)
         elif self.options.style == FORMAT_STYLE_PERCENT:
-            base_pattern = locale.percent_formats.get(None)
+            base_pattern = cast(NumberPattern, locale.percent_formats.get(None))
             pattern = self._apply_options(base_pattern)
-            return pattern.apply(self, locale)
+            return pattern.apply(selfnum, locale)
         elif self.options.style == FORMAT_STYLE_CURRENCY:
             base_pattern = locale.currency_formats['standard']
             pattern = self._apply_options(base_pattern)
-            return pattern.apply(self, locale, currency=self.options.currency)
+            return pattern.apply(selfnum, locale, currency=self.options.currency)
 
-    def _apply_options(self, pattern):
+    def _apply_options(self, pattern: NumberPattern) -> NumberPattern:
         # We are essentially trying to copy the
         # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NumberFormat
         # API using Babel number formatting routines, which is slightly awkward
@@ -130,7 +137,7 @@ class FluentNumber(FluentType):
             if self.options.currencyDisplay == CURRENCY_DISPLAY_CODE:
                 # Not sure of the correct algorithm here, but this seems to
                 # work:
-                def replacer(s):
+                def replacer(s: str) -> str:
                     return s.replace("¤", "¤¤")
                 pattern.suffix = (replacer(pattern.suffix[0]),
                                   replacer(pattern.suffix[1]))
@@ -144,15 +151,14 @@ class FluentNumber(FluentType):
                 warnings.warn("Unsupported currencyDisplayValue {}, falling back to {}"
                               .format(CURRENCY_DISPLAY_NAME,
                                       CURRENCY_DISPLAY_SYMBOL))
-        if (self.options.minimumSignificantDigits is not None
-                or self.options.maximumSignificantDigits is not None):
+        minSD = self.options.minimumSignificantDigits
+        maxSD = self.options.maximumSignificantDigits
+        if (minSD is not None or maxSD is not None):
             # This triggers babel routines into 'significant digits' mode:
             pattern.pattern = '@'
             # We then manually set int_prec, and leave the rest as they are.
-            min_digits = (1 if self.options.minimumSignificantDigits is None
-                          else self.options.minimumSignificantDigits)
-            max_digits = (min_digits if self.options.maximumSignificantDigits is None
-                          else self.options.maximumSignificantDigits)
+            min_digits = minSD if minSD is not None else 1
+            max_digits = maxSD if maxSD is not None else min_digits
             pattern.int_prec = (min_digits, max_digits)
         else:
             if self.options.minimumIntegerDigits is not None:
@@ -165,7 +171,10 @@ class FluentNumber(FluentType):
         return pattern
 
 
-def merge_options(options_class, base, kwargs):
+Options = TypeVar('Options', bound=Union[NumberFormatOptions, 'DateFormatOptions'])
+
+
+def merge_options(options_class: Type[Options], base: Union[Options, None], kwargs: Dict[str, Any]) -> Options:
     """
     Given an 'options_class', an optional 'base' object to copy from,
     and some keyword arguments, create a new options instance
@@ -188,7 +197,7 @@ def merge_options(options_class, base, kwargs):
     for k in kwargs.keys():
         setattr(retval, k, getattr(kwarg_options, k))
 
-    return retval
+    return retval  # type: ignore
 
 
 # We want types that inherit from both FluentNumber and a native type,
@@ -213,7 +222,10 @@ class FluentDecimal(FluentNumber, Decimal):
     pass
 
 
-def fluent_number(number, **kwargs):
+def fluent_number(
+        number: Union[int, float, Decimal, FluentNumber, FluentNone],
+        **kwargs: Any
+) -> Union[FluentNumber, FluentNone]:
     if isinstance(number, FluentNumber) and not kwargs:
         return number
     if isinstance(number, int):
@@ -232,7 +244,7 @@ def fluent_number(number, **kwargs):
 _UNGROUPED_PATTERN = parse_pattern("#0")
 
 
-def clone_pattern(pattern):
+def clone_pattern(pattern: NumberPattern) -> NumberPattern:
     return NumberPattern(pattern.pattern,
                          pattern.prefix,
                          pattern.suffix,
@@ -249,25 +261,28 @@ class DateFormatOptions:
     # See https://projectfluent.org/fluent/guide/functions.html#datetime
 
     # Developer only
-    timeZone = attr.ib(default=None)
+    timeZone: Union[str, None] = attr.ib(default=None)
 
     # Other
-    hour12 = attr.ib(default=None)
-    weekday = attr.ib(default=None)
-    era = attr.ib(default=None)
-    year = attr.ib(default=None)
-    month = attr.ib(default=None)
-    day = attr.ib(default=None)
-    hour = attr.ib(default=None)
-    minute = attr.ib(default=None)
-    second = attr.ib(default=None)
-    timeZoneName = attr.ib(default=None)
+    hour12: Union[bool, None] = attr.ib(default=None)
+    weekday: Literal["long", "short", "narrow", None] = attr.ib(default=None)
+    era: Literal["long", "short", "narrow", None] = attr.ib(default=None)
+    year: Literal["numeric", "2-digit", None] = attr.ib(default=None)
+    month: Literal["numeric", "2-digit", "long", "short", "narrow", None] = attr.ib(default=None)
+    day: Literal["numeric", "2-digit", None] = attr.ib(default=None)
+    hour: Literal["numeric", "2-digit", None] = attr.ib(default=None)
+    minute: Literal["numeric", "2-digit", None] = attr.ib(default=None)
+    second: Literal["numeric", "2-digit", None] = attr.ib(default=None)
+    timeZoneName: Literal["long", "short", "longOffset", "shortOffset",
+                          "longGeneric", "shortGeneric", None] = attr.ib(default=None)
 
     # See https://github.com/tc39/proposal-ecma402-datetime-style
-    dateStyle = attr.ib(default=None,
-                        validator=attr.validators.in_(DATE_STYLE_OPTIONS))
-    timeStyle = attr.ib(default=None,
-                        validator=attr.validators.in_(TIME_STYLE_OPTIONS))
+    dateStyle: Literal["full", "long", "medium", "short", None] = attr.ib(
+        default=None,
+        validator=attr.validators.in_(DATE_STYLE_OPTIONS))
+    timeStyle: Literal["full", "long", "medium", "short", None] = attr.ib(
+        default=None,
+        validator=attr.validators.in_(TIME_STYLE_OPTIONS))
 
 
 _SUPPORTED_DATETIME_OPTIONS = ['dateStyle', 'timeStyle', 'timeZone']
@@ -278,7 +293,7 @@ class FluentDateType(FluentType):
     # some Python implementation (e.g. PyPy) implement some methods.
     # So we leave those alone, and implement another `_init_options`
     # which is called from other constructors.
-    def _init_options(self, dt_obj, kwargs):
+    def _init_options(self, dt_obj: Union[date, datetime], kwargs: Dict[str, Any]) -> None:
         if 'timeStyle' in kwargs and not isinstance(self, datetime):
             raise TypeError("timeStyle option can only be specified for datetime instances, not date instance")
 
@@ -289,32 +304,33 @@ class FluentDateType(FluentType):
             if k not in _SUPPORTED_DATETIME_OPTIONS:
                 warnings.warn(f"FluentDateType option {k} is not yet supported")
 
-    def format(self, locale):
+    def format(self, locale: Locale) -> str:
         if isinstance(self, datetime):
             selftz = _ensure_datetime_tzinfo(self, tzinfo=self.options.timeZone)
         else:
-            selftz = self
+            selftz = cast(datetime, self)
 
-        if self.options.dateStyle is None and self.options.timeStyle is None:
-            return format_date(selftz, format='medium', locale=locale)
-        elif self.options.dateStyle is None and self.options.timeStyle is not None:
-            return format_time(selftz, format=self.options.timeStyle, locale=locale)
-        elif self.options.dateStyle is not None and self.options.timeStyle is None:
-            return format_date(selftz, format=self.options.dateStyle, locale=locale)
-        else:
-            # Both date and time. Logic copied from babel.dates.format_datetime,
-            # with modifications.
-            # Which datetime format do we pick? We arbitrarily pick dateStyle.
+        ds = self.options.dateStyle
+        ts = self.options.timeStyle
+        if ds is None:
+            if ts is None:
+                return format_date(selftz, format='medium', locale=locale)
+            else:
+                return format_time(selftz, format=ts, locale=locale)
+        elif ts is None:
+            return format_date(selftz, format=ds, locale=locale)
 
-            return (get_datetime_format(self.options.dateStyle, locale=locale)
-                    .replace("'", "")
-                    .replace('{0}', format_time(selftz, self.options.timeStyle, tzinfo=None,
-                                                locale=locale))
-                    .replace('{1}', format_date(selftz, self.options.dateStyle, locale=locale))
-                    )
+        # Both date and time. Logic copied from babel.dates.format_datetime,
+        # with modifications.
+        # Which datetime format do we pick? We arbitrarily pick dateStyle.
+
+        return (cast(str, get_datetime_format(ds, locale=locale))
+                .replace("'", "")
+                .replace('{0}', format_time(selftz, ts, tzinfo=None, locale=locale))
+                .replace('{1}', format_date(selftz, ds, locale=locale)))
 
 
-def _ensure_datetime_tzinfo(dt, tzinfo=None):
+def _ensure_datetime_tzinfo(dt: datetime, tzinfo: Union[str, None] = None) -> datetime:
     """
     Ensure the datetime passed has an attached tzinfo.
     """
@@ -330,7 +346,7 @@ def _ensure_datetime_tzinfo(dt, tzinfo=None):
 
 class FluentDate(FluentDateType, date):
     @classmethod
-    def from_date(cls, dt_obj, **kwargs):
+    def from_date(cls, dt_obj: date, **kwargs: Any) -> 'FluentDate':
         obj = cls(dt_obj.year, dt_obj.month, dt_obj.day)
         obj._init_options(dt_obj, kwargs)
         return obj
@@ -338,7 +354,7 @@ class FluentDate(FluentDateType, date):
 
 class FluentDateTime(FluentDateType, datetime):
     @classmethod
-    def from_date_time(cls, dt_obj, **kwargs):
+    def from_date_time(cls, dt_obj: datetime, **kwargs: Any) -> 'FluentDateTime':
         obj = cls(dt_obj.year, dt_obj.month, dt_obj.day,
                   dt_obj.hour, dt_obj.minute, dt_obj.second,
                   dt_obj.microsecond, tzinfo=dt_obj.tzinfo)
@@ -346,7 +362,10 @@ class FluentDateTime(FluentDateType, datetime):
         return obj
 
 
-def fluent_date(dt, **kwargs):
+def fluent_date(
+        dt: Union[date, datetime, FluentDateType, FluentNone],
+        **kwargs: Any
+) -> Union[FluentDateType, FluentNone]:
     if isinstance(dt, FluentDateType) and not kwargs:
         return dt
     if isinstance(dt, datetime):

@@ -1,13 +1,19 @@
 import babel
 import babel.numbers
 import babel.plural
+from typing import Any, Callable, Dict, List, Literal, TYPE_CHECKING, Tuple, Union, cast
 
-from fluent.syntax.ast import Message, Term
+from fluent.syntax import ast as FTL
 
 from .builtins import BUILTINS
 from .prepare import Compiler
-from .resolver import ResolverEnvironment, CurrentEnvironment
+from .resolver import CurrentEnvironment, Message, Pattern, ResolverEnvironment
 from .utils import native_to_fluent
+
+if TYPE_CHECKING:
+    from .types import FluentNone, FluentType
+
+PluralCategory = Literal['zero', 'one', 'two', 'few', 'many', 'other']
 
 
 class FluentBundle:
@@ -25,37 +31,42 @@ class FluentBundle:
     See the documentation of the Fluent syntax for more information.
     """
 
-    def __init__(self, locales, functions=None, use_isolating=True):
+    def __init__(self,
+                 locales: List[str],
+                 functions: Union[Dict[str, Callable[[Any], 'FluentType']], None] = None,
+                 use_isolating: bool = True):
         self.locales = locales
         _functions = BUILTINS.copy()
         if functions:
             _functions.update(functions)
         self._functions = _functions
         self.use_isolating = use_isolating
-        self._messages = {}
-        self._terms = {}
-        self._compiled = {}
-        self._compiler = Compiler()
+        self._messages: Dict[str, Union[FTL.Message, FTL.Term]] = {}
+        self._terms: Dict[str, Union[FTL.Message, FTL.Term]] = {}
+        self._compiled: Dict[str, Message] = {}
+        # The compiler is not typed, and this cast is only valid for the public API
+        self._compiler = cast(Callable[[Union[FTL.Message, FTL.Term]], Message], Compiler())
         self._babel_locale = self._get_babel_locale()
-        self._plural_form = babel.plural.to_python(self._babel_locale.plural_form)
+        self._plural_form = cast(Callable[[Any], Callable[[Union[int, float]], PluralCategory]],
+                                 babel.plural.to_python)(self._babel_locale.plural_form)
 
-    def add_resource(self, resource, allow_overrides=False):
+    def add_resource(self, resource: FTL.Resource, allow_overrides: bool = False) -> None:
         # TODO - warn/error about duplicates
         for item in resource.body:
-            if not isinstance(item, (Message, Term)):
+            if not isinstance(item, (FTL.Message, FTL.Term)):
                 continue
-            map_ = self._messages if isinstance(item, Message) else self._terms
+            map_ = self._messages if isinstance(item, FTL.Message) else self._terms
             full_id = item.id.name
             if full_id not in map_ or allow_overrides:
                 map_[full_id] = item
 
-    def has_message(self, message_id):
+    def has_message(self, message_id: str) -> bool:
         return message_id in self._messages
 
-    def get_message(self, message_id):
+    def get_message(self, message_id: str) -> Message:
         return self._lookup(message_id)
 
-    def _lookup(self, entry_id, term=False):
+    def _lookup(self, entry_id: str, term: bool = False) -> Message:
         if term:
             compiled_id = '-' + entry_id
         else:
@@ -68,7 +79,10 @@ class FluentBundle:
         self._compiled[compiled_id] = self._compiler(entry)
         return self._compiled[compiled_id]
 
-    def format_pattern(self, pattern, args=None):
+    def format_pattern(self,
+                       pattern: Pattern,
+                       args: Union[Dict[str, Any], None] = None
+                       ) -> Tuple[Union[str, 'FluentNone'], List[Exception]]:
         if args is not None:
             fluent_args = {
                 argname: native_to_fluent(argvalue)
@@ -77,7 +91,7 @@ class FluentBundle:
         else:
             fluent_args = {}
 
-        errors = []
+        errors: List[Exception] = []
         env = ResolverEnvironment(context=self,
                                   current=CurrentEnvironment(args=fluent_args),
                                   errors=errors)
@@ -86,9 +100,9 @@ class FluentBundle:
         except ValueError as e:
             errors.append(e)
             result = '{???}'
-        return [result, errors]
+        return (result, errors)
 
-    def _get_babel_locale(self):
+    def _get_babel_locale(self) -> babel.Locale:
         for lc in self.locales:
             try:
                 return babel.Locale.parse(lc.replace('-', '_'))

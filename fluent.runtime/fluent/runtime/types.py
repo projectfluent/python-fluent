@@ -118,6 +118,8 @@ class FluentNumber(FluentType):
             base_pattern = locale.currency_formats['standard']
             pattern = self._apply_options(base_pattern)
             return pattern.apply(selfnum, locale, currency=self.options.currency)
+        # never happens
+        return '???'
 
     def _apply_options(self, pattern: NumberPattern) -> NumberPattern:
         # We are essentially trying to copy the
@@ -339,8 +341,6 @@ def _ensure_datetime_tzinfo(dt: datetime, tzinfo: Union[str, None] = None) -> da
         dt = dt.replace(tzinfo=pytz.UTC)
     if tzinfo is not None:
         dt = dt.astimezone(get_timezone(tzinfo))
-        if hasattr(tzinfo, 'normalize'):  # pytz
-            dt = tzinfo.normalize(datetime)
     return dt
 
 

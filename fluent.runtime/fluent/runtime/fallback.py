@@ -107,7 +107,6 @@ class FluentResourceLoader(AbstractResourceLoader):
         location on disk, or a list of strings.
         """
         self.roots = [roots] if isinstance(roots, str) else roots
-        self.Resource = FluentResource
 
     def resources(self, locale: str, resource_ids: List[str]) -> Generator[List['Resource'], None, None]:
         for root in self.roots:

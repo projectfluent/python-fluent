@@ -227,6 +227,10 @@ def resolveEntryReference(
         ref_id = reference_to_id(ref)
         env.errors.append(unknown_reference_error_obj(ref_id))
         return FluentNone(f'{{{ref_id}}}')
+    except TypeError:
+        ref_id = reference_to_id(ref)
+        env.errors.append(FluentReferenceError(f"No pattern: {ref_id}"))
+        return FluentNone(ref_id)
 
 
 class MessageReference(FTL.MessageReference, BaseResolver):
@@ -296,6 +300,9 @@ class SelectExpression(FTL.SelectExpression, BaseResolver):
                 break
 
         if found is None:
+            if default is None:
+                env.errors.append(FluentFormatError("No default"))
+                return FluentNone()
             found = default
         return found.value(env)
 

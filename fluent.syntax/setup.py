@@ -1,8 +1,8 @@
-from setuptools import setup, find_namespace_packages
-import os
+from os import path
+from setuptools import setup
 
-this_directory = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(this_directory, 'README.rst'), 'rb') as f:
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.rst'), 'rb') as f:
     long_description = f.read().decode('utf-8')
 
 setup(name='fluent.syntax',
@@ -24,6 +24,7 @@ setup(name='fluent.syntax',
           'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3 :: Only',
       ],
-      packages=find_namespace_packages(include=['fluent.*']),
+      packages=['fluent.syntax'],
+      package_data={'fluent.syntax': ['py.typed']},
       test_suite='tests.syntax'
       )

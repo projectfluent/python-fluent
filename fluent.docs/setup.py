@@ -1,6 +1,9 @@
-from setuptools import setup, find_namespace_packages
+from setuptools import setup
 
 setup(
     name='fluent.docs',
-    packages=find_namespace_packages(include=['fluent.*']),
+    packages=['fluent.docs'],
+    install_requires=[
+        'typing-extensions>=3.7,<5'
+    ],
 )

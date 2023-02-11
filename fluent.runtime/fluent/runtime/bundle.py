@@ -1,7 +1,8 @@
 import babel
 import babel.numbers
 import babel.plural
-from typing import Any, Callable, Dict, List, Literal, TYPE_CHECKING, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, TYPE_CHECKING, Tuple, Union, cast
+from typing_extensions import Literal
 
 from fluent.syntax import ast as FTL
 

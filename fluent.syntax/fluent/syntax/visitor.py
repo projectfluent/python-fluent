@@ -25,7 +25,7 @@ class Visitor:
         visit(node)
 
     def generic_visit(self, node: BaseNode) -> None:
-        for _propname, propvalue in vars(node).items():
+        for propvalue in vars(node).values():
             self.visit(propvalue)
 
 

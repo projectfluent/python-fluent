@@ -37,10 +37,7 @@ class FluentBundle:
                  functions: Union[Dict[str, Callable[[Any], 'FluentType']], None] = None,
                  use_isolating: bool = True):
         self.locales = locales
-        _functions = BUILTINS.copy()
-        if functions:
-            _functions.update(functions)
-        self._functions = _functions
+        self._functions = {**BUILTINS, **(functions or {})}
         self.use_isolating = use_isolating
         self._messages: Dict[str, Union[FTL.Message, FTL.Term]] = {}
         self._terms: Dict[str, Union[FTL.Message, FTL.Term]] = {}

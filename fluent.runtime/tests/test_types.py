@@ -45,7 +45,7 @@ class TestFluentNumber(unittest.TestCase):
             fluent_number,
             1,
             not_a_real_option=True,
-            )
+        )
 
     def test_style_validation(self):
         self.assertRaises(ValueError,
@@ -213,14 +213,14 @@ class TestFluentDate(unittest.TestCase):
         fd = fluent_date(self.a_datetime, timeStyle='short')
         en_US = Locale.parse('en_US')
         en_GB = Locale.parse('en_GB')
-        self.assertEqual(fd.format(en_US), '2:15 PM')
+        self.assertRegex(fd.format(en_US), '^2:15\\sPM$')
         self.assertEqual(fd.format(en_GB), '14:15')
 
     def test_dateStyle_and_timeStyle_datetime(self):
         fd = fluent_date(self.a_datetime, timeStyle='short', dateStyle='short')
         en_US = Locale.parse('en_US')
         en_GB = Locale.parse('en_GB')
-        self.assertEqual(fd.format(en_US), '2/1/18, 2:15 PM')
+        self.assertRegex(fd.format(en_US), '^2/1/18, 2:15\\sPM$')
         self.assertEqual(fd.format(en_GB), '01/02/2018, 14:15')
 
     def test_validate_dateStyle(self):
@@ -246,7 +246,7 @@ class TestFluentDate(unittest.TestCase):
         fd1 = fluent_date(dt1, dateStyle='short', timeStyle='short')
         self.assertEqual(fd1.format(en_GB), '02/07/2018, 00:30')
         fd1b = fluent_date(dt1, dateStyle='full', timeStyle='full')
-        self.assertEqual(fd1b.format(en_GB), 'Monday, 2 July 2018 at 00:30:00 British Summer Time')
+        self.assertRegex(fd1b.format(en_GB), '^Monday, 2 July 2018(,| at) 00:30:00 British Summer Time$')
         fd1c = fluent_date(dt1, dateStyle='short')
         self.assertEqual(fd1c.format(en_GB), '02/07/2018')
         fd1d = fluent_date(dt1, timeStyle='short')
@@ -259,7 +259,7 @@ class TestFluentDate(unittest.TestCase):
         self.assertEqual(fd2.format(en_GB), '02/07/2018, 00:30')
         fd2b = fluent_date(dt2, dateStyle='full', timeStyle='full',
                            timeZone='Europe/London')
-        self.assertEqual(fd2b.format(en_GB), 'Monday, 2 July 2018 at 00:30:00 British Summer Time')
+        self.assertRegex(fd2b.format(en_GB), '^Monday, 2 July 2018(,| at) 00:30:00 British Summer Time$')
         fd2c = fluent_date(dt2, dateStyle='short',
                            timeZone='Europe/London')
         self.assertEqual(fd2c.format(en_GB), '02/07/2018')
@@ -290,7 +290,7 @@ class TestFluentDate(unittest.TestCase):
             fluent_date,
             self.a_date,
             not_a_real_option=True,
-            )
+        )
 
     def test_dont_wrap_unnecessarily(self):
         f1 = fluent_date(self.a_date)

@@ -1,7 +1,8 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any, Union
 
-from fluent.syntax.ast import TermReference
+from fluent.syntax.ast import MessageReference, TermReference
 
 from .types import FluentInt, FluentFloat, FluentDecimal, FluentDate, FluentDateTime
 from .errors import FluentReferenceError
@@ -10,7 +11,7 @@ TERM_SIGIL = '-'
 ATTRIBUTE_SEPARATOR = '.'
 
 
-def native_to_fluent(val):
+def native_to_fluent(val: Any) -> Any:
     """
     Convert a python type to a Fluent Type.
     """
@@ -28,7 +29,7 @@ def native_to_fluent(val):
     return val
 
 
-def reference_to_id(ref):
+def reference_to_id(ref: Union[MessageReference, TermReference]) -> str:
     """
     Returns a string reference for a MessageReference or TermReference
     AST node.
@@ -39,6 +40,7 @@ def reference_to_id(ref):
        -term
        -term.attr
     """
+    start: str
     if isinstance(ref, TermReference):
         start = TERM_SIGIL + ref.id.name
     else:
@@ -49,7 +51,7 @@ def reference_to_id(ref):
     return start
 
 
-def unknown_reference_error_obj(ref_id):
+def unknown_reference_error_obj(ref_id: str) -> FluentReferenceError:
     if ATTRIBUTE_SEPARATOR in ref_id:
         return FluentReferenceError(f"Unknown attribute: {ref_id}")
     if ref_id.startswith(TERM_SIGIL):

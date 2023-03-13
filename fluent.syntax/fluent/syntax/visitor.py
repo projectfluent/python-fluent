@@ -1,4 +1,5 @@
-from .ast import BaseNode
+from typing import Any, List
+from .ast import BaseNode, Node
 
 
 class Visitor:
@@ -11,7 +12,8 @@ class Visitor:
     If you want to still descend into the children of the node, call
     `generic_visit` of the superclass.
     '''
-    def visit(self, node):
+
+    def visit(self, node: Any) -> None:
         if isinstance(node, list):
             for child in node:
                 self.visit(child)
@@ -22,8 +24,8 @@ class Visitor:
         visit = getattr(self, f'visit_{nodename}', self.generic_visit)
         visit(node)
 
-    def generic_visit(self, node):
-        for propname, propvalue in vars(node).items():
+    def generic_visit(self, node: BaseNode) -> None:
+        for propvalue in vars(node).values():
             self.visit(propvalue)
 
 
@@ -35,7 +37,8 @@ class Transformer(Visitor):
     If you need to keep the original AST around, pass
     a `node.clone()` to the transformer.
     '''
-    def visit(self, node):
+
+    def visit(self, node: Any) -> Any:
         if not isinstance(node, BaseNode):
             return node
 
@@ -43,10 +46,10 @@ class Transformer(Visitor):
         visit = getattr(self, f'visit_{nodename}', self.generic_visit)
         return visit(node)
 
-    def generic_visit(self, node):
+    def generic_visit(self, node: Node) -> Node:  # type: ignore
         for propname, propvalue in vars(node).items():
             if isinstance(propvalue, list):
-                new_vals = []
+                new_vals: List[Any] = []
                 for child in propvalue:
                     new_val = self.visit(child)
                     if new_val is not None:

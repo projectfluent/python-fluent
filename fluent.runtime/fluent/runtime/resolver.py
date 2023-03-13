@@ -1,11 +1,14 @@
-import contextlib
-
 import attr
+import contextlib
+from typing import Any, Dict, Generator, List, Set, TYPE_CHECKING, Union, cast
 
 from fluent.syntax import ast as FTL
 from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
 from .types import FluentType, FluentNone, FluentInt, FluentFloat
 from .utils import reference_to_id, unknown_reference_error_obj
+
+if TYPE_CHECKING:
+    from .bundle import FluentBundle
 
 
 """
@@ -38,22 +41,22 @@ class CurrentEnvironment:
     # For Messages, VariableReference nodes are interpreted as external args,
     # but for Terms they are the values explicitly passed using CallExpression
     # syntax. So we have to be able to change 'args' for this purpose.
-    args = attr.ib()
+    args: Dict[str, Any] = attr.ib(factory=dict)
     # This controls whether we need to report an error if a VariableReference
     # refers to an arg that is not present in the args dict.
-    error_for_missing_arg = attr.ib(default=True)
+    error_for_missing_arg: bool = attr.ib(default=True)
 
 
 @attr.s
 class ResolverEnvironment:
-    context = attr.ib()
-    errors = attr.ib()
-    part_count = attr.ib(default=0, init=False)
-    active_patterns = attr.ib(factory=set, init=False)
-    current = attr.ib(factory=CurrentEnvironment)
+    context: 'FluentBundle' = attr.ib()
+    errors: List[Exception] = attr.ib()
+    part_count: int = attr.ib(default=0, init=False)
+    active_patterns: Set[FTL.Pattern] = attr.ib(factory=set, init=False)
+    current: CurrentEnvironment = attr.ib(factory=CurrentEnvironment)
 
     @contextlib.contextmanager
-    def modified(self, **replacements):
+    def modified(self, **replacements: Any) -> Generator['ResolverEnvironment', None, None]:
         """
         Context manager that modifies the 'current' attribute of the
         environment, restoring the old data at the end.
@@ -65,7 +68,7 @@ class ResolverEnvironment:
         yield self
         self.current = old_current
 
-    def modified_for_term_reference(self, args=None):
+    def modified_for_term_reference(self, args: Union[Dict[str, Any], None] = None) -> Any:
         return self.modified(args=args if args is not None else {},
                              error_for_missing_arg=False)
 
@@ -79,46 +82,59 @@ class BaseResolver:
     classes that don't show up in the evaluation, but need to
     be part of the compiled tree structure.
     """
-    def __call__(self, env):
+
+    def __call__(self, env: ResolverEnvironment) -> Any:
         raise NotImplementedError
 
 
 class Literal(BaseResolver):
-    pass
+    value: str
 
 
-class EntryResolver(BaseResolver):
-    '''Entries (Messages and Terms) have attributes.
-    In the AST they're a list, the resolver wants a dict. The helper method
-    here should be called from the constructor.
-    '''
-    def _fix_attributes(self):
-        self.attributes = {
-            attr.id.name: attr.value
-            for attr in self.attributes
-        }
+class Message(FTL.Entry, BaseResolver):
+    id: 'Identifier'
+    value: Union['Pattern', None]
+    attributes: Dict[str, 'Pattern']
+
+    def __init__(self,
+                 id: 'Identifier',
+                 value: Union['Pattern', None] = None,
+                 attributes: Union[List['Attribute'], None] = None,
+                 comment: Any = None,
+                 **kwargs: Any):
+        super().__init__(**kwargs)
+        self.id = id
+        self.value = value
+        self.attributes = {attr.id.name: attr.value for attr in attributes} if attributes else {}
 
 
-class Message(FTL.Message, EntryResolver):
-    def __init__(self, id, **kwargs):
-        super().__init__(id, **kwargs)
-        self._fix_attributes()
+class Term(FTL.Entry, BaseResolver):
+    id: 'Identifier'
+    value: 'Pattern'
+    attributes: Dict[str, 'Pattern']
 
-
-class Term(FTL.Term, EntryResolver):
-    def __init__(self, id, value, **kwargs):
-        super().__init__(id, value, **kwargs)
-        self._fix_attributes()
+    def __init__(self,
+                 id: 'Identifier',
+                 value: 'Pattern',
+                 attributes: Union[List['Attribute'], None] = None,
+                 comment: Any = None,
+                 **kwargs: Any):
+        super().__init__(**kwargs)
+        self.id = id
+        self.value = value
+        self.attributes = {attr.id.name: attr.value for attr in attributes} if attributes else {}
 
 
 class Pattern(FTL.Pattern, BaseResolver):
     # Prevent messages with too many sub parts, for CPI DOS protection
     MAX_PARTS = 1000
 
-    def __init__(self, *args, **kwargs):
+    elements: List[Union['TextElement', 'Placeable']]  # type: ignore
+
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-    def __call__(self, env):
+    def __call__(self, env: ResolverEnvironment) -> Union[str, FluentNone]:
         if self in env.active_patterns:
             env.errors.append(FluentCyclicReferenceError("Cyclic reference"))
             return FluentNone()
@@ -137,7 +153,7 @@ class Pattern(FTL.Pattern, BaseResolver):
         return retval
 
 
-def resolve(fluentish, env):
+def resolve(fluentish: Any, env: ResolverEnvironment) -> Any:
     if isinstance(fluentish, FluentType):
         return fluentish.format(env.context._babel_locale)
     if isinstance(fluentish, str):
@@ -150,12 +166,16 @@ def resolve(fluentish, env):
 
 
 class TextElement(FTL.TextElement, Literal):
-    def __call__(self, env):
+    value: str
+
+    def __call__(self, env: ResolverEnvironment) -> str:
         return self.value
 
 
 class Placeable(FTL.Placeable, BaseResolver):
-    def __call__(self, env):
+    expression: Union['InlineExpression', 'Placeable', 'SelectExpression']
+
+    def __call__(self, env: ResolverEnvironment) -> Any:
         inner = resolve(self.expression(env), env)
         if not env.context.use_isolating:
             return inner
@@ -163,49 +183,70 @@ class Placeable(FTL.Placeable, BaseResolver):
 
 
 class NeverIsolatingPlaceable(FTL.Placeable, BaseResolver):
-    def __call__(self, env):
+    expression: Union['InlineExpression', Placeable, 'SelectExpression']
+
+    def __call__(self, env: ResolverEnvironment) -> Any:
         inner = resolve(self.expression(env), env)
         return inner
 
 
 class StringLiteral(FTL.StringLiteral, Literal):
-    def __call__(self, env):
+    value: str
+
+    def __call__(self, env: ResolverEnvironment) -> str:
         return self.parse()['value']
 
 
 class NumberLiteral(FTL.NumberLiteral, BaseResolver):
-    def __init__(self, value, **kwargs):
+    value: Union[FluentFloat, FluentInt]  # type: ignore
+
+    def __init__(self, value: str, **kwargs: Any):
         super().__init__(value, **kwargs)
-        if '.' in self.value:
+        if '.' in cast(str, self.value):
             self.value = FluentFloat(self.value)
         else:
             self.value = FluentInt(self.value)
 
-    def __call__(self, env):
+    def __call__(self, env: ResolverEnvironment) -> Union[FluentFloat, FluentInt]:
         return self.value
 
 
-class EntryReference(BaseResolver):
-    def __call__(self, env):
-        try:
-            entry = env.context._lookup(self.id.name, term=isinstance(self, FTL.TermReference))
-            if self.attribute:
-                pattern = entry.attributes[self.attribute.name]
-            else:
-                pattern = entry.value
-            return pattern(env)
-        except LookupError:
-            ref_id = reference_to_id(self)
-            env.errors.append(unknown_reference_error_obj(ref_id))
-            return FluentNone(f'{{{ref_id}}}')
+def resolveEntryReference(
+        ref: Union['MessageReference', 'TermReference'],
+        env: ResolverEnvironment
+) -> Union[str, FluentNone]:
+    try:
+        entry = env.context._lookup(ref.id.name, term=isinstance(ref, FTL.TermReference))
+        pattern: Pattern
+        if ref.attribute:
+            pattern = entry.attributes[ref.attribute.name]
+        else:
+            pattern = entry.value  # type: ignore
+        return pattern(env)
+    except LookupError:
+        ref_id = reference_to_id(ref)
+        env.errors.append(unknown_reference_error_obj(ref_id))
+        return FluentNone(f'{{{ref_id}}}')
+    except TypeError:
+        ref_id = reference_to_id(ref)
+        env.errors.append(FluentReferenceError(f"No pattern: {ref_id}"))
+        return FluentNone(ref_id)
 
 
-class MessageReference(FTL.MessageReference, EntryReference):
-    pass
+class MessageReference(FTL.MessageReference, BaseResolver):
+    id: 'Identifier'
+    attribute: Union['Identifier', None]
+
+    def __call__(self, env: ResolverEnvironment) -> Union[str, FluentNone]:
+        return resolveEntryReference(self, env)
 
 
-class TermReference(FTL.TermReference, EntryReference):
-    def __call__(self, env):
+class TermReference(FTL.TermReference, BaseResolver):
+    id: 'Identifier'
+    attribute: Union['Identifier', None]
+    arguments: Union['CallArguments', None]
+
+    def __call__(self, env: ResolverEnvironment) -> Union[str, FluentNone]:
         if self.arguments:
             if self.arguments.positional:
                 env.errors.append(FluentFormatError("Ignored positional arguments passed to term '{}'"
@@ -214,11 +255,13 @@ class TermReference(FTL.TermReference, EntryReference):
         else:
             kwargs = None
         with env.modified_for_term_reference(args=kwargs):
-            return super().__call__(env)
+            return resolveEntryReference(self, env)
 
 
 class VariableReference(FTL.VariableReference, BaseResolver):
-    def __call__(self, env):
+    id: 'Identifier'
+
+    def __call__(self, env: ResolverEnvironment) -> Any:
         name = self.id.name
         try:
             arg_val = env.current.args[name]
@@ -236,17 +279,18 @@ class VariableReference(FTL.VariableReference, BaseResolver):
 
 
 class Attribute(FTL.Attribute, BaseResolver):
-    pass
+    id: 'Identifier'
+    value: Pattern
 
 
 class SelectExpression(FTL.SelectExpression, BaseResolver):
-    def __call__(self, env):
-        key = self.selector(env)
-        return self.select_from_select_expression(env, key=key)
+    selector: 'InlineExpression'
+    variants: List['Variant']  # type: ignore
 
-    def select_from_select_expression(self, env, key):
-        default = None
-        found = None
+    def __call__(self, env: ResolverEnvironment) -> Union[str, FluentNone]:
+        key = self.selector(env)
+        default: Union['Variant', None] = None
+        found: Union['Variant', None] = None
         for variant in self.variants:
             if variant.default:
                 default = variant
@@ -256,15 +300,18 @@ class SelectExpression(FTL.SelectExpression, BaseResolver):
                 break
 
         if found is None:
+            if default is None:
+                env.errors.append(FluentFormatError("No default"))
+                return FluentNone()
             found = default
         return found.value(env)
 
 
-def is_number(val):
+def is_number(val: Any) -> bool:
     return isinstance(val, (int, float))
 
 
-def match(val1, val2, env):
+def match(val1: Any, val2: Any, env: ResolverEnvironment) -> bool:
     if val1 is None or isinstance(val1, FluentNone):
         return False
     if val2 is None or isinstance(val2, FluentNone):
@@ -272,28 +319,36 @@ def match(val1, val2, env):
     if is_number(val1):
         if not is_number(val2):
             # Could be plural rule match
-            return env.context._plural_form(val1) == val2
+            return cast(bool, env.context._plural_form(val1) == val2)
     elif is_number(val2):
         return match(val2, val1, env)
 
-    return val1 == val2
+    return cast(bool, val1 == val2)
 
 
 class Variant(FTL.Variant, BaseResolver):
-    pass
+    key: Union['Identifier', NumberLiteral]
+    value: Pattern
+    default: bool
 
 
 class Identifier(FTL.Identifier, BaseResolver):
-    def __call__(self, env):
+    name: str
+
+    def __call__(self, env: ResolverEnvironment) -> str:
         return self.name
 
 
 class CallArguments(FTL.CallArguments, BaseResolver):
-    pass
+    positional: List[Union['InlineExpression', Placeable]]  # type: ignore
+    named: List['NamedArgument']  # type: ignore
 
 
 class FunctionReference(FTL.FunctionReference, BaseResolver):
-    def __call__(self, env):
+    id: Identifier
+    arguments: CallArguments
+
+    def __call__(self, env: ResolverEnvironment) -> Any:
         args = [arg(env) for arg in self.arguments.positional]
         kwargs = {kwarg.name.name: kwarg.value(env) for kwarg in self.arguments.named}
         function_name = self.id.name
@@ -312,4 +367,9 @@ class FunctionReference(FTL.FunctionReference, BaseResolver):
 
 
 class NamedArgument(FTL.NamedArgument, BaseResolver):
-    pass
+    name: Identifier
+    value: Union[NumberLiteral, StringLiteral]
+
+
+InlineExpression = Union[NumberLiteral, StringLiteral, MessageReference,
+                         TermReference, VariableReference, FunctionReference]

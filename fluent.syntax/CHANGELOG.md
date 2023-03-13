@@ -1,9 +1,10 @@
 # Changelog
 
-## fluent.syntax 0.19 (TBD)
+## fluent.syntax 0.19.0 (March 13, 2023)
 
-  - Drop support for Python 2.7 and 3.5
-  - Add support for Python 3.6 through 3.9
+  - Drop support for Python 2.7 and 3.5 & support for Python 3.6 through 3.9 ([#161](https://github.com/projectfluent/python-fluent/pull/161))
+  - Treat tab as text, not whitespace ([#179](https://github.com/projectfluent/python-fluent/pull/179))
+  - Add type hints ([#180](https://github.com/projectfluent/python-fluent/pull/180))
 
 ## fluent.syntax 0.18.1 (September 15, 2020)
 

@@ -1,11 +1,11 @@
 Changelog
 =========
 
-fluent.runtime 0.4 (TBD)
+fluent.runtime 0.4.0 (March 13, 2023)
 -----------------------------------
 
-* Drop support for Python 2.7 and 3.5
-* Add support for Python 3.6 through 3.9
+* Drop support for Python 2.7 and 3.5 & support for Python 3.6 through 3.9 ([#163](https://github.com/projectfluent/python-fluent/pull/163))
+* Add type hints ([#180](https://github.com/projectfluent/python-fluent/pull/180))
 
 fluent.runtime 0.3.1 (May 20, 2020)
 -----------------------------------

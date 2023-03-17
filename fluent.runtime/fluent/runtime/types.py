@@ -1,34 +1,36 @@
 import warnings
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any, ClassVar, Generic, Mapping, Set, Type, TypeVar, Union, cast, overload
+from typing_extensions import Final, Literal, Self
 
 import attr
 import pytz
 from babel import Locale
 from babel.dates import format_date, format_time, get_datetime_format, get_timezone
 from babel.numbers import NumberPattern, parse_pattern
-from typing import Any, Dict, Type, TypeVar, Union, cast
-from typing_extensions import Literal
 
-FORMAT_STYLE_DECIMAL = "decimal"
-FORMAT_STYLE_CURRENCY = "currency"
-FORMAT_STYLE_PERCENT = "percent"
-FORMAT_STYLE_OPTIONS = {
+_T = TypeVar('_T')
+
+FORMAT_STYLE_DECIMAL: Final = "decimal"
+FORMAT_STYLE_CURRENCY: Final = "currency"
+FORMAT_STYLE_PERCENT: Final = "percent"
+FORMAT_STYLE_OPTIONS: Final = {
     FORMAT_STYLE_DECIMAL,
     FORMAT_STYLE_CURRENCY,
     FORMAT_STYLE_PERCENT,
 }
 
-CURRENCY_DISPLAY_SYMBOL = "symbol"
-CURRENCY_DISPLAY_CODE = "code"
-CURRENCY_DISPLAY_NAME = "name"
-CURRENCY_DISPLAY_OPTIONS = {
+CURRENCY_DISPLAY_SYMBOL: Final = "symbol"
+CURRENCY_DISPLAY_CODE: Final = "code"
+CURRENCY_DISPLAY_NAME: Final = "name"
+CURRENCY_DISPLAY_OPTIONS: Final = {
     CURRENCY_DISPLAY_SYMBOL,
     CURRENCY_DISPLAY_CODE,
     CURRENCY_DISPLAY_NAME,
 }
 
-DATE_STYLE_OPTIONS = {
+DATE_STYLE_OPTIONS: Final[Set[Union[Literal['full', 'long', 'medium', 'short'], None]]] = {
     "full",
     "long",
     "medium",
@@ -36,7 +38,7 @@ DATE_STYLE_OPTIONS = {
     None,
 }
 
-TIME_STYLE_OPTIONS = {
+TIME_STYLE_OPTIONS: Final[Set[Union[Literal['full', 'long', 'medium', 'short'], None]]] = {
     "full",
     "long",
     "medium",
@@ -54,7 +56,7 @@ class FluentNone(FluentType):
     def __init__(self, name: Union[str, None] = None):
         self.name = name
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, FluentNone) and self.name == other.name
 
     def format(self, locale: Locale) -> str:
@@ -83,19 +85,19 @@ class NumberFormatOptions:
     maximumSignificantDigits: Union[int, None] = attr.ib(default=None)
 
 
-class FluentNumber(FluentType):
+class FluentNumber(FluentType, Generic[_T]):
 
-    default_number_format_options = NumberFormatOptions()
+    default_number_format_options: ClassVar = NumberFormatOptions()
 
     def __new__(cls,
-                value: Union[int, float, Decimal, 'FluentNumber'],
-                **kwargs: Any) -> 'FluentNumber':
-        self = super().__new__(cls, value)  # type: ignore
+                value: Union[str, _T, 'FluentNumber[_T]'],
+                **kwargs: Any) -> Self:
+        self = super().__new__(cls, value)  # type: ignore[call-arg]
         return self._init(value, kwargs)
 
     def _init(self,
-              value: Union[int, float, Decimal, 'FluentNumber'],
-              kwargs: Dict[str, Any]) -> 'FluentNumber':
+              value: Union[str, _T, 'FluentNumber[_T]'],
+              kwargs: Mapping[str, Any]) -> Self:
         self.options = merge_options(NumberFormatOptions,
                                      getattr(value, 'options', self.default_number_format_options),
                                      kwargs)
@@ -174,10 +176,7 @@ class FluentNumber(FluentType):
         return pattern
 
 
-Options = TypeVar('Options', bound=Union[NumberFormatOptions, 'DateFormatOptions'])
-
-
-def merge_options(options_class: Type[Options], base: Union[Options, None], kwargs: Dict[str, Any]) -> Options:
+def merge_options(options_class: Type[_T], base: Union[_T, None], kwargs: Mapping[str, Any]) -> _T:
     """
     Given an 'options_class', an optional 'base' object to copy from,
     and some keyword arguments, create a new options instance
@@ -200,7 +199,7 @@ def merge_options(options_class: Type[Options], base: Union[Options, None], kwar
     for k in kwargs.keys():
         setattr(retval, k, getattr(kwarg_options, k))
 
-    return retval  # type: ignore
+    return retval
 
 
 # We want types that inherit from both FluentNumber and a native type,
@@ -213,22 +212,56 @@ def merge_options(options_class: Type[Options], base: Union[Options, None], kwar
 #    instances in place of a native type and will work just the same without
 #    modification (in most cases).
 
-class FluentInt(FluentNumber, int):
+class FluentInt(FluentNumber[int], int):
     pass
 
 
-class FluentFloat(FluentNumber, float):
+class FluentFloat(FluentNumber[float], float):
     pass
 
 
-class FluentDecimal(FluentNumber, Decimal):
+class FluentDecimal(FluentNumber[Decimal], Decimal):
     pass
+
+
+AnyFluentNumber = TypeVar('AnyFluentNumber', bound=FluentNumber[Any])
+
+
+@overload
+def fluent_number(number: AnyFluentNumber) -> AnyFluentNumber:  # type: ignore[misc]
+    ...
+
+
+@overload
+def fluent_number(number: int, **kwargs: Any) -> FluentInt:
+    ...
+
+
+@overload
+def fluent_number(number: float, **kwargs: Any) -> FluentFloat:
+    ...
+
+
+@overload
+def fluent_number(number: Decimal, **kwargs: Any) -> FluentDecimal:
+    ...
+
+
+@overload
+def fluent_number(number: FluentNone, **kwargs: Any) -> FluentNone:
+    ...
+
+
+@overload
+def fluent_number(number: Union[int, float, Decimal, FluentNumber[Any], FluentNone],
+                  **kwargs: Any) -> Union[FluentInt, FluentFloat, FluentDecimal, FluentNone]:
+    ...
 
 
 def fluent_number(
-        number: Union[int, float, Decimal, FluentNumber, FluentNone],
+        number: Union[int, float, Decimal, FluentNumber[Any], FluentNone],
         **kwargs: Any
-) -> Union[FluentNumber, FluentNone]:
+) -> Union[FluentNumber[Any], FluentNone]:
     if isinstance(number, FluentNumber) and not kwargs:
         return number
     if isinstance(number, int):
@@ -244,7 +277,7 @@ def fluent_number(
                         .format(number, type(number)))
 
 
-_UNGROUPED_PATTERN = parse_pattern("#0")
+_UNGROUPED_PATTERN: Final = parse_pattern("#0")
 
 
 def clone_pattern(pattern: NumberPattern) -> NumberPattern:
@@ -288,7 +321,7 @@ class DateFormatOptions:
         validator=attr.validators.in_(TIME_STYLE_OPTIONS))
 
 
-_SUPPORTED_DATETIME_OPTIONS = ['dateStyle', 'timeStyle', 'timeZone']
+_SUPPORTED_DATETIME_OPTIONS: Final = ['dateStyle', 'timeStyle', 'timeZone']
 
 
 class FluentDateType(FluentType):
@@ -296,7 +329,7 @@ class FluentDateType(FluentType):
     # some Python implementation (e.g. PyPy) implement some methods.
     # So we leave those alone, and implement another `_init_options`
     # which is called from other constructors.
-    def _init_options(self, dt_obj: Union[date, datetime], kwargs: Dict[str, Any]) -> None:
+    def _init_options(self, dt_obj: Union[date, datetime], kwargs: Mapping[str, Any]) -> None:
         if 'timeStyle' in kwargs and not isinstance(self, datetime):
             raise TypeError("timeStyle option can only be specified for datetime instances, not date instance")
 
@@ -347,7 +380,7 @@ def _ensure_datetime_tzinfo(dt: datetime, tzinfo: Union[str, None] = None) -> da
 
 class FluentDate(FluentDateType, date):
     @classmethod
-    def from_date(cls, dt_obj: date, **kwargs: Any) -> 'FluentDate':
+    def from_date(cls, dt_obj: date, **kwargs: Any) -> Self:
         obj = cls(dt_obj.year, dt_obj.month, dt_obj.day)
         obj._init_options(dt_obj, kwargs)
         return obj
@@ -355,12 +388,41 @@ class FluentDate(FluentDateType, date):
 
 class FluentDateTime(FluentDateType, datetime):
     @classmethod
-    def from_date_time(cls, dt_obj: datetime, **kwargs: Any) -> 'FluentDateTime':
+    def from_date_time(cls, dt_obj: datetime, **kwargs: Any) -> Self:
         obj = cls(dt_obj.year, dt_obj.month, dt_obj.day,
                   dt_obj.hour, dt_obj.minute, dt_obj.second,
                   dt_obj.microsecond, tzinfo=dt_obj.tzinfo)
         obj._init_options(dt_obj, kwargs)
         return obj
+
+
+AnyFluentDate = TypeVar('AnyFluentDate', bound=FluentDateType)
+
+
+@overload
+def fluent_date(dt: AnyFluentDate) -> AnyFluentDate:  # type: ignore[misc]
+    ...
+
+
+@overload
+def fluent_date(dt: datetime, **kwargs: Any) -> FluentDateTime:  # type: ignore[misc]
+    ...
+
+
+@overload
+def fluent_date(dt: date, **kwargs: Any) -> FluentDate:
+    ...
+
+
+@overload
+def fluent_date(dt: FluentNone, **kwargs: Any) -> FluentNone:
+    ...
+
+
+@overload
+def fluent_date(dt: Union[FluentDateType, date, FluentNone],
+                **kwargs: Any) -> Union[FluentDateTime, FluentDate, FluentNone]:
+    ...
 
 
 def fluent_date(

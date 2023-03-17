@@ -27,7 +27,7 @@ setup(name='fluent.syntax',
       packages=['fluent.syntax'],
       package_data={'fluent.syntax': ['py.typed']},
       install_requires=[
-          'typing-extensions>=3.7,<5'
+          'typing-extensions>=4.0,<4.2'
       ],
       test_suite='tests.syntax'
       )

@@ -1,13 +1,16 @@
 import codecs
 import os
-from typing import Any, Callable, Dict, Generator, List, TYPE_CHECKING, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, List, Sequence, Type, Union, cast
 
 from fluent.syntax import FluentParser
 
 from .bundle import FluentBundle
 
 if TYPE_CHECKING:
+    from _typeshed import SupportsItems, SupportsKeysAndGetItem
+
     from fluent.syntax.ast import Resource
+
     from .types import FluentType
 
 
@@ -21,12 +24,12 @@ class FluentLocalization:
 
     def __init__(
         self,
-        locales: List[str],
-        resource_ids: List[str],
+        locales: Sequence[str],
+        resource_ids: Iterable[str],
         resource_loader: 'AbstractResourceLoader',
         use_isolating: bool = False,
         bundle_class: Type[FluentBundle] = FluentBundle,
-        functions: Union[Dict[str, Callable[[Any], 'FluentType']], None] = None,
+        functions: Union['SupportsKeysAndGetItem[str, Callable[[Any], FluentType]]', None] = None,
     ):
         self.locales = locales
         self.resource_ids = resource_ids
@@ -37,7 +40,7 @@ class FluentLocalization:
         self._bundle_cache: List[FluentBundle] = []
         self._bundle_it = self._iterate_bundles()
 
-    def format_value(self, msg_id: str, args: Union[Dict[str, Any], None] = None) -> str:
+    def format_value(self, msg_id: str, args: Union['SupportsItems[str, Any]', None] = None) -> str:
         for bundle in self._bundles():
             if not bundle.has_message(msg_id):
                 continue
@@ -48,12 +51,12 @@ class FluentLocalization:
             return cast(str, val)  # Never FluentNone when format_pattern called externally
         return msg_id
 
-    def _create_bundle(self, locales: List[str]) -> FluentBundle:
+    def _create_bundle(self, locales: Sequence[str]) -> FluentBundle:
         return self.bundle_class(
             locales, functions=self.functions, use_isolating=self.use_isolating
         )
 
-    def _bundles(self) -> Generator[FluentBundle, None, None]:
+    def _bundles(self) -> Iterator[FluentBundle]:
         bundle_pointer = 0
         while True:
             if bundle_pointer == len(self._bundle_cache):
@@ -64,7 +67,7 @@ class FluentLocalization:
             yield self._bundle_cache[bundle_pointer]
             bundle_pointer += 1
 
-    def _iterate_bundles(self) -> Generator[FluentBundle, None, None]:
+    def _iterate_bundles(self) -> Iterator[FluentBundle]:
         for first_loc in range(0, len(self.locales)):
             locs = self.locales[first_loc:]
             for resources in self.resource_loader.resources(locs[0], self.resource_ids):
@@ -79,7 +82,7 @@ class AbstractResourceLoader:
     Interface to implement for resource loaders.
     """
 
-    def resources(self, locale: str, resource_ids: List[str]) -> Generator[List['Resource'], None, None]:
+    def resources(self, locale: str, resource_ids: Iterable[str]) -> Iterator[List['Resource']]:
         """
         Yield lists of FluentResource objects, corresponding to
         each of the resource_ids.
@@ -101,14 +104,14 @@ class FluentResourceLoader(AbstractResourceLoader):
     different roots.
     """
 
-    def __init__(self, roots: Union[str, List[str]]):
+    def __init__(self, roots: Union[str, Iterable[str]]):
         """
         Create a resource loader. The roots may be a string for a single
         location on disk, or a list of strings.
         """
-        self.roots = [roots] if isinstance(roots, str) else roots
+        self.roots: Iterable[str] = [roots] if isinstance(roots, str) else roots
 
-    def resources(self, locale: str, resource_ids: List[str]) -> Generator[List['Resource'], None, None]:
+    def resources(self, locale: str, resource_ids: Iterable[str]) -> Iterator[List['Resource']]:
         for root in self.roots:
             resources: List[Any] = []
             for resource_id in resource_ids:

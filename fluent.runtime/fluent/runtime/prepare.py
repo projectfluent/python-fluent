@@ -1,5 +1,7 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, Sequence
+
 from fluent.syntax import ast as FTL
+
 from . import resolver
 
 
@@ -29,7 +31,7 @@ class Compiler:
             return expression
         return resolver.Placeable(expression=expression, **kwargs)
 
-    def compile_Pattern(self, _: Any, elements: List[Any], **kwargs: Any) -> Any:
+    def compile_Pattern(self, _: Any, elements: Sequence[Any], **kwargs: Any) -> Any:
         if len(elements) == 1 and isinstance(elements[0], resolver.Placeable):
             # Don't isolate isolated placeables
             return resolver.NeverIsolatingPlaceable(elements[0].expression)

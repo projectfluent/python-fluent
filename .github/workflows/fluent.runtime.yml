@@ -58,7 +58,7 @@ jobs:
           python -m pip install wheel
           python -m pip install --upgrade pip
           python -m pip install .
-          python -m pip install flake8==6 mypy==1 types-babel types-pytz
+          python -m pip install flake8==6 mypy==1.1.1 types-babel types-pytz
       - name: Install latest fluent.syntax
         working-directory: ./fluent.syntax
         run: |

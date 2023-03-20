@@ -1,10 +1,10 @@
+import json
 import re
 import sys
-import json
-from typing import Any, Callable, Dict, List, TypeVar, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, Match, Sequence, Union, cast
+from typing_extensions import Self, TypeAlias
 
-Node = TypeVar('Node', bound='BaseNode')
-ToJsonFn = Callable[[Dict[str, Any]], Any]
+ToJsonFn: TypeAlias = Callable[[Dict[str, Any]], Any]
 
 
 def to_json(value: Any, fn: Union[ToJsonFn, None] = None) -> Any:
@@ -21,7 +21,7 @@ def to_json(value: Any, fn: Union[ToJsonFn, None] = None) -> Any:
 def from_json(value: Any) -> Any:
     if isinstance(value, dict):
         cls = getattr(sys.modules[__name__], value['type'])
-        args = {
+        args: Dict[str, Any] = {
             k: from_json(v)
             for k, v in value.items()
             if k != 'type'
@@ -33,7 +33,7 @@ def from_json(value: Any) -> Any:
         return value
 
 
-def scalars_equal(node1: Any, node2: Any, ignored_fields: List[str]) -> bool:
+def scalars_equal(node1: Any, node2: Any, ignored_fields: Iterable[str]) -> bool:
     """Compare two nodes which are not lists."""
 
     if type(node1) != type(node2):
@@ -52,7 +52,7 @@ class BaseNode:
     Annotation.  Implements __str__, to_json and traverse.
     """
 
-    def clone(self: Node) -> Node:
+    def clone(self) -> Self:
         """Create a deep clone of the current node."""
         def visit(value: Any) -> Any:
             """Clone node and its descendants."""
@@ -69,7 +69,7 @@ class BaseNode:
             **{name: visit(value) for name, value in vars(self).items()}
         )
 
-    def equals(self, other: 'BaseNode', ignored_fields: List[str] = ['span']) -> bool:
+    def equals(self, other: 'BaseNode', ignored_fields: Iterable[str] = ['span']) -> bool:
         """Compare two nodes.
 
         Nodes are deeply compared on a field by field basis. If possible, False
@@ -134,9 +134,9 @@ class SyntaxNode(BaseNode):
 
 
 class Resource(SyntaxNode):
-    def __init__(self, body: Union[List['EntryType'], None] = None, **kwargs: Any):
+    def __init__(self, body: Union[Sequence['EntryType'], None] = None, **kwargs: Any):
         super().__init__(**kwargs)
-        self.body = body or []
+        self.body: Sequence['EntryType'] = body or []
 
 
 class Entry(SyntaxNode):
@@ -147,28 +147,28 @@ class Message(Entry):
     def __init__(self,
                  id: 'Identifier',
                  value: Union['Pattern', None] = None,
-                 attributes: Union[List['Attribute'], None] = None,
+                 attributes: Union[Sequence['Attribute'], None] = None,
                  comment: Union['Comment', None] = None,
                  **kwargs: Any):
         super().__init__(**kwargs)
         self.id = id
         self.value = value
-        self.attributes = attributes or []
+        self.attributes: Sequence['Attribute'] = attributes or []
         self.comment = comment
 
 
 class Term(Entry):
-    def __init__(self, id: 'Identifier', value: 'Pattern', attributes: Union[List['Attribute'], None] = None,
+    def __init__(self, id: 'Identifier', value: 'Pattern', attributes: Union[Sequence['Attribute'], None] = None,
                  comment: Union['Comment', None] = None, **kwargs: Any):
         super().__init__(**kwargs)
         self.id = id
         self.value = value
-        self.attributes = attributes or []
+        self.attributes: Sequence['Attribute'] = attributes or []
         self.comment = comment
 
 
 class Pattern(SyntaxNode):
-    def __init__(self, elements: List[Union['TextElement', 'Placeable']], **kwargs: Any):
+    def __init__(self, elements: Sequence[Union['TextElement', 'Placeable']], **kwargs: Any):
         super().__init__(**kwargs)
         self.elements = elements
 
@@ -208,10 +208,10 @@ class Literal(Expression):
 
 class StringLiteral(Literal):
     def parse(self) -> Dict[str, str]:
-        def from_escape_sequence(matchobj: Any) -> str:
+        def from_escape_sequence(matchobj: Match[str]) -> str:
             c, codepoint4, codepoint6 = matchobj.groups()
             if c:
-                return cast(str, c)
+                return c
             codepoint = int(codepoint4 or codepoint6, 16)
             if codepoint <= 0xD7FF or 0xE000 <= codepoint:
                 return chr(codepoint)
@@ -229,7 +229,7 @@ class StringLiteral(Literal):
 
 
 class NumberLiteral(Literal):
-    def parse(self) -> Dict[str, Union[float, int]]:
+    def parse(self) -> Dict[str, Any]:
         value = float(self.value)
         decimal_position = self.value.find('.')
         precision = 0
@@ -274,7 +274,7 @@ class FunctionReference(Expression):
 
 
 class SelectExpression(Expression):
-    def __init__(self, selector: 'InlineExpression', variants: List['Variant'], **kwargs: Any):
+    def __init__(self, selector: 'InlineExpression', variants: Sequence['Variant'], **kwargs: Any):
         super().__init__(**kwargs)
         self.selector = selector
         self.variants = variants
@@ -282,12 +282,12 @@ class SelectExpression(Expression):
 
 class CallArguments(SyntaxNode):
     def __init__(self,
-                 positional: Union[List[Union['InlineExpression', Placeable]], None] = None,
-                 named: Union[List['NamedArgument'], None] = None,
+                 positional: Union[Sequence[Union['InlineExpression', Placeable]], None] = None,
+                 named: Union[Sequence['NamedArgument'], None] = None,
                  **kwargs: Any):
         super().__init__(**kwargs)
-        self.positional = [] if positional is None else positional
-        self.named = [] if named is None else named
+        self.positional: Sequence[Union['InlineExpression', Placeable]] = [] if positional is None else positional
+        self.named: Sequence['NamedArgument'] = [] if named is None else named
 
 
 class Attribute(SyntaxNode):
@@ -362,15 +362,15 @@ class Span(BaseNode):
 class Annotation(SyntaxNode):
     def __init__(self,
                  code: str,
-                 arguments: Union[List[Any], None] = None,
+                 arguments: Union[Sequence[Any], None] = None,
                  message: Union[str, None] = None,
                  **kwargs: Any):
         super().__init__(**kwargs)
         self.code = code
-        self.arguments = arguments or []
+        self.arguments: Sequence[Any] = arguments or []
         self.message = message
 
 
-EntryType = Union[Message, Term, Comment, GroupComment, ResourceComment, Junk]
-InlineExpression = Union[NumberLiteral, StringLiteral, MessageReference,
-                         TermReference, VariableReference, FunctionReference]
+EntryType: TypeAlias = Union[Message, Term, Comment, GroupComment, ResourceComment, Junk]
+InlineExpression: TypeAlias = Union[NumberLiteral, StringLiteral, MessageReference,
+                                    TermReference, VariableReference, FunctionReference]

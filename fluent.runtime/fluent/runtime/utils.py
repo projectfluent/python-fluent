@@ -1,14 +1,48 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Union
+from typing import Any, TypeVar, Union, overload
+from typing_extensions import Final
 
 from fluent.syntax.ast import MessageReference, TermReference
 
-from .types import FluentInt, FluentFloat, FluentDecimal, FluentDate, FluentDateTime
 from .errors import FluentReferenceError
+from .types import FluentDate, FluentDateTime, FluentDecimal, FluentFloat, FluentInt
 
-TERM_SIGIL = '-'
-ATTRIBUTE_SEPARATOR = '.'
+TERM_SIGIL: Final = '-'
+ATTRIBUTE_SEPARATOR: Final = '.'
+
+
+_T = TypeVar('_T')
+
+
+@overload
+def native_to_fluent(val: int) -> FluentInt:  # type: ignore[misc]
+    ...
+
+
+@overload
+def native_to_fluent(val: float) -> FluentFloat:  # type: ignore[misc]
+    ...
+
+
+@overload
+def native_to_fluent(val: Decimal) -> FluentDecimal:  # type: ignore[misc]
+    ...
+
+
+@overload
+def native_to_fluent(val: datetime) -> FluentDateTime:  # type: ignore[misc]
+    ...
+
+
+@overload
+def native_to_fluent(val: date) -> FluentDate:  # type: ignore[misc]
+    ...
+
+
+@overload
+def native_to_fluent(val: _T) -> _T:
+    ...
 
 
 def native_to_fluent(val: Any) -> Any:

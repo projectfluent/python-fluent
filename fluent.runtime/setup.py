@@ -33,7 +33,7 @@ setup(name='fluent.runtime',
           'attrs',
           'babel',
           'pytz',
-          'typing-extensions>=3.7,<5'
+          'typing-extensions>=4.0,<4.2'
       ],
       test_suite='tests',
       )

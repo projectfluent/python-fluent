@@ -1,10 +1,12 @@
-import attr
 import contextlib
-from typing import Any, Dict, Generator, List, Set, TYPE_CHECKING, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Sequence, Set, Union, cast
+from typing_extensions import Final, Self
 
+import attr
 from fluent.syntax import ast as FTL
+
 from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
-from .types import FluentType, FluentNone, FluentInt, FluentFloat
+from .types import FluentFloat, FluentInt, FluentNone, FluentType
 from .utils import reference_to_id, unknown_reference_error_obj
 
 if TYPE_CHECKING:
@@ -27,7 +29,7 @@ modifyable state in the resolver environment.
 
 
 # Prevent expansion of too long placeables, for memory DOS protection
-MAX_PART_LENGTH = 2500
+MAX_PART_LENGTH: Final = 2500
 
 
 @attr.s
@@ -56,7 +58,7 @@ class ResolverEnvironment:
     current: CurrentEnvironment = attr.ib(factory=CurrentEnvironment)
 
     @contextlib.contextmanager
-    def modified(self, **replacements: Any) -> Generator['ResolverEnvironment', None, None]:
+    def modified(self, **replacements: Any) -> Iterator[Self]:
         """
         Context manager that modifies the 'current' attribute of the
         environment, restoring the old data at the end.
@@ -68,7 +70,9 @@ class ResolverEnvironment:
         yield self
         self.current = old_current
 
-    def modified_for_term_reference(self, args: Union[Dict[str, Any], None] = None) -> Any:
+    def modified_for_term_reference(self,
+                                    args: Union[Mapping[str, Any], None] = None
+                                    ) -> 'contextlib._GeneratorContextManager[Self]':
         return self.modified(args=args if args is not None else {},
                              error_for_missing_arg=False)
 
@@ -99,7 +103,7 @@ class Message(FTL.Entry, BaseResolver):
     def __init__(self,
                  id: 'Identifier',
                  value: Union['Pattern', None] = None,
-                 attributes: Union[List['Attribute'], None] = None,
+                 attributes: Union[Iterable['Attribute'], None] = None,
                  comment: Any = None,
                  **kwargs: Any):
         super().__init__(**kwargs)
@@ -116,7 +120,7 @@ class Term(FTL.Entry, BaseResolver):
     def __init__(self,
                  id: 'Identifier',
                  value: 'Pattern',
-                 attributes: Union[List['Attribute'], None] = None,
+                 attributes: Union[Iterable['Attribute'], None] = None,
                  comment: Any = None,
                  **kwargs: Any):
         super().__init__(**kwargs)
@@ -129,7 +133,7 @@ class Pattern(FTL.Pattern, BaseResolver):
     # Prevent messages with too many sub parts, for CPI DOS protection
     MAX_PARTS = 1000
 
-    elements: List[Union['TextElement', 'Placeable']]  # type: ignore
+    elements: Sequence[Union['TextElement', 'Placeable']]
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -198,14 +202,14 @@ class StringLiteral(FTL.StringLiteral, Literal):
 
 
 class NumberLiteral(FTL.NumberLiteral, BaseResolver):
-    value: Union[FluentFloat, FluentInt]  # type: ignore
+    value: Union[FluentFloat, FluentInt]  # type: ignore[assignment]
 
     def __init__(self, value: str, **kwargs: Any):
         super().__init__(value, **kwargs)
-        if '.' in cast(str, self.value):
-            self.value = FluentFloat(self.value)
+        if '.' in value:
+            self.value = FluentFloat(value)
         else:
-            self.value = FluentInt(self.value)
+            self.value = FluentInt(value)
 
     def __call__(self, env: ResolverEnvironment) -> Union[FluentFloat, FluentInt]:
         return self.value
@@ -285,7 +289,7 @@ class Attribute(FTL.Attribute, BaseResolver):
 
 class SelectExpression(FTL.SelectExpression, BaseResolver):
     selector: 'InlineExpression'
-    variants: List['Variant']  # type: ignore
+    variants: Sequence['Variant']
 
     def __call__(self, env: ResolverEnvironment) -> Union[str, FluentNone]:
         key = self.selector(env)
@@ -340,8 +344,8 @@ class Identifier(FTL.Identifier, BaseResolver):
 
 
 class CallArguments(FTL.CallArguments, BaseResolver):
-    positional: List[Union['InlineExpression', Placeable]]  # type: ignore
-    named: List['NamedArgument']  # type: ignore
+    positional: Sequence[Union['InlineExpression', Placeable]]
+    named: Sequence['NamedArgument']
 
 
 class FunctionReference(FTL.FunctionReference, BaseResolver):

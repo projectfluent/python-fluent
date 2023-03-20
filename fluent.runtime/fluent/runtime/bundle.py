@@ -1,9 +1,9 @@
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Sequence, Tuple, Union, cast
+from typing_extensions import Literal
+
 import babel
 import babel.numbers
 import babel.plural
-from typing import Any, Callable, Dict, List, TYPE_CHECKING, Tuple, Union, cast
-from typing_extensions import Literal
-
 from fluent.syntax import ast as FTL
 
 from .builtins import BUILTINS
@@ -12,6 +12,8 @@ from .resolver import CurrentEnvironment, Message, Pattern, ResolverEnvironment
 from .utils import native_to_fluent
 
 if TYPE_CHECKING:
+    from _typeshed import SupportsItems, SupportsKeysAndGetItem
+
     from .types import FluentNone, FluentType
 
 PluralCategory = Literal['zero', 'one', 'two', 'few', 'many', 'other']
@@ -33,8 +35,8 @@ class FluentBundle:
     """
 
     def __init__(self,
-                 locales: List[str],
-                 functions: Union[Dict[str, Callable[[Any], 'FluentType']], None] = None,
+                 locales: Sequence[str],
+                 functions: Union['SupportsKeysAndGetItem[str, Callable[[Any], FluentType]]', None] = None,
                  use_isolating: bool = True):
         self.locales = locales
         self._functions = {**BUILTINS, **(functions or {})}
@@ -79,10 +81,10 @@ class FluentBundle:
 
     def format_pattern(self,
                        pattern: Pattern,
-                       args: Union[Dict[str, Any], None] = None
+                       args: Union['SupportsItems[str, Any]', None] = None
                        ) -> Tuple[Union[str, 'FluentNone'], List[Exception]]:
         if args is not None:
-            fluent_args = {
+            fluent_args: Dict[str, Any] = {
                 argname: native_to_fluent(argvalue)
                 for argname, argvalue in args.items()
             }

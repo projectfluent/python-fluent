@@ -1,5 +1,6 @@
 from typing import Callable, Union
-from typing_extensions import Literal
+from typing_extensions import Final, Literal
+
 from .errors import ParseError
 
 
@@ -59,9 +60,9 @@ class ParserStream:
         self.peek_offset = 0
 
 
-EOL = '\n'
-EOF = None
-SPECIAL_LINE_START_CHARS = ('}', '.', '[', '*')
+EOL: Final = '\n'
+EOF: Final = None
+SPECIAL_LINE_START_CHARS: Final = ('}', '.', '[', '*')
 
 
 class FluentParserStream(ParserStream):

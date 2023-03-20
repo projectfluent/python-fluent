@@ -1,5 +1,8 @@
-from typing import Any, List
-from .ast import BaseNode, Node
+from typing import Any, List, TypeVar
+
+from .ast import BaseNode
+
+Node = TypeVar("Node", bound=BaseNode)
 
 
 class Visitor:
@@ -46,7 +49,7 @@ class Transformer(Visitor):
         visit = getattr(self, f'visit_{nodename}', self.generic_visit)
         return visit(node)
 
-    def generic_visit(self, node: Node) -> Node:  # type: ignore
+    def generic_visit(self, node: Node) -> Node:  # type: ignore[override]
         for propname, propvalue in vars(node).items():
             if isinstance(propvalue, list):
                 new_vals: List[Any] = []

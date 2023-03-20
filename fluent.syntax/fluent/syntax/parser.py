@@ -1,13 +1,14 @@
 import re
-from typing import Any, Callable, List, Set, TypeVar, Union, cast
+from typing import Any, Callable, Iterable, List, Set, TypeVar, Union, cast
+
 from . import ast
-from .stream import EOL, FluentParserStream
 from .errors import ParseError
+from .stream import EOL, FluentParserStream
 
-R = TypeVar("R", bound=ast.SyntaxNode)
+WithSpanFunc = TypeVar("WithSpanFunc", bound=Callable[..., ast.SyntaxNode])
 
 
-def with_span(fn: Callable[..., R]) -> Callable[..., R]:
+def with_span(fn: WithSpanFunc) -> WithSpanFunc:
     def decorated(self: 'FluentParser', ps: FluentParserStream, *args: Any, **kwargs: Any) -> Any:
         if not self.with_spans:
             return fn(self, ps, *args, **kwargs)
@@ -24,7 +25,7 @@ def with_span(fn: Callable[..., R]) -> Callable[..., R]:
         node.add_span(start, end)
         return node
 
-    return decorated
+    return cast(WithSpanFunc, decorated)
 
 
 class FluentParser:
@@ -412,7 +413,7 @@ class FluentParser:
             self.add_span(start, end)
 
     def dedent(self,
-               elements: List[Union[ast.TextElement, ast.Placeable, Indent]],
+               elements: Iterable[Union[ast.TextElement, ast.Placeable, Indent]],
                common_indent: int
                ) -> List[Union[ast.TextElement, ast.Placeable]]:
         '''Dedent a list of elements by removing the maximum common indent from

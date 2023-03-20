@@ -206,10 +206,10 @@ class NumberLiteral(FTL.NumberLiteral, BaseResolver):
 
     def __init__(self, value: str, **kwargs: Any):
         super().__init__(value, **kwargs)
-        if '.' in cast(str, self.value):
-            self.value = FluentFloat(cast(str, self.value))
+        if '.' in value:
+            self.value = FluentFloat(value)
         else:
-            self.value = FluentInt(cast(str, self.value))
+            self.value = FluentInt(value)
 
     def __call__(self, env: ResolverEnvironment) -> Union[FluentFloat, FluentInt]:
         return self.value

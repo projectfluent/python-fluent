@@ -1,7 +1,7 @@
 import warnings
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, ClassVar, Generic, Mapping, Set, Type, TypeVar, Union, cast, overload
+from typing import Any, ClassVar, Generic, Mapping, Type, TypeVar, Union, cast, overload
 from typing_extensions import Final, Literal, Self
 
 import attr
@@ -30,7 +30,7 @@ CURRENCY_DISPLAY_OPTIONS: Final = {
     CURRENCY_DISPLAY_NAME,
 }
 
-DATE_STYLE_OPTIONS: Final[Set[Union[Literal['full', 'long', 'medium', 'short'], None]]] = {
+DATE_STYLE_OPTIONS: Final = {
     "full",
     "long",
     "medium",
@@ -38,7 +38,7 @@ DATE_STYLE_OPTIONS: Final[Set[Union[Literal['full', 'long', 'medium', 'short'], 
     None,
 }
 
-TIME_STYLE_OPTIONS: Final[Set[Union[Literal['full', 'long', 'medium', 'short'], None]]] = {
+TIME_STYLE_OPTIONS: Final = {
     "full",
     "long",
     "medium",

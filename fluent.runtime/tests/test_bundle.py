@@ -75,6 +75,21 @@ class TestFluentBundle(unittest.TestCase):
         self.assertEqual(bundle._plural_form(2),
                          'other')
 
+    def test_ordinal_form_english_ints(self):
+        bundle = FluentBundle(['en-US'])
+        self.assertEqual(bundle._ordinal_form(0),
+                         'other')
+        self.assertEqual(bundle._ordinal_form(1),
+                         'one')
+        self.assertEqual(bundle._ordinal_form(2),
+                         'two')
+        self.assertEqual(bundle._ordinal_form(3),
+                         'few')
+        self.assertEqual(bundle._ordinal_form(11),
+                         'other')
+        self.assertEqual(bundle._ordinal_form(21),
+                         'one')
+
     def test_format_args(self):
         self.bundle.add_resource(FluentResource('foo = Foo'))
         val, errs = self.bundle.format_pattern(self.bundle.get_message('foo').value)

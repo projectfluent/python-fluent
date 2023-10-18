@@ -28,6 +28,13 @@ CURRENCY_DISPLAY_OPTIONS = {
     CURRENCY_DISPLAY_NAME,
 }
 
+NUMBER_TYPE_ORDINAL = "ordinal"
+NUMBER_TYPE_CARDINAL = "cardinal"
+NUMBER_TYPE_OPTIONS = {
+    NUMBER_TYPE_ORDINAL,
+    NUMBER_TYPE_CARDINAL,
+}
+
 DATE_STYLE_OPTIONS = {
     "full",
     "long",
@@ -71,6 +78,9 @@ class NumberFormatOptions:
     style: Literal['decimal', 'currency', 'percent'] = attr.ib(
         default=FORMAT_STYLE_DECIMAL,
         validator=attr.validators.in_(FORMAT_STYLE_OPTIONS))
+    type: Literal['ordinal', 'cardinal'] = attr.ib(
+        default=NUMBER_TYPE_CARDINAL,
+        validator=attr.validators.in_(NUMBER_TYPE_OPTIONS))
     currency: Union[str, None] = attr.ib(default=None)
     currencyDisplay: Literal['symbol', 'code', 'name'] = attr.ib(
         default=CURRENCY_DISPLAY_SYMBOL,

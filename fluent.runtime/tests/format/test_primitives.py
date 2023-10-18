@@ -128,6 +128,10 @@ class TestNumbers(unittest.TestCase):
                *[0] Zero
                 [1] One
              }
+            position      =  { NUMBER(1, type: "ordinal") ->
+               *[other] Zero
+                [one] ${1}st
+             }
         """)))
 
     def test_int_number_used_in_placeable(self):

@@ -47,6 +47,8 @@ class FluentBundle:
         self._babel_locale = self._get_babel_locale()
         self._plural_form = cast(Callable[[Any], Callable[[Union[int, float]], PluralCategory]],
                                  babel.plural.to_python)(self._babel_locale.plural_form)
+        self._ordinal_form = cast(Callable[[Any], Callable[[Union[int, float]], PluralCategory]],
+                                  babel.plural.to_python)(self._babel_locale.ordinal_form)
 
     def add_resource(self, resource: FTL.Resource, allow_overrides: bool = False) -> None:
         # TODO - warn/error about duplicates

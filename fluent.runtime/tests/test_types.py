@@ -1,6 +1,6 @@
 import unittest
 import warnings
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 
 import pytz
@@ -166,6 +166,8 @@ class TestFluentDate(unittest.TestCase):
         self.a_date = date(2018, 2, 1)
         self.a_datetime = datetime(2018, 2, 1, 14, 15, 16, 123456,
                                    tzinfo=pytz.UTC)
+        self.a_time = time(10, 31, 00, 333,
+                           tzinfo=pytz.UTC)
 
     def test_date(self):
         fd = fluent_date(self.a_date)
@@ -174,6 +176,16 @@ class TestFluentDate(unittest.TestCase):
         self.assertEqual(fd.year, self.a_date.year)
         self.assertEqual(fd.month, self.a_date.month)
         self.assertEqual(fd.day, self.a_date.day)
+
+    def test_time(self):
+        fd = fluent_date(self.a_time)
+        self.assertTrue(isinstance(fd, time))
+        self.assertTrue(isinstance(fd, FluentDateType))
+        self.assertEqual(fd.hour, self.a_time.hour)
+        self.assertEqual(fd.minute, self.a_time.minute)
+        self.assertEqual(fd.second, self.a_time.second)
+        self.assertEqual(fd.microsecond, self.a_time.microsecond)
+        self.assertEqual(fd.tzinfo, self.a_time.tzinfo)
 
     def test_datetime(self):
         fd = fluent_date(self.a_datetime)
@@ -188,8 +200,22 @@ class TestFluentDate(unittest.TestCase):
         self.assertEqual(fd.microsecond, self.a_datetime.microsecond)
         self.assertEqual(fd.tzinfo, self.a_datetime.tzinfo)
 
-    def test_format_defaults(self):
+    def test_date_format_defaults(self):
         fd = fluent_date(self.a_date)
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        self.assertEqual(fd.format(en_GB), '1 Feb 2018')
+        self.assertEqual(fd.format(en_US), 'Feb 1, 2018')
+
+    def test_time_format_defaults(self):
+        fd = fluent_date(self.a_time)
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        self.assertEqual(fd.format(en_GB), '10:31')
+        self.assertRegex(fd.format(en_US), '^10:31\\sAM$')
+
+    def test_datetime_format_defaults(self):
+        fd = fluent_date(self.a_datetime)
         en_US = Locale.parse('en_US')
         en_GB = Locale.parse('en_GB')
         self.assertEqual(fd.format(en_GB), '1 Feb 2018')
@@ -211,6 +237,13 @@ class TestFluentDate(unittest.TestCase):
 
     def test_timeStyle_datetime(self):
         fd = fluent_date(self.a_datetime, timeStyle='short')
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        self.assertRegex(fd.format(en_US), '^2:15\\sPM$')
+        self.assertEqual(fd.format(en_GB), '14:15')
+
+    def test_timeStyle_time(self):
+        fd = fluent_date(self.a_datetime.time(), timeStyle='short')
         en_US = Locale.parse('en_US')
         en_GB = Locale.parse('en_GB')
         self.assertRegex(fd.format(en_US), '^2:15\\sPM$')

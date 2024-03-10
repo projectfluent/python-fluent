@@ -28,10 +28,10 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.7
+          python-version: 3.9
       - name: Install dependencies
         working-directory: ./fluent.runtime
         run: |
@@ -40,9 +40,6 @@ jobs:
           python -m pip install .
       - name: Install latest fluent.syntax
         working-directory: ./fluent.syntax
-        run: |
-          python -m pip install .
-      - name: Test
+        run: python -m pip install .
+      - run: ./runtests.py
         working-directory: ./fluent.runtime
-        run: |
-          ./runtests.py

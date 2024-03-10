@@ -36,7 +36,7 @@ def from_json(value: Any) -> Any:
 def scalars_equal(node1: Any, node2: Any, ignored_fields: List[str]) -> bool:
     """Compare two nodes which are not lists."""
 
-    if type(node1) != type(node2):
+    if type(node1) is not type(node2):
         return False
 
     if isinstance(node1, BaseNode):

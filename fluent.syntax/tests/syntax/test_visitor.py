@@ -98,7 +98,7 @@ class ReplaceText:
 
     def __call__(self, node):
         """Perform find and replace on text values only"""
-        if type(node) == ast.TextElement:
+        if type(node) is ast.TextElement:
             node.value = node.value.replace(self.before, self.after)
         return node
 

@@ -135,6 +135,18 @@ class TestSelectExpressionWithPluralCategories(unittest.TestCase):
                 [one] A
                *[other] B
              }
+
+            count =  { NUMBER($num, type: "cardinal") ->
+               *[other] B
+                [one] A
+             }
+
+            order =  { NUMBER($num, type: "ordinal") ->
+               *[other] {$num}th
+                [one] {$num}st
+                [two] {$num}nd
+                [few] {$num}rd
+             }
         """)))
 
     def test_selects_the_right_category(self):
@@ -170,6 +182,42 @@ class TestSelectExpressionWithPluralCategories(unittest.TestCase):
     def test_with_argument_float(self):
         val, errs = self.bundle.format_pattern(self.bundle.get_message('qux').value, {'num': 1.0})
         self.assertEqual(val, "A")
+        self.assertEqual(len(errs), 0)
+
+    def test_with_cardinal_integer(self):
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('count').value, {'num': 1})
+        self.assertEqual(val, "A")
+        self.assertEqual(len(errs), 0)
+
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('count').value, {'num': 2})
+        self.assertEqual(val, "B")
+        self.assertEqual(len(errs), 0)
+
+    def test_with_cardinal_float(self):
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('count').value, {'num': 1.0})
+        self.assertEqual(val, "A")
+        self.assertEqual(len(errs), 0)
+
+    def test_with_ordinal_integer(self):
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('order').value, {'num': 1})
+        self.assertEqual(val, "1st")
+        self.assertEqual(len(errs), 0)
+
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('order').value, {'num': 2})
+        self.assertEqual(val, "2nd")
+        self.assertEqual(len(errs), 0)
+
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('order').value, {'num': 11})
+        self.assertEqual(val, "11th")
+        self.assertEqual(len(errs), 0)
+
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('order').value, {'num': 21})
+        self.assertEqual(val, "21st")
+        self.assertEqual(len(errs), 0)
+
+    def test_with_ordinal_float(self):
+        val, errs = self.bundle.format_pattern(self.bundle.get_message('order').value, {'num': 1.0})
+        self.assertEqual(val, "1st")
         self.assertEqual(len(errs), 0)
 
 

@@ -319,7 +319,11 @@ def match(val1: Any, val2: Any, env: ResolverEnvironment) -> bool:
     if is_number(val1):
         if not is_number(val2):
             # Could be plural rule match
-            return cast(bool, env.context._plural_form(val1) == val2)
+            if isinstance(val1, (FluentInt, FluentFloat)) and val1.options.type == 'ordinal':
+                val1_form = env.context._ordinal_form(val1)
+            else:
+                val1_form = env.context._plural_form(val1)
+            return cast(bool, val1_form == val2)
     elif is_number(val2):
         return match(val2, val1, env)
 

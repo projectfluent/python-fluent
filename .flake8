@@ -1,2 +1,3 @@
 [flake8]
+exclude=.tox
 max-line-length=120

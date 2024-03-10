@@ -41,5 +41,5 @@ jobs:
       - name: Install latest fluent.syntax
         working-directory: ./fluent.syntax
         run: python -m pip install .
-      - run: ./runtests.py
+      - run: python -m unittest
         working-directory: ./fluent.runtime

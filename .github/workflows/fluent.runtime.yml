@@ -41,5 +41,5 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install fluent.syntax==${{ matrix.fluent-syntax }} six
           python -m pip install .
-      - run: ./runtests.py
+      - run: python -m unittest
         working-directory: ./fluent.runtime

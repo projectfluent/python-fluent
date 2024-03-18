@@ -1,14 +1,17 @@
 import re
 from typing import Any, Callable, List, Set, TypeVar, Union, cast
+
 from . import ast
-from .stream import EOL, FluentParserStream
 from .errors import ParseError
+from .stream import EOL, FluentParserStream
 
 R = TypeVar("R", bound=ast.SyntaxNode)
 
 
 def with_span(fn: Callable[..., R]) -> Callable[..., R]:
-    def decorated(self: 'FluentParser', ps: FluentParserStream, *args: Any, **kwargs: Any) -> Any:
+    def decorated(
+        self: "FluentParser", ps: FluentParserStream, *args: Any, **kwargs: Any
+    ) -> Any:
         if not self.with_spans:
             return fn(self, ps, *args, **kwargs)
 
@@ -38,8 +41,7 @@ class FluentParser:
         self.with_spans = with_spans
 
     def parse(self, source: str) -> ast.Resource:
-        """Create a :class:`.ast.Resource` from a Fluent source.
-        """
+        """Create a :class:`.ast.Resource` from a Fluent source."""
         ps = FluentParserStream(source)
         ps.skip_blank_block()
 
@@ -55,8 +57,11 @@ class FluentParser:
             # However they should parse as standalone when they're followed by
             # Junk. Consequently, we only attach Comments once we know that the
             # Message or the Term parsed successfully.
-            if isinstance(entry, ast.Comment) and len(blank_lines) == 0 \
-                    and ps.current_char:
+            if (
+                isinstance(entry, ast.Comment)
+                and len(blank_lines) == 0
+                and ps.current_char
+            ):
                 # Stash the comment and decide what to do with it
                 # in the next pass.
                 last_comment = entry
@@ -66,7 +71,9 @@ class FluentParser:
                 if isinstance(entry, (ast.Message, ast.Term)):
                     entry.comment = last_comment
                     if self.with_spans:
-                        cast(ast.Span, entry.span).start = cast(ast.Span, entry.comment.span).start
+                        cast(ast.Span, entry.span).start = cast(
+                            ast.Span, entry.comment.span
+                        ).start
                 else:
                     entries.append(last_comment)
                 # In either case, the stashed comment has been dealt with;
@@ -94,7 +101,7 @@ class FluentParser:
         ps = FluentParserStream(source)
         ps.skip_blank_block()
 
-        while ps.current_char == '#':
+        while ps.current_char == "#":
             skipped = self.get_entry_or_junk(ps)
             if isinstance(skipped, ast.Junk):
                 # Don't skip Junk comments.
@@ -123,35 +130,38 @@ class FluentParser:
             junk = ast.Junk(slice)
             if self.with_spans:
                 junk.add_span(entry_start_pos, next_entry_start)
-            annot = ast.Annotation(err.code, list(err.args) if err.args else None, err.message)
+            annot = ast.Annotation(
+                err.code, list(err.args) if err.args else None, err.message
+            )
             annot.add_span(error_index, error_index)
             junk.add_annotation(annot)
             return junk
 
     def get_entry(self, ps: FluentParserStream) -> ast.EntryType:
-        if ps.current_char == '#':
+        if ps.current_char == "#":
             return self.get_comment(ps)
 
-        if ps.current_char == '-':
+        if ps.current_char == "-":
             return self.get_term(ps)
 
         if ps.is_identifier_start():
             return self.get_message(ps)
 
-        raise ParseError('E0002')
+        raise ParseError("E0002")
 
     @with_span
-    def get_comment(self, ps: FluentParserStream) -> Union[ast.Comment, ast.GroupComment, ast.ResourceComment]:
+    def get_comment(
+        self, ps: FluentParserStream
+    ) -> Union[ast.Comment, ast.GroupComment, ast.ResourceComment]:
         # 0 - comment
         # 1 - group comment
         # 2 - resource comment
         level = -1
-        content = ''
+        content = ""
 
         while True:
             i = -1
-            while ps.current_char == '#' \
-                    and (i < (2 if level == -1 else level)):
+            while ps.current_char == "#" and (i < (2 if level == -1 else level)):
                 ps.next()
                 i += 1
 
@@ -159,7 +169,7 @@ class FluentParser:
                 level = i
 
             if ps.current_char != EOL:
-                ps.expect_char(' ')
+                ps.expect_char(" ")
                 ch = ps.take_char(lambda x: x != EOL)
                 while ch:
                     content += ch
@@ -185,43 +195,43 @@ class FluentParser:
     def get_message(self, ps: FluentParserStream) -> ast.Message:
         id = self.get_identifier(ps)
         ps.skip_blank_inline()
-        ps.expect_char('=')
+        ps.expect_char("=")
 
         value = self.maybe_get_pattern(ps)
         attrs = self.get_attributes(ps)
 
         if value is None and len(attrs) == 0:
-            raise ParseError('E0005', id.name)
+            raise ParseError("E0005", id.name)
 
         return ast.Message(id, value, attrs)
 
     @with_span
     def get_term(self, ps: FluentParserStream) -> ast.Term:
-        ps.expect_char('-')
+        ps.expect_char("-")
         id = self.get_identifier(ps)
 
         ps.skip_blank_inline()
-        ps.expect_char('=')
+        ps.expect_char("=")
 
         value = self.maybe_get_pattern(ps)
         if value is None:
-            raise ParseError('E0006', id.name)
+            raise ParseError("E0006", id.name)
 
         attrs = self.get_attributes(ps)
         return ast.Term(id, value, attrs)
 
     @with_span
     def get_attribute(self, ps: FluentParserStream) -> ast.Attribute:
-        ps.expect_char('.')
+        ps.expect_char(".")
 
         key = self.get_identifier(ps)
 
         ps.skip_blank_inline()
-        ps.expect_char('=')
+        ps.expect_char("=")
 
         value = self.maybe_get_pattern(ps)
         if value is None:
-            raise ParseError('E0012')
+            raise ParseError("E0012")
 
         return ast.Attribute(key, value)
 
@@ -241,7 +251,7 @@ class FluentParser:
     def get_identifier(self, ps: FluentParserStream) -> ast.Identifier:
         name = ps.take_id_start()
         if name is None:
-            raise ParseError('E0004', 'a-zA-Z')
+            raise ParseError("E0004", "a-zA-Z")
 
         ch = ps.take_id_char()
         while ch:
@@ -250,14 +260,16 @@ class FluentParser:
 
         return ast.Identifier(name)
 
-    def get_variant_key(self, ps: FluentParserStream) -> Union[ast.Identifier, ast.NumberLiteral]:
+    def get_variant_key(
+        self, ps: FluentParserStream
+    ) -> Union[ast.Identifier, ast.NumberLiteral]:
         ch = ps.current_char
 
         if ch is None:
-            raise ParseError('E0013')
+            raise ParseError("E0013")
 
         cc = ord(ch)
-        if ((cc >= 48 and cc <= 57) or cc == 45):  # 0-9, -
+        if (cc >= 48 and cc <= 57) or cc == 45:  # 0-9, -
             return self.get_number(ps)
 
         return self.get_identifier(ps)
@@ -266,23 +278,23 @@ class FluentParser:
     def get_variant(self, ps: FluentParserStream, has_default: bool) -> ast.Variant:
         default_index = False
 
-        if ps.current_char == '*':
+        if ps.current_char == "*":
             if has_default:
-                raise ParseError('E0015')
+                raise ParseError("E0015")
             ps.next()
             default_index = True
 
-        ps.expect_char('[')
+        ps.expect_char("[")
         ps.skip_blank()
 
         key = self.get_variant_key(ps)
 
         ps.skip_blank()
-        ps.expect_char(']')
+        ps.expect_char("]")
 
         value = self.maybe_get_pattern(ps)
         if value is None:
-            raise ParseError('E0012')
+            raise ParseError("E0012")
 
         return ast.Variant(key, value, default_index)
 
@@ -302,15 +314,15 @@ class FluentParser:
             ps.skip_blank()
 
         if len(variants) == 0:
-            raise ParseError('E0011')
+            raise ParseError("E0011")
 
         if not has_default:
-            raise ParseError('E0010')
+            raise ParseError("E0010")
 
         return variants
 
     def get_digits(self, ps: FluentParserStream) -> str:
-        num = ''
+        num = ""
 
         ch = ps.take_digit()
         while ch:
@@ -318,29 +330,29 @@ class FluentParser:
             ch = ps.take_digit()
 
         if len(num) == 0:
-            raise ParseError('E0004', '0-9')
+            raise ParseError("E0004", "0-9")
 
         return num
 
     @with_span
     def get_number(self, ps: FluentParserStream) -> ast.NumberLiteral:
-        num = ''
+        num = ""
 
-        if ps.current_char == '-':
-            num += '-'
+        if ps.current_char == "-":
+            num += "-"
             ps.next()
 
         num += self.get_digits(ps)
 
-        if ps.current_char == '.':
-            num += '.'
+        if ps.current_char == ".":
+            num += "."
             ps.next()
             num += self.get_digits(ps)
 
         return ast.NumberLiteral(num)
 
     def maybe_get_pattern(self, ps: FluentParserStream) -> Union[ast.Pattern, None]:
-        '''Parse an inline or a block Pattern, or None
+        """Parse an inline or a block Pattern, or None
 
         maybe_get_pattern distinguishes between patterns which start on the
         same line as the indentifier (aka inline singleline patterns and inline
@@ -348,7 +360,7 @@ class FluentParser:
         patterns). The distinction is important for the dedentation logic: the
         indent of the first line of a block pattern must be taken into account
         when calculating the maximum common indent.
-        '''
+        """
         ps.peek_blank_inline()
         if ps.is_value_start():
             ps.skip_to_peek()
@@ -373,7 +385,7 @@ class FluentParser:
             common_indent_length = len(first_indent)
         else:
             # Should get fixed by the subsequent min() operation
-            common_indent_length = cast(int, float('infinity'))
+            common_indent_length = cast(int, float("infinity"))
 
         while ps.current_char:
             if ps.current_char == EOL:
@@ -383,7 +395,9 @@ class FluentParser:
                     ps.skip_to_peek()
                     indent = ps.skip_blank_inline()
                     common_indent_length = min(common_indent_length, len(indent))
-                    elements.append(self.Indent(blank_lines + indent, blank_start, ps.index))
+                    elements.append(
+                        self.Indent(blank_lines + indent, blank_start, ps.index)
+                    )
                     continue
 
                 # The end condition for get_pattern's while loop is a newline
@@ -391,11 +405,11 @@ class FluentParser:
                 ps.reset_peek()
                 break
 
-            if ps.current_char == '}':
-                raise ParseError('E0027')
+            if ps.current_char == "}":
+                raise ParseError("E0027")
 
             element: Union[ast.TextElement, ast.Placeable]
-            if ps.current_char == '{':
+            if ps.current_char == "{":
                 element = self.get_placeable(ps)
             else:
                 element = self.get_text_element(ps)
@@ -411,14 +425,15 @@ class FluentParser:
             self.value = value
             self.add_span(start, end)
 
-    def dedent(self,
-               elements: List[Union[ast.TextElement, ast.Placeable, Indent]],
-               common_indent: int
-               ) -> List[Union[ast.TextElement, ast.Placeable]]:
-        '''Dedent a list of elements by removing the maximum common indent from
+    def dedent(
+        self,
+        elements: List[Union[ast.TextElement, ast.Placeable, Indent]],
+        common_indent: int,
+    ) -> List[Union[ast.TextElement, ast.Placeable]]:
+        """Dedent a list of elements by removing the maximum common indent from
         the beginning of text lines. The common indent is calculated in
         get_pattern.
-        '''
+        """
         trimmed: List[Union[ast.TextElement, ast.Placeable]] = []
 
         for element in elements:
@@ -428,7 +443,7 @@ class FluentParser:
 
             if isinstance(element, self.Indent):
                 # Strip the common indent.
-                element.value = element.value[:len(element.value) - common_indent]
+                element.value = element.value[: len(element.value) - common_indent]
                 if len(element.value) == 0:
                     continue
 
@@ -437,7 +452,10 @@ class FluentParser:
                 # Join adjacent TextElements by replacing them with their sum.
                 sum = ast.TextElement(prev.value + element.value)
                 if self.with_spans:
-                    sum.add_span(cast(ast.Span, prev.span).start, cast(ast.Span, element.span).end)
+                    sum.add_span(
+                        cast(ast.Span, prev.span).start,
+                        cast(ast.Span, element.span).end,
+                    )
                 trimmed[-1] = sum
                 continue
 
@@ -446,7 +464,10 @@ class FluentParser:
                 # TextElements, convert it into a new TextElement.
                 text_element = ast.TextElement(element.value)
                 if self.with_spans:
-                    text_element.add_span(cast(ast.Span, element.span).start, cast(ast.Span, element.span).end)
+                    text_element.add_span(
+                        cast(ast.Span, element.span).start,
+                        cast(ast.Span, element.span).end,
+                    )
                 element = text_element
 
             trimmed.append(element)
@@ -454,7 +475,7 @@ class FluentParser:
         # Trim trailing whitespace from the Pattern.
         last_element = trimmed[-1] if len(trimmed) > 0 else None
         if isinstance(last_element, ast.TextElement):
-            last_element.value = last_element.value.rstrip(' \n\r')
+            last_element.value = last_element.value.rstrip(" \n\r")
             if last_element.value == "":
                 trimmed.pop()
 
@@ -462,12 +483,12 @@ class FluentParser:
 
     @with_span
     def get_text_element(self, ps: FluentParserStream) -> ast.TextElement:
-        buf = ''
+        buf = ""
 
         while ps.current_char:
             ch = ps.current_char
 
-            if ch == '{' or ch == '}':
+            if ch == "{" or ch == "}":
                 return ast.TextElement(buf)
 
             if ch == EOL:
@@ -481,70 +502,73 @@ class FluentParser:
     def get_escape_sequence(self, ps: FluentParserStream) -> str:
         next = ps.current_char
 
-        if next == '\\' or next == '"':
+        if next == "\\" or next == '"':
             ps.next()
-            return f'\\{next}'
+            return f"\\{next}"
 
-        if next == 'u':
+        if next == "u":
             return self.get_unicode_escape_sequence(ps, next, 4)
 
-        if next == 'U':
+        if next == "U":
             return self.get_unicode_escape_sequence(ps, next, 6)
 
-        raise ParseError('E0025', next)
+        raise ParseError("E0025", next)
 
-    def get_unicode_escape_sequence(self, ps: FluentParserStream, u: str, digits: int) -> str:
+    def get_unicode_escape_sequence(
+        self, ps: FluentParserStream, u: str, digits: int
+    ) -> str:
         ps.expect_char(u)
-        sequence = ''
+        sequence = ""
         for _ in range(digits):
             ch = ps.take_hex_digit()
             if not ch:
-                raise ParseError('E0026', f'\\{u}{sequence}{ps.current_char}')
+                raise ParseError("E0026", f"\\{u}{sequence}{ps.current_char}")
             sequence += ch
 
-        return f'\\{u}{sequence}'
+        return f"\\{u}{sequence}"
 
     @with_span
     def get_placeable(self, ps: FluentParserStream) -> ast.Placeable:
-        ps.expect_char('{')
+        ps.expect_char("{")
         ps.skip_blank()
         expression = self.get_expression(ps)
-        ps.expect_char('}')
+        ps.expect_char("}")
         return ast.Placeable(expression)
 
     @with_span
-    def get_expression(self, ps: FluentParserStream) -> Union[ast.InlineExpression,
-                                                              ast.Placeable,
-                                                              ast.SelectExpression]:
+    def get_expression(
+        self, ps: FluentParserStream
+    ) -> Union[ast.InlineExpression, ast.Placeable, ast.SelectExpression]:
         selector = self.get_inline_expression(ps)
 
         ps.skip_blank()
 
-        if ps.current_char == '-':
-            if ps.peek() != '>':
+        if ps.current_char == "-":
+            if ps.peek() != ">":
                 ps.reset_peek()
                 return selector
 
             if isinstance(selector, ast.MessageReference):
                 if selector.attribute is None:
-                    raise ParseError('E0016')
+                    raise ParseError("E0016")
                 else:
-                    raise ParseError('E0018')
+                    raise ParseError("E0018")
 
-            elif (
-                isinstance(selector, ast.TermReference)
-            ):
+            elif isinstance(selector, ast.TermReference):
                 if selector.attribute is None:
-                    raise ParseError('E0017')
+                    raise ParseError("E0017")
             elif not (
-                isinstance(selector, (
-                    ast.StringLiteral,
-                    ast.NumberLiteral,
-                    ast.VariableReference,
-                    ast.FunctionReference,
-                ))
+                isinstance(
+                    selector,
+                    (
+                        ast.StringLiteral,
+                        ast.NumberLiteral,
+                        ast.VariableReference,
+                        ast.FunctionReference,
+                    ),
+                )
             ):
-                raise ParseError('E0029')
+                raise ParseError("E0029")
 
             ps.next()
             ps.next()
@@ -555,17 +579,16 @@ class FluentParser:
             variants = self.get_variants(ps)
             return ast.SelectExpression(selector, variants)
 
-        if (
-            isinstance(selector, ast.TermReference)
-            and selector.attribute is not None
-        ):
-            raise ParseError('E0019')
+        if isinstance(selector, ast.TermReference) and selector.attribute is not None:
+            raise ParseError("E0019")
 
         return selector
 
     @with_span
-    def get_inline_expression(self, ps: FluentParserStream) -> Union[ast.InlineExpression, ast.Placeable]:
-        if ps.current_char == '{':
+    def get_inline_expression(
+        self, ps: FluentParserStream
+    ) -> Union[ast.InlineExpression, ast.Placeable]:
+        if ps.current_char == "{":
             return self.get_placeable(ps)
 
         if ps.is_number_start():
@@ -574,21 +597,21 @@ class FluentParser:
         if ps.current_char == '"':
             return self.get_string(ps)
 
-        if ps.current_char == '$':
+        if ps.current_char == "$":
             ps.next()
             id = self.get_identifier(ps)
             return ast.VariableReference(id)
 
-        if ps.current_char == '-':
+        if ps.current_char == "-":
             ps.next()
             id = self.get_identifier(ps)
             attribute = None
-            if ps.current_char == '.':
+            if ps.current_char == ".":
                 ps.next()
                 attribute = self.get_identifier(ps)
             arguments = None
             ps.peek_blank()
-            if ps.current_peek == '(':
+            if ps.current_peek == "(":
                 ps.skip_to_peek()
                 arguments = self.get_call_arguments(ps)
             return ast.TermReference(id, attribute, arguments)
@@ -597,32 +620,32 @@ class FluentParser:
             id = self.get_identifier(ps)
             ps.peek_blank()
 
-            if ps.current_peek == '(':
+            if ps.current_peek == "(":
                 # It's a Function. Ensure it's all upper-case.
-                if not re.match('^[A-Z][A-Z0-9_-]*$', id.name):
-                    raise ParseError('E0008')
+                if not re.match("^[A-Z][A-Z0-9_-]*$", id.name):
+                    raise ParseError("E0008")
                 ps.skip_to_peek()
                 args = self.get_call_arguments(ps)
                 return ast.FunctionReference(id, args)
 
             attribute = None
-            if ps.current_char == '.':
+            if ps.current_char == ".":
                 ps.next()
                 attribute = self.get_identifier(ps)
 
             return ast.MessageReference(id, attribute)
 
-        raise ParseError('E0028')
+        raise ParseError("E0028")
 
     @with_span
-    def get_call_argument(self,
-                          ps: FluentParserStream
-                          ) -> Union[ast.InlineExpression, ast.NamedArgument, ast.Placeable]:
+    def get_call_argument(
+        self, ps: FluentParserStream
+    ) -> Union[ast.InlineExpression, ast.NamedArgument, ast.Placeable]:
         exp = self.get_inline_expression(ps)
 
         ps.skip_blank()
 
-        if ps.current_char != ':':
+        if ps.current_char != ":":
             return exp
 
         if isinstance(exp, ast.MessageReference) and exp.attribute is None:
@@ -632,7 +655,7 @@ class FluentParser:
             value = self.get_literal(ps)
             return ast.NamedArgument(exp.id, value)
 
-        raise ParseError('E0009')
+        raise ParseError("E0009")
 
     @with_span
     def get_call_arguments(self, ps: FluentParserStream) -> ast.CallArguments:
@@ -640,39 +663,39 @@ class FluentParser:
         named: List[ast.NamedArgument] = []
         argument_names: Set[str] = set()
 
-        ps.expect_char('(')
+        ps.expect_char("(")
         ps.skip_blank()
 
         while True:
-            if ps.current_char == ')':
+            if ps.current_char == ")":
                 break
 
             arg = self.get_call_argument(ps)
             if isinstance(arg, ast.NamedArgument):
                 if arg.name.name in argument_names:
-                    raise ParseError('E0022')
+                    raise ParseError("E0022")
                 named.append(arg)
                 argument_names.add(arg.name.name)
             elif len(argument_names) > 0:
-                raise ParseError('E0021')
+                raise ParseError("E0021")
             else:
                 positional.append(arg)
 
             ps.skip_blank()
 
-            if ps.current_char == ',':
+            if ps.current_char == ",":
                 ps.next()
                 ps.skip_blank()
                 continue
 
             break
 
-        ps.expect_char(')')
+        ps.expect_char(")")
         return ast.CallArguments(positional, named)
 
     @with_span
     def get_string(self, ps: FluentParserStream) -> ast.StringLiteral:
-        value = ''
+        value = ""
 
         ps.expect_char('"')
 
@@ -680,22 +703,24 @@ class FluentParser:
             ch = ps.take_char(lambda x: x != '"' and x != EOL)
             if not ch:
                 break
-            if ch == '\\':
+            if ch == "\\":
                 value += self.get_escape_sequence(ps)
             else:
                 value += ch
 
         if ps.current_char == EOL:
-            raise ParseError('E0020')
+            raise ParseError("E0020")
 
         ps.expect_char('"')
 
         return ast.StringLiteral(value)
 
     @with_span
-    def get_literal(self, ps: FluentParserStream) -> Union[ast.NumberLiteral, ast.StringLiteral]:
+    def get_literal(
+        self, ps: FluentParserStream
+    ) -> Union[ast.NumberLiteral, ast.StringLiteral]:
         if ps.is_number_start():
             return self.get_number(ps)
         if ps.current_char == '"':
             return self.get_string(ps)
-        raise ParseError('E0014')
+        raise ParseError("E0014")

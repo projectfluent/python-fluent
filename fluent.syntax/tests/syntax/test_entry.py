@@ -1,9 +1,9 @@
 import unittest
 
-from tests.syntax import dedent_ftl
 from fluent.syntax.ast import from_json
 from fluent.syntax.parser import FluentParser
 from fluent.syntax.serializer import FluentSerializer
+from tests.syntax import dedent_ftl
 
 
 class TestParseEntry(unittest.TestCase):
@@ -19,24 +19,14 @@ class TestParseEntry(unittest.TestCase):
         output = {
             "comment": None,
             "value": {
-                "elements": [
-                    {
-                        "span": None,
-                        "type": "TextElement",
-                        "value": "Foo"
-                    }
-                ],
+                "elements": [{"span": None, "type": "TextElement", "value": "Foo"}],
                 "span": None,
-                "type": "Pattern"
+                "type": "Pattern",
             },
             "attributes": [],
             "type": "Message",
             "span": None,
-            "id": {
-                "span": None,
-                "type": "Identifier",
-                "name": "foo"
-            }
+            "id": {"span": None, "type": "Identifier", "name": "foo"},
         }
 
         message = self.parser.parse_entry(dedent_ftl(input))
@@ -50,25 +40,15 @@ class TestParseEntry(unittest.TestCase):
         output = {
             "comment": None,
             "value": {
-                "elements": [
-                    {
-                        "span": None,
-                        "type": "TextElement",
-                        "value": "Foo"
-                    }
-                ],
+                "elements": [{"span": None, "type": "TextElement", "value": "Foo"}],
                 "span": None,
-                "type": "Pattern"
+                "type": "Pattern",
             },
             "attributes": [],
             "type": "Message",
-            "id": {
-                "name": "foo",
-                "span": None,
-                "type": "Identifier"
-            },
+            "id": {"name": "foo", "span": None, "type": "Identifier"},
             "span": None,
-            "type": "Message"
+            "type": "Message",
         }
 
         message = self.parser.parse_entry(dedent_ftl(input))
@@ -85,17 +65,13 @@ class TestParseEntry(unittest.TestCase):
                 {
                     "arguments": ["="],
                     "code": "E0003",
-                    "message": "Expected token: \"=\"",
-                    "span": {
-                        "end": 23,
-                        "start": 23,
-                        "type": "Span"
-                    },
-                    "type": "Annotation"
+                    "message": 'Expected token: "="',
+                    "span": {"end": 23, "start": 23, "type": "Span"},
+                    "type": "Annotation",
                 }
             ],
             "span": None,
-            "type": "Junk"
+            "type": "Junk",
         }
 
         message = self.parser.parse_entry(dedent_ftl(input))
@@ -111,24 +87,14 @@ class TestParseEntry(unittest.TestCase):
         output = {
             "comment": None,
             "value": {
-                "elements": [
-                    {
-                        "span": None,
-                        "type": "TextElement",
-                        "value": "Foo"
-                    }
-                ],
+                "elements": [{"span": None, "type": "TextElement", "value": "Foo"}],
                 "span": None,
-                "type": "Pattern"
+                "type": "Pattern",
             },
             "attributes": [],
             "span": None,
             "type": "Message",
-            "id": {
-                "name": "foo",
-                "span": None,
-                "type": "Identifier"
-            }
+            "id": {"name": "foo", "span": None, "type": "Identifier"},
         }
 
         message = self.parser.parse_entry(dedent_ftl(input))
@@ -145,17 +111,13 @@ class TestParseEntry(unittest.TestCase):
                 {
                     "arguments": [" "],
                     "code": "E0003",
-                    "message": "Expected token: \" \"",
-                    "span": {
-                        "end": 21,
-                        "start": 21,
-                        "type": "Span"
-                    },
-                    "type": "Annotation"
+                    "message": 'Expected token: " "',
+                    "span": {"end": 21, "start": 21, "type": "Span"},
+                    "type": "Annotation",
                 }
             ],
             "span": None,
-            "type": "Junk"
+            "type": "Junk",
         }
 
         message = self.parser.parse_entry(dedent_ftl(input))
@@ -170,20 +132,12 @@ class TestSerializeEntry(unittest.TestCase):
         input = {
             "comment": None,
             "value": {
-                "elements": [
-                    {
-                        "type": "TextElement",
-                        "value": "Foo"
-                    }
-                ],
-                "type": "Pattern"
+                "elements": [{"type": "TextElement", "value": "Foo"}],
+                "type": "Pattern",
             },
             "attributes": [],
             "type": "Message",
-            "id": {
-                "type": "Identifier",
-                "name": "foo"
-            }
+            "id": {"type": "Identifier", "name": "foo"},
         }
         output = """\
             foo = Foo

@@ -1,10 +1,10 @@
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Union, cast
+
 import babel
 import babel.numbers
 import babel.plural
-from typing import Any, Callable, Dict, List, TYPE_CHECKING, Tuple, Union, cast
-from typing_extensions import Literal
-
 from fluent.syntax import ast as FTL
+from typing_extensions import Literal
 
 from .builtins import BUILTINS
 from .prepare import Compiler
@@ -14,7 +14,7 @@ from .utils import native_to_fluent
 if TYPE_CHECKING:
     from .types import FluentNone, FluentType
 
-PluralCategory = Literal['zero', 'one', 'two', 'few', 'many', 'other']
+PluralCategory = Literal["zero", "one", "two", "few", "many", "other"]
 
 
 class FluentBundle:
@@ -32,10 +32,12 @@ class FluentBundle:
     See the documentation of the Fluent syntax for more information.
     """
 
-    def __init__(self,
-                 locales: List[str],
-                 functions: Union[Dict[str, Callable[[Any], 'FluentType']], None] = None,
-                 use_isolating: bool = True):
+    def __init__(
+        self,
+        locales: List[str],
+        functions: Union[Dict[str, Callable[[Any], "FluentType"]], None] = None,
+        use_isolating: bool = True,
+    ):
         self.locales = locales
         self._functions = {**BUILTINS, **(functions or {})}
         self.use_isolating = use_isolating
@@ -43,14 +45,22 @@ class FluentBundle:
         self._terms: Dict[str, Union[FTL.Message, FTL.Term]] = {}
         self._compiled: Dict[str, Message] = {}
         # The compiler is not typed, and this cast is only valid for the public API
-        self._compiler = cast(Callable[[Union[FTL.Message, FTL.Term]], Message], Compiler())
+        self._compiler = cast(
+            Callable[[Union[FTL.Message, FTL.Term]], Message], Compiler()
+        )
         self._babel_locale = self._get_babel_locale()
-        self._plural_form = cast(Callable[[Any], Callable[[Union[int, float]], PluralCategory]],
-                                 babel.plural.to_python)(self._babel_locale.plural_form)
-        self._ordinal_form = cast(Callable[[Any], Callable[[Union[int, float]], PluralCategory]],
-                                  babel.plural.to_python)(self._babel_locale.ordinal_form)
+        self._plural_form = cast(
+            Callable[[Any], Callable[[Union[int, float]], PluralCategory]],
+            babel.plural.to_python,
+        )(self._babel_locale.plural_form)
+        self._ordinal_form = cast(
+            Callable[[Any], Callable[[Union[int, float]], PluralCategory]],
+            babel.plural.to_python,
+        )(self._babel_locale.ordinal_form)
 
-    def add_resource(self, resource: FTL.Resource, allow_overrides: bool = False) -> None:
+    def add_resource(
+        self, resource: FTL.Resource, allow_overrides: bool = False
+    ) -> None:
         # TODO - warn/error about duplicates
         for item in resource.body:
             if not isinstance(item, (FTL.Message, FTL.Term)):
@@ -68,7 +78,7 @@ class FluentBundle:
 
     def _lookup(self, entry_id: str, term: bool = False) -> Message:
         if term:
-            compiled_id = '-' + entry_id
+            compiled_id = "-" + entry_id
         else:
             compiled_id = entry_id
         try:
@@ -79,10 +89,9 @@ class FluentBundle:
         self._compiled[compiled_id] = self._compiler(entry)
         return self._compiled[compiled_id]
 
-    def format_pattern(self,
-                       pattern: Pattern,
-                       args: Union[Dict[str, Any], None] = None
-                       ) -> Tuple[Union[str, 'FluentNone'], List[Exception]]:
+    def format_pattern(
+        self, pattern: Pattern, args: Union[Dict[str, Any], None] = None
+    ) -> Tuple[Union[str, "FluentNone"], List[Exception]]:
         if args is not None:
             fluent_args = {
                 argname: native_to_fluent(argvalue)
@@ -92,20 +101,20 @@ class FluentBundle:
             fluent_args = {}
 
         errors: List[Exception] = []
-        env = ResolverEnvironment(context=self,
-                                  current=CurrentEnvironment(args=fluent_args),
-                                  errors=errors)
+        env = ResolverEnvironment(
+            context=self, current=CurrentEnvironment(args=fluent_args), errors=errors
+        )
         try:
             result = pattern(env)
         except ValueError as e:
             errors.append(e)
-            result = '{???}'
+            result = "{???}"
         return (result, errors)
 
     def _get_babel_locale(self) -> babel.Locale:
         for lc in self.locales:
             try:
-                return babel.Locale.parse(lc.replace('-', '_'))
+                return babel.Locale.parse(lc.replace("-", "_"))
             except babel.UnknownLocaleError:
                 continue
         # TODO - log error

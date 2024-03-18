@@ -1,15 +1,16 @@
 #!/usr/bin/python
 
-import sys
 import codecs
-from fluent.syntax import parse
 import json
+import sys
 
-sys.path.append('./')
+from fluent.syntax import parse
+
+sys.path.append("./")
 
 
 def read_file(path):
-    with codecs.open(path, 'r', encoding='utf-8') as file:
+    with codecs.open(path, "r", encoding="utf-8") as file:
         text = file.read()
     return text
 
@@ -20,6 +21,6 @@ def print_ast(fileType, data):
 
 
 if __name__ == "__main__":
-    file_type = 'ftl'
+    file_type = "ftl"
     f = read_file(sys.argv[1])
     print_ast(file_type, f)

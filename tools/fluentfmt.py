@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
-import sys
 import codecs
+import sys
+
 from fluent.syntax import parse, serialize
 
 sys.path.append("./")

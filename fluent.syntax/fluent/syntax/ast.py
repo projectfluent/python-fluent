@@ -1,9 +1,9 @@
+import json
 import re
 import sys
-import json
 from typing import Any, Callable, Dict, List, TypeVar, Union, cast
 
-Node = TypeVar('Node', bound='BaseNode')
+Node = TypeVar("Node", bound="BaseNode")
 ToJsonFn = Callable[[Dict[str, Any]], Any]
 
 
@@ -20,12 +20,8 @@ def to_json(value: Any, fn: Union[ToJsonFn, None] = None) -> Any:
 
 def from_json(value: Any) -> Any:
     if isinstance(value, dict):
-        cls = getattr(sys.modules[__name__], value['type'])
-        args = {
-            k: from_json(v)
-            for k, v in value.items()
-            if k != 'type'
-        }
+        cls = getattr(sys.modules[__name__], value["type"])
+        args = {k: from_json(v) for k, v in value.items() if k != "type"}
         return cls(**args)
     if isinstance(value, list):
         return list(map(from_json, value))
@@ -54,6 +50,7 @@ class BaseNode:
 
     def clone(self: Node) -> Node:
         """Create a deep clone of the current node."""
+
         def visit(value: Any) -> Any:
             """Clone node and its descendants."""
             if isinstance(value, BaseNode):
@@ -69,7 +66,7 @@ class BaseNode:
             **{name: visit(value) for name, value in vars(self).items()}
         )
 
-    def equals(self, other: 'BaseNode', ignored_fields: List[str] = ['span']) -> bool:
+    def equals(self, other: "BaseNode", ignored_fields: List[str] = ["span"]) -> bool:
         """Compare two nodes.
 
         Nodes are deeply compared on a field by field basis. If possible, False
@@ -109,13 +106,8 @@ class BaseNode:
         return True
 
     def to_json(self, fn: Union[ToJsonFn, None] = None) -> Any:
-        obj = {
-            name: to_json(value, fn)
-            for name, value in vars(self).items()
-        }
-        obj.update(
-            {'type': self.__class__.__name__}
-        )
+        obj = {name: to_json(value, fn) for name, value in vars(self).items()}
+        obj.update({"type": self.__class__.__name__})
         return fn(obj) if fn else obj
 
     def __str__(self) -> str:
@@ -125,7 +117,7 @@ class BaseNode:
 class SyntaxNode(BaseNode):
     """Base class for AST nodes which can have Spans."""
 
-    def __init__(self, span: Union['Span', None] = None, **kwargs: Any):
+    def __init__(self, span: Union["Span", None] = None, **kwargs: Any):
         super().__init__(**kwargs)
         self.span = span
 
@@ -134,7 +126,7 @@ class SyntaxNode(BaseNode):
 
 
 class Resource(SyntaxNode):
-    def __init__(self, body: Union[List['EntryType'], None] = None, **kwargs: Any):
+    def __init__(self, body: Union[List["EntryType"], None] = None, **kwargs: Any):
         super().__init__(**kwargs)
         self.body = body or []
 
@@ -144,12 +136,14 @@ class Entry(SyntaxNode):
 
 
 class Message(Entry):
-    def __init__(self,
-                 id: 'Identifier',
-                 value: Union['Pattern', None] = None,
-                 attributes: Union[List['Attribute'], None] = None,
-                 comment: Union['Comment', None] = None,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        id: "Identifier",
+        value: Union["Pattern", None] = None,
+        attributes: Union[List["Attribute"], None] = None,
+        comment: Union["Comment", None] = None,
+        **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.id = id
         self.value = value
@@ -158,8 +152,14 @@ class Message(Entry):
 
 
 class Term(Entry):
-    def __init__(self, id: 'Identifier', value: 'Pattern', attributes: Union[List['Attribute'], None] = None,
-                 comment: Union['Comment', None] = None, **kwargs: Any):
+    def __init__(
+        self,
+        id: "Identifier",
+        value: "Pattern",
+        attributes: Union[List["Attribute"], None] = None,
+        comment: Union["Comment", None] = None,
+        **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.id = id
         self.value = value
@@ -168,7 +168,9 @@ class Term(Entry):
 
 
 class Pattern(SyntaxNode):
-    def __init__(self, elements: List[Union['TextElement', 'Placeable']], **kwargs: Any):
+    def __init__(
+        self, elements: List[Union["TextElement", "Placeable"]], **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.elements = elements
 
@@ -184,9 +186,11 @@ class TextElement(PatternElement):
 
 
 class Placeable(PatternElement):
-    def __init__(self,
-                 expression: Union['InlineExpression', 'Placeable', 'SelectExpression'],
-                 **kwargs: Any):
+    def __init__(
+        self,
+        expression: Union["InlineExpression", "Placeable", "SelectExpression"],
+        **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.expression = expression
 
@@ -203,7 +207,7 @@ class Literal(Expression):
         self.value = value
 
     def parse(self) -> Dict[str, Any]:
-        return {'value': self.value}
+        return {"value": self.value}
 
 
 class StringLiteral(Literal):
@@ -218,42 +222,46 @@ class StringLiteral(Literal):
             # Escape sequences reresenting surrogate code points are
             # well-formed but invalid in Fluent. Replace them with U+FFFD
             # REPLACEMENT CHARACTER.
-            return '�'
+            return "�"
 
         value = re.sub(
             r'\\(?:(\\|")|u([0-9a-fA-F]{4})|U([0-9a-fA-F]{6}))',
             from_escape_sequence,
-            self.value
+            self.value,
         )
-        return {'value': value}
+        return {"value": value}
 
 
 class NumberLiteral(Literal):
     def parse(self) -> Dict[str, Union[float, int]]:
         value = float(self.value)
-        decimal_position = self.value.find('.')
+        decimal_position = self.value.find(".")
         precision = 0
         if decimal_position >= 0:
             precision = len(self.value) - decimal_position - 1
-        return {
-            'value': value,
-            'precision': precision
-        }
+        return {"value": value, "precision": precision}
 
 
 class MessageReference(Expression):
-    def __init__(self, id: 'Identifier', attribute: Union['Identifier', None] = None, **kwargs: Any):
+    def __init__(
+        self,
+        id: "Identifier",
+        attribute: Union["Identifier", None] = None,
+        **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.id = id
         self.attribute = attribute
 
 
 class TermReference(Expression):
-    def __init__(self,
-                 id: 'Identifier',
-                 attribute: Union['Identifier', None] = None,
-                 arguments: Union['CallArguments', None] = None,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        id: "Identifier",
+        attribute: Union["Identifier", None] = None,
+        arguments: Union["CallArguments", None] = None,
+        **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.id = id
         self.attribute = attribute
@@ -261,44 +269,54 @@ class TermReference(Expression):
 
 
 class VariableReference(Expression):
-    def __init__(self, id: 'Identifier', **kwargs: Any):
+    def __init__(self, id: "Identifier", **kwargs: Any):
         super().__init__(**kwargs)
         self.id = id
 
 
 class FunctionReference(Expression):
-    def __init__(self, id: 'Identifier', arguments: 'CallArguments', **kwargs: Any):
+    def __init__(self, id: "Identifier", arguments: "CallArguments", **kwargs: Any):
         super().__init__(**kwargs)
         self.id = id
         self.arguments = arguments
 
 
 class SelectExpression(Expression):
-    def __init__(self, selector: 'InlineExpression', variants: List['Variant'], **kwargs: Any):
+    def __init__(
+        self, selector: "InlineExpression", variants: List["Variant"], **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.selector = selector
         self.variants = variants
 
 
 class CallArguments(SyntaxNode):
-    def __init__(self,
-                 positional: Union[List[Union['InlineExpression', Placeable]], None] = None,
-                 named: Union[List['NamedArgument'], None] = None,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        positional: Union[List[Union["InlineExpression", Placeable]], None] = None,
+        named: Union[List["NamedArgument"], None] = None,
+        **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.positional = [] if positional is None else positional
         self.named = [] if named is None else named
 
 
 class Attribute(SyntaxNode):
-    def __init__(self, id: 'Identifier', value: Pattern, **kwargs: Any):
+    def __init__(self, id: "Identifier", value: Pattern, **kwargs: Any):
         super().__init__(**kwargs)
         self.id = id
         self.value = value
 
 
 class Variant(SyntaxNode):
-    def __init__(self, key: Union['Identifier', NumberLiteral], value: Pattern, default: bool = False, **kwargs: Any):
+    def __init__(
+        self,
+        key: Union["Identifier", NumberLiteral],
+        value: Pattern,
+        default: bool = False,
+        **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.key = key
         self.value = value
@@ -306,7 +324,12 @@ class Variant(SyntaxNode):
 
 
 class NamedArgument(SyntaxNode):
-    def __init__(self, name: 'Identifier', value: Union[NumberLiteral, StringLiteral], **kwargs: Any):
+    def __init__(
+        self,
+        name: "Identifier",
+        value: Union[NumberLiteral, StringLiteral],
+        **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.name = name
         self.value = value
@@ -340,15 +363,17 @@ class ResourceComment(BaseComment):
 
 
 class Junk(SyntaxNode):
-    def __init__(self,
-                 content: Union[str, None] = None,
-                 annotations: Union[List['Annotation'], None] = None,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        content: Union[str, None] = None,
+        annotations: Union[List["Annotation"], None] = None,
+        **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.content = content
         self.annotations = annotations or []
 
-    def add_annotation(self, annot: 'Annotation') -> None:
+    def add_annotation(self, annot: "Annotation") -> None:
         self.annotations.append(annot)
 
 
@@ -360,11 +385,13 @@ class Span(BaseNode):
 
 
 class Annotation(SyntaxNode):
-    def __init__(self,
-                 code: str,
-                 arguments: Union[List[Any], None] = None,
-                 message: Union[str, None] = None,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        code: str,
+        arguments: Union[List[Any], None] = None,
+        message: Union[str, None] = None,
+        **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.code = code
         self.arguments = arguments or []
@@ -372,5 +399,11 @@ class Annotation(SyntaxNode):
 
 
 EntryType = Union[Message, Term, Comment, GroupComment, ResourceComment, Junk]
-InlineExpression = Union[NumberLiteral, StringLiteral, MessageReference,
-                         TermReference, VariableReference, FunctionReference]
+InlineExpression = Union[
+    NumberLiteral,
+    StringLiteral,
+    MessageReference,
+    TermReference,
+    VariableReference,
+    FunctionReference,
+]

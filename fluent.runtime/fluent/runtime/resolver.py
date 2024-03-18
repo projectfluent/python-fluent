@@ -1,10 +1,11 @@
-import attr
 import contextlib
-from typing import Any, Dict, Generator, List, Set, TYPE_CHECKING, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Set, Union, cast
 
+import attr
 from fluent.syntax import ast as FTL
+
 from .errors import FluentCyclicReferenceError, FluentFormatError, FluentReferenceError
-from .types import FluentType, FluentNone, FluentInt, FluentFloat
+from .types import FluentFloat, FluentInt, FluentNone, FluentType
 from .utils import reference_to_id, unknown_reference_error_obj
 
 if TYPE_CHECKING:
@@ -49,14 +50,16 @@ class CurrentEnvironment:
 
 @attr.s
 class ResolverEnvironment:
-    context: 'FluentBundle' = attr.ib()
+    context: "FluentBundle" = attr.ib()
     errors: List[Exception] = attr.ib()
     part_count: int = attr.ib(default=0, init=False)
     active_patterns: Set[FTL.Pattern] = attr.ib(factory=set, init=False)
     current: CurrentEnvironment = attr.ib(factory=CurrentEnvironment)
 
     @contextlib.contextmanager
-    def modified(self, **replacements: Any) -> Generator['ResolverEnvironment', None, None]:
+    def modified(
+        self, **replacements: Any
+    ) -> Generator["ResolverEnvironment", None, None]:
         """
         Context manager that modifies the 'current' attribute of the
         environment, restoring the old data at the end.
@@ -68,9 +71,12 @@ class ResolverEnvironment:
         yield self
         self.current = old_current
 
-    def modified_for_term_reference(self, args: Union[Dict[str, Any], None] = None) -> Any:
-        return self.modified(args=args if args is not None else {},
-                             error_for_missing_arg=False)
+    def modified_for_term_reference(
+        self, args: Union[Dict[str, Any], None] = None
+    ) -> Any:
+        return self.modified(
+            args=args if args is not None else {}, error_for_missing_arg=False
+        )
 
 
 class BaseResolver:
@@ -92,44 +98,52 @@ class Literal(BaseResolver):
 
 
 class Message(FTL.Entry, BaseResolver):
-    id: 'Identifier'
-    value: Union['Pattern', None]
-    attributes: Dict[str, 'Pattern']
+    id: "Identifier"
+    value: Union["Pattern", None]
+    attributes: Dict[str, "Pattern"]
 
-    def __init__(self,
-                 id: 'Identifier',
-                 value: Union['Pattern', None] = None,
-                 attributes: Union[List['Attribute'], None] = None,
-                 comment: Any = None,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        id: "Identifier",
+        value: Union["Pattern", None] = None,
+        attributes: Union[List["Attribute"], None] = None,
+        comment: Any = None,
+        **kwargs: Any,
+    ):
         super().__init__(**kwargs)
         self.id = id
         self.value = value
-        self.attributes = {attr.id.name: attr.value for attr in attributes} if attributes else {}
+        self.attributes = (
+            {attr.id.name: attr.value for attr in attributes} if attributes else {}
+        )
 
 
 class Term(FTL.Entry, BaseResolver):
-    id: 'Identifier'
-    value: 'Pattern'
-    attributes: Dict[str, 'Pattern']
+    id: "Identifier"
+    value: "Pattern"
+    attributes: Dict[str, "Pattern"]
 
-    def __init__(self,
-                 id: 'Identifier',
-                 value: 'Pattern',
-                 attributes: Union[List['Attribute'], None] = None,
-                 comment: Any = None,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        id: "Identifier",
+        value: "Pattern",
+        attributes: Union[List["Attribute"], None] = None,
+        comment: Any = None,
+        **kwargs: Any,
+    ):
         super().__init__(**kwargs)
         self.id = id
         self.value = value
-        self.attributes = {attr.id.name: attr.value for attr in attributes} if attributes else {}
+        self.attributes = (
+            {attr.id.name: attr.value for attr in attributes} if attributes else {}
+        )
 
 
 class Pattern(FTL.Pattern, BaseResolver):
     # Prevent messages with too many sub parts, for CPI DOS protection
     MAX_PARTS = 1000
 
-    elements: List[Union['TextElement', 'Placeable']]  # type: ignore
+    elements: List[Union["TextElement", "Placeable"]]  # type: ignore
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -143,11 +157,10 @@ class Pattern(FTL.Pattern, BaseResolver):
         remaining_parts = self.MAX_PARTS - env.part_count
         if len(self.elements) > remaining_parts:
             env.active_patterns.remove(self)
-            raise ValueError("Too many parts in message (> {}), "
-                             "aborting.".format(self.MAX_PARTS))
-        retval = ''.join(
-            resolve(element(env), env) for element in elements
-        )
+            raise ValueError(
+                "Too many parts in message (> {}), " "aborting.".format(self.MAX_PARTS)
+            )
+        retval = "".join(resolve(element(env), env) for element in elements)
         env.part_count += len(elements)
         env.active_patterns.remove(self)
         return retval
@@ -173,7 +186,7 @@ class TextElement(FTL.TextElement, Literal):
 
 
 class Placeable(FTL.Placeable, BaseResolver):
-    expression: Union['InlineExpression', 'Placeable', 'SelectExpression']
+    expression: Union["InlineExpression", "Placeable", "SelectExpression"]
 
     def __call__(self, env: ResolverEnvironment) -> Any:
         inner = resolve(self.expression(env), env)
@@ -183,7 +196,7 @@ class Placeable(FTL.Placeable, BaseResolver):
 
 
 class NeverIsolatingPlaceable(FTL.Placeable, BaseResolver):
-    expression: Union['InlineExpression', Placeable, 'SelectExpression']
+    expression: Union["InlineExpression", Placeable, "SelectExpression"]
 
     def __call__(self, env: ResolverEnvironment) -> Any:
         inner = resolve(self.expression(env), env)
@@ -194,7 +207,7 @@ class StringLiteral(FTL.StringLiteral, Literal):
     value: str
 
     def __call__(self, env: ResolverEnvironment) -> str:
-        return self.parse()['value']
+        return self.parse()["value"]
 
 
 class NumberLiteral(FTL.NumberLiteral, BaseResolver):
@@ -202,7 +215,7 @@ class NumberLiteral(FTL.NumberLiteral, BaseResolver):
 
     def __init__(self, value: str, **kwargs: Any):
         super().__init__(value, **kwargs)
-        if '.' in cast(str, self.value):
+        if "." in cast(str, self.value):
             self.value = FluentFloat(self.value)
         else:
             self.value = FluentInt(self.value)
@@ -212,11 +225,12 @@ class NumberLiteral(FTL.NumberLiteral, BaseResolver):
 
 
 def resolveEntryReference(
-        ref: Union['MessageReference', 'TermReference'],
-        env: ResolverEnvironment
+    ref: Union["MessageReference", "TermReference"], env: ResolverEnvironment
 ) -> Union[str, FluentNone]:
     try:
-        entry = env.context._lookup(ref.id.name, term=isinstance(ref, FTL.TermReference))
+        entry = env.context._lookup(
+            ref.id.name, term=isinstance(ref, FTL.TermReference)
+        )
         pattern: Pattern
         if ref.attribute:
             pattern = entry.attributes[ref.attribute.name]
@@ -226,7 +240,7 @@ def resolveEntryReference(
     except LookupError:
         ref_id = reference_to_id(ref)
         env.errors.append(unknown_reference_error_obj(ref_id))
-        return FluentNone(f'{{{ref_id}}}')
+        return FluentNone(f"{{{ref_id}}}")
     except TypeError:
         ref_id = reference_to_id(ref)
         env.errors.append(FluentReferenceError(f"No pattern: {ref_id}"))
@@ -234,24 +248,31 @@ def resolveEntryReference(
 
 
 class MessageReference(FTL.MessageReference, BaseResolver):
-    id: 'Identifier'
-    attribute: Union['Identifier', None]
+    id: "Identifier"
+    attribute: Union["Identifier", None]
 
     def __call__(self, env: ResolverEnvironment) -> Union[str, FluentNone]:
         return resolveEntryReference(self, env)
 
 
 class TermReference(FTL.TermReference, BaseResolver):
-    id: 'Identifier'
-    attribute: Union['Identifier', None]
-    arguments: Union['CallArguments', None]
+    id: "Identifier"
+    attribute: Union["Identifier", None]
+    arguments: Union["CallArguments", None]
 
     def __call__(self, env: ResolverEnvironment) -> Union[str, FluentNone]:
         if self.arguments:
             if self.arguments.positional:
-                env.errors.append(FluentFormatError("Ignored positional arguments passed to term '{}'"
-                                                    .format(reference_to_id(self))))
-            kwargs = {kwarg.name.name: kwarg.value(env) for kwarg in self.arguments.named}
+                env.errors.append(
+                    FluentFormatError(
+                        "Ignored positional arguments passed to term '{}'".format(
+                            reference_to_id(self)
+                        )
+                    )
+                )
+            kwargs = {
+                kwarg.name.name: kwarg.value(env) for kwarg in self.arguments.named
+            }
         else:
             kwargs = None
         with env.modified_for_term_reference(args=kwargs):
@@ -259,7 +280,7 @@ class TermReference(FTL.TermReference, BaseResolver):
 
 
 class VariableReference(FTL.VariableReference, BaseResolver):
-    id: 'Identifier'
+    id: "Identifier"
 
     def __call__(self, env: ResolverEnvironment) -> Any:
         name = self.id.name
@@ -267,30 +288,30 @@ class VariableReference(FTL.VariableReference, BaseResolver):
             arg_val = env.current.args[name]
         except LookupError:
             if env.current.error_for_missing_arg:
-                env.errors.append(
-                    FluentReferenceError(f"Unknown external: {name}"))
+                env.errors.append(FluentReferenceError(f"Unknown external: {name}"))
             return FluentNone(name)
 
         if isinstance(arg_val, (FluentType, str)):
             return arg_val
-        env.errors.append(TypeError("Unsupported external type: {}, {}"
-                                    .format(name, type(arg_val))))
+        env.errors.append(
+            TypeError("Unsupported external type: {}, {}".format(name, type(arg_val)))
+        )
         return FluentNone(name)
 
 
 class Attribute(FTL.Attribute, BaseResolver):
-    id: 'Identifier'
+    id: "Identifier"
     value: Pattern
 
 
 class SelectExpression(FTL.SelectExpression, BaseResolver):
-    selector: 'InlineExpression'
-    variants: List['Variant']  # type: ignore
+    selector: "InlineExpression"
+    variants: List["Variant"]  # type: ignore
 
     def __call__(self, env: ResolverEnvironment) -> Union[str, FluentNone]:
         key = self.selector(env)
-        default: Union['Variant', None] = None
-        found: Union['Variant', None] = None
+        default: Union["Variant", None] = None
+        found: Union["Variant", None] = None
         for variant in self.variants:
             if variant.default:
                 default = variant
@@ -319,7 +340,10 @@ def match(val1: Any, val2: Any, env: ResolverEnvironment) -> bool:
     if is_number(val1):
         if not is_number(val2):
             # Could be plural rule match
-            if isinstance(val1, (FluentInt, FluentFloat)) and val1.options.type == 'ordinal':
+            if (
+                isinstance(val1, (FluentInt, FluentFloat))
+                and val1.options.type == "ordinal"
+            ):
                 val1_form = env.context._ordinal_form(val1)
             else:
                 val1_form = env.context._plural_form(val1)
@@ -331,7 +355,7 @@ def match(val1: Any, val2: Any, env: ResolverEnvironment) -> bool:
 
 
 class Variant(FTL.Variant, BaseResolver):
-    key: Union['Identifier', NumberLiteral]
+    key: Union["Identifier", NumberLiteral]
     value: Pattern
     default: bool
 
@@ -344,8 +368,8 @@ class Identifier(FTL.Identifier, BaseResolver):
 
 
 class CallArguments(FTL.CallArguments, BaseResolver):
-    positional: List[Union['InlineExpression', Placeable]]  # type: ignore
-    named: List['NamedArgument']  # type: ignore
+    positional: List[Union["InlineExpression", Placeable]]  # type: ignore
+    named: List["NamedArgument"]  # type: ignore
 
 
 class FunctionReference(FTL.FunctionReference, BaseResolver):
@@ -359,8 +383,9 @@ class FunctionReference(FTL.FunctionReference, BaseResolver):
         try:
             function = env.context._functions[function_name]
         except LookupError:
-            env.errors.append(FluentReferenceError("Unknown function: {}"
-                                                   .format(function_name)))
+            env.errors.append(
+                FluentReferenceError("Unknown function: {}".format(function_name))
+            )
             return FluentNone(function_name + "()")
 
         try:
@@ -375,5 +400,11 @@ class NamedArgument(FTL.NamedArgument, BaseResolver):
     value: Union[NumberLiteral, StringLiteral]
 
 
-InlineExpression = Union[NumberLiteral, StringLiteral, MessageReference,
-                         TermReference, VariableReference, FunctionReference]
+InlineExpression = Union[
+    NumberLiteral,
+    StringLiteral,
+    MessageReference,
+    TermReference,
+    VariableReference,
+    FunctionReference,
+]

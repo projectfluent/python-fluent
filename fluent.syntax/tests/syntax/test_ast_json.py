@@ -1,8 +1,8 @@
 import unittest
 
-from tests.syntax import dedent_ftl
 from fluent.syntax.ast import from_json
 from fluent.syntax.parser import FluentParser
+from tests.syntax import dedent_ftl
 
 
 class TestASTJSON(unittest.TestCase):

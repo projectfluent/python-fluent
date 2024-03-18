@@ -4,11 +4,11 @@ from typing import Any, Union
 
 from fluent.syntax.ast import MessageReference, TermReference
 
-from .types import FluentInt, FluentFloat, FluentDecimal, FluentDate, FluentDateTime
 from .errors import FluentReferenceError
+from .types import FluentDate, FluentDateTime, FluentDecimal, FluentFloat, FluentInt
 
-TERM_SIGIL = '-'
-ATTRIBUTE_SEPARATOR = '.'
+TERM_SIGIL = "-"
+ATTRIBUTE_SEPARATOR = "."
 
 
 def native_to_fluent(val: Any) -> Any:
@@ -47,7 +47,7 @@ def reference_to_id(ref: Union[MessageReference, TermReference]) -> str:
         start = ref.id.name
 
     if ref.attribute:
-        return ''.join([start, ATTRIBUTE_SEPARATOR, ref.attribute.name])
+        return "".join([start, ATTRIBUTE_SEPARATOR, ref.attribute.name])
     return start
 
 

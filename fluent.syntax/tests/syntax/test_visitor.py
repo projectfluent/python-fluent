@@ -1,9 +1,8 @@
-from collections import defaultdict
 import unittest
+from collections import defaultdict
 
+from fluent.syntax import ast, visitor
 from fluent.syntax.parser import FluentParser
-from fluent.syntax import ast
-from fluent.syntax import visitor
 from tests.syntax import dedent_ftl
 
 
@@ -22,51 +21,53 @@ class MockVisitor(visitor.Visitor):
 
 class TestVisitor(unittest.TestCase):
     def test_resource(self):
-        resource = FluentParser().parse(dedent_ftl('''\
+        resource = FluentParser().parse(
+            dedent_ftl(
+                """\
         one = Message
         # Comment
         two = Messages
         three = Messages with
             .an = Attribute
-        '''))
+        """
+            )
+        )
         mv = MockVisitor()
         mv.visit(resource)
         self.assertEqual(mv.pattern_calls, 4)
         self.assertDictEqual(
             mv.calls,
             {
-                'Resource': 1,
-                'Comment': 1,
-                'Message': 3,
-                'Identifier': 4,
-                'Attribute': 1,
-                'Span': 10,
-            }
+                "Resource": 1,
+                "Comment": 1,
+                "Message": 3,
+                "Identifier": 4,
+                "Attribute": 1,
+                "Span": 10,
+            },
         )
 
 
 class TestTransformer(unittest.TestCase):
     def test(self):
-        resource = FluentParser().parse(dedent_ftl('''\
+        resource = FluentParser().parse(
+            dedent_ftl(
+                """\
         one = Message
         two = Messages
         three = Has a
             .an = Message string in the Attribute
-        '''))
+        """
+            )
+        )
         prior_res_id = id(resource)
         prior_msg_id = id(resource.body[1].value)
         backup = resource.clone()
-        transformed = ReplaceTransformer('Message', 'Term').visit(resource)
+        transformed = ReplaceTransformer("Message", "Term").visit(resource)
         self.assertEqual(prior_res_id, id(transformed))
-        self.assertEqual(
-            prior_msg_id,
-            id(transformed.body[1].value)
-        )
+        self.assertEqual(prior_msg_id, id(transformed.body[1].value))
         self.assertFalse(transformed.equals(backup))
-        self.assertEqual(
-            transformed.body[1].value.elements[0].value,
-            'Terms'
-        )
+        self.assertEqual(transformed.body[1].value.elements[0].value, "Terms")
 
 
 class WordCounter:

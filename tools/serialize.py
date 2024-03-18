@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-import sys
-import json
 import codecs
+import json
+import sys
+
 from fluent.syntax import ast, serialize
 
 sys.path.append("./")

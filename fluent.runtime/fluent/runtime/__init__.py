@@ -2,15 +2,14 @@ from fluent.syntax import FluentParser
 from fluent.syntax.ast import Resource
 
 from .bundle import FluentBundle
-from .fallback import FluentLocalization, AbstractResourceLoader, FluentResourceLoader
-
+from .fallback import AbstractResourceLoader, FluentLocalization, FluentResourceLoader
 
 __all__ = [
-    'FluentLocalization',
-    'AbstractResourceLoader',
-    'FluentResourceLoader',
-    'FluentResource',
-    'FluentBundle',
+    "FluentLocalization",
+    "AbstractResourceLoader",
+    "FluentResourceLoader",
+    "FluentResource",
+    "FluentBundle",
 ]
 
 

@@ -1,9 +1,10 @@
 from typing import Any, List
+
 from .ast import BaseNode, Node
 
 
 class Visitor:
-    '''Read-only visitor pattern.
+    """Read-only visitor pattern.
 
     Subclass this to gather information from an AST.
     To generally define which nodes not to descend in to, overload
@@ -11,7 +12,7 @@ class Visitor:
     To handle specific node types, add methods like `visit_Pattern`.
     If you want to still descend into the children of the node, call
     `generic_visit` of the superclass.
-    '''
+    """
 
     def visit(self, node: Any) -> None:
         if isinstance(node, list):
@@ -21,7 +22,7 @@ class Visitor:
         if not isinstance(node, BaseNode):
             return
         nodename = type(node).__name__
-        visit = getattr(self, f'visit_{nodename}', self.generic_visit)
+        visit = getattr(self, f"visit_{nodename}", self.generic_visit)
         visit(node)
 
     def generic_visit(self, node: BaseNode) -> None:
@@ -30,20 +31,20 @@ class Visitor:
 
 
 class Transformer(Visitor):
-    '''In-place AST Transformer pattern.
+    """In-place AST Transformer pattern.
 
     Subclass this to create an in-place modified variant
     of the given AST.
     If you need to keep the original AST around, pass
     a `node.clone()` to the transformer.
-    '''
+    """
 
     def visit(self, node: Any) -> Any:
         if not isinstance(node, BaseNode):
             return node
 
         nodename = type(node).__name__
-        visit = getattr(self, f'visit_{nodename}', self.generic_visit)
+        visit = getattr(self, f"visit_{nodename}", self.generic_visit)
         return visit(node)
 
     def generic_visit(self, node: Node) -> Node:  # type: ignore

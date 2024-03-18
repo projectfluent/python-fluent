@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Union, cast
 
 import babel
 import babel.numbers
@@ -34,16 +34,16 @@ class FluentBundle:
 
     def __init__(
         self,
-        locales: List[str],
-        functions: Union[Dict[str, Callable[..., "FluentType"]], None] = None,
+        locales: list[str],
+        functions: Union[dict[str, Callable[..., "FluentType"]], None] = None,
         use_isolating: bool = True,
     ):
         self.locales = locales
         self._functions = {**BUILTINS, **(functions or {})}
         self.use_isolating = use_isolating
-        self._messages: Dict[str, Union[FTL.Message, FTL.Term]] = {}
-        self._terms: Dict[str, Union[FTL.Message, FTL.Term]] = {}
-        self._compiled: Dict[str, Message] = {}
+        self._messages: dict[str, Union[FTL.Message, FTL.Term]] = {}
+        self._terms: dict[str, Union[FTL.Message, FTL.Term]] = {}
+        self._compiled: dict[str, Message] = {}
         # The compiler is not typed, and this cast is only valid for the public API
         self._compiler = cast(
             Callable[[Union[FTL.Message, FTL.Term]], Message], Compiler()
@@ -90,8 +90,8 @@ class FluentBundle:
         return self._compiled[compiled_id]
 
     def format_pattern(
-        self, pattern: Pattern, args: Union[Dict[str, Any], None] = None
-    ) -> Tuple[Union[str, "FluentNone"], List[Exception]]:
+        self, pattern: Pattern, args: Union[dict[str, Any], None] = None
+    ) -> tuple[Union[str, "FluentNone"], list[Exception]]:
         if args is not None:
             fluent_args = {
                 argname: native_to_fluent(argvalue)
@@ -100,7 +100,7 @@ class FluentBundle:
         else:
             fluent_args = {}
 
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         env = ResolverEnvironment(
             context=self, current=CurrentEnvironment(args=fluent_args), errors=errors
         )

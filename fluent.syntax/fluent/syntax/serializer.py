@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Union
 
 from . import ast
 
@@ -46,11 +46,11 @@ class FluentSerializer:
     def serialize(self, resource: ast.Resource) -> str:
         "Serialize a :class:`.ast.Resource` to a string."
         if not isinstance(resource, ast.Resource):
-            raise Exception("Unknown resource type: {}".format(type(resource)))
+            raise Exception(f"Unknown resource type: {type(resource)}")
 
         state = 0
 
-        parts: List[str] = []
+        parts: list[str] = []
         for entry in resource.body:
             if not isinstance(entry, ast.Junk) or self.with_junk:
                 parts.append(self.serialize_entry(entry, state))
@@ -79,7 +79,7 @@ class FluentSerializer:
             return "{}\n".format(serialize_comment(entry, "###"))
         if isinstance(entry, ast.Junk):
             return serialize_junk(entry)
-        raise Exception("Unknown entry type: {}".format(type(entry)))
+        raise Exception(f"Unknown entry type: {type(entry)}")
 
 
 def serialize_comment(
@@ -104,7 +104,7 @@ def serialize_junk(junk: ast.Junk) -> str:
 
 
 def serialize_message(message: ast.Message) -> str:
-    parts: List[str] = []
+    parts: list[str] = []
 
     if message.comment:
         parts.append(serialize_comment(message.comment))
@@ -123,7 +123,7 @@ def serialize_message(message: ast.Message) -> str:
 
 
 def serialize_term(term: ast.Term) -> str:
-    parts: List[str] = []
+    parts: list[str] = []
 
     if term.comment:
         parts.append(serialize_comment(term.comment))
@@ -160,20 +160,20 @@ def serialize_element(element: ast.PatternElement) -> str:
         return element.value
     if isinstance(element, ast.Placeable):
         return serialize_placeable(element)
-    raise Exception("Unknown element type: {}".format(type(element)))
+    raise Exception(f"Unknown element type: {type(element)}")
 
 
 def serialize_placeable(placeable: ast.Placeable) -> str:
     expr = placeable.expression
     if isinstance(expr, ast.Placeable):
-        return "{{{}}}".format(serialize_placeable(expr))
+        return f"{{{serialize_placeable(expr)}}}"
     if isinstance(expr, ast.SelectExpression):
         # Special-case select expressions to control the withespace around the
         # opening and the closing brace.
-        return "{{ {}}}".format(serialize_expression(expr))
+        return f"{{ {serialize_expression(expr)}}}"
     if isinstance(expr, ast.Expression):
-        return "{{ {} }}".format(serialize_expression(expr))
-    raise Exception("Unknown expression type: {}".format(type(expr)))
+        return f"{{ {serialize_expression(expr)} }}"
+    raise Exception(f"Unknown expression type: {type(expr)}")
 
 
 def serialize_expression(expression: Union[ast.Expression, ast.Placeable]) -> str:
@@ -199,13 +199,13 @@ def serialize_expression(expression: Union[ast.Expression, ast.Placeable]) -> st
         args = serialize_call_arguments(expression.arguments)
         return f"{expression.id.name}{args}"
     if isinstance(expression, ast.SelectExpression):
-        out = "{} ->".format(serialize_expression(expression.selector))
+        out = f"{serialize_expression(expression.selector)} ->"
         for variant in expression.variants:
             out += serialize_variant(variant)
         return f"{out}\n"
     if isinstance(expression, ast.Placeable):
         return serialize_placeable(expression)
-    raise Exception("Unknown expression type: {}".format(type(expression)))
+    raise Exception(f"Unknown expression type: {type(expression)}")
 
 
 def serialize_variant(variant: ast.Variant) -> str:
@@ -221,11 +221,11 @@ def serialize_call_arguments(expr: ast.CallArguments) -> str:
     named = ", ".join(serialize_named_argument(arg) for arg in expr.named)
     if len(expr.positional) > 0 and len(expr.named) > 0:
         return f"({positional}, {named})"
-    return "({})".format(positional or named)
+    return f"({positional or named})"
 
 
 def serialize_named_argument(arg: ast.NamedArgument) -> str:
-    return "{}: {}".format(arg.name.name, serialize_expression(arg.value))
+    return f"{arg.name.name}: {serialize_expression(arg.value)}"
 
 
 def serialize_variant_key(key: Union[ast.Identifier, ast.NumberLiteral]) -> str:
@@ -233,4 +233,4 @@ def serialize_variant_key(key: Union[ast.Identifier, ast.NumberLiteral]) -> str:
         return key.name
     if isinstance(key, ast.NumberLiteral):
         return key.value
-    raise Exception("Unknown variant key type: {}".format(type(key)))
+    raise Exception(f"Unknown variant key type: {type(key)}")

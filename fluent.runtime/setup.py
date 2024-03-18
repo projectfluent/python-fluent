@@ -6,7 +6,6 @@ this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, "README.rst"), "rb") as f:
     long_description = f.read().decode("utf-8")
 
-
 setup(
     name="fluent.runtime",
     description="Localization library for expressive translations.",
@@ -21,22 +20,21 @@ setup(
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3 :: Only",
     ],
     packages=["fluent.runtime"],
     package_data={"fluent.runtime": ["py.typed"]},
     # These should also be duplicated in tox.ini and /.github/workflows/fluent.runtime.yml
-    python_requires=">=3.6",
+    python_requires=">=3.9",
     install_requires=[
         "fluent.syntax>=0.17,<0.20",
         "attrs",
         "babel",
         "pytz",
-        "typing-extensions>=3.7,<5",
     ],
     test_suite="tests",
 )

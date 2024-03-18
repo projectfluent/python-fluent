@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from fluent.syntax import ast as FTL
 
@@ -17,7 +17,7 @@ class Compiler:
         nodename: str = type(node).__name__
         if not hasattr(resolver, nodename):
             return node
-        kwargs: Dict[str, Any] = vars(node).copy()
+        kwargs: dict[str, Any] = vars(node).copy()
         for propname, propvalue in kwargs.items():
             kwargs[propname] = self(propvalue)
         handler = getattr(self, "compile_" + nodename, self.compile_generic)
@@ -31,7 +31,7 @@ class Compiler:
             return expression
         return resolver.Placeable(expression=expression, **kwargs)
 
-    def compile_Pattern(self, _: Any, elements: List[Any], **kwargs: Any) -> Any:
+    def compile_Pattern(self, _: Any, elements: list[Any], **kwargs: Any) -> Any:
         if len(elements) == 1 and isinstance(elements[0], resolver.Placeable):
             # Don't isolate isolated placeables
             return resolver.NeverIsolatingPlaceable(elements[0].expression)

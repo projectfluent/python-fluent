@@ -48,7 +48,6 @@ class TestParseEntry(unittest.TestCase):
             "type": "Message",
             "id": {"name": "foo", "span": None, "type": "Identifier"},
             "span": None,
-            "type": "Message",
         }
 
         message = self.parser.parse_entry(dedent_ftl(input))

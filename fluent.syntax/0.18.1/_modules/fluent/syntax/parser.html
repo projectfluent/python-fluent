@@ -67,7 +67,7 @@
 
 
 <div class="viewcode-block" id="FluentParser"><a class="viewcode-back" href="../../../parsing.html#fluent.syntax.parser.FluentParser">[docs]</a><span class="k">class</span> <span class="nc">FluentParser</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This class is used to parse Fluent source content.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This class is used to parse Fluent source content.</span>
 
 <span class="sd">    ``with_spans`` enables source information in the form of</span>
 <span class="sd">    :class:`.ast.Span` objects for each :class:`.ast.SyntaxNode`.</span>
@@ -76,7 +76,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">with_spans</span> <span class="o">=</span> <span class="n">with_spans</span>
 
 <div class="viewcode-block" id="FluentParser.parse"><a class="viewcode-back" href="../../../parsing.html#fluent.syntax.parser.FluentParser.parse">[docs]</a>    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Create a :class:`.ast.Resource` from a Fluent source.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a :class:`.ast.Resource` from a Fluent source.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ps</span> <span class="o">=</span> <span class="n">FluentParserStream</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
         <span class="n">ps</span><span class="o">.</span><span class="n">skip_blank_block</span><span class="p">()</span>
@@ -121,7 +121,7 @@
         <span class="k">return</span> <span class="n">res</span></div>
 
 <div class="viewcode-block" id="FluentParser.parse_entry"><a class="viewcode-back" href="../../../parsing.html#fluent.syntax.parser.FluentParser.parse_entry">[docs]</a>    <span class="k">def</span> <span class="nf">parse_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Parse the first :class:`.ast.Entry` in source.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse the first :class:`.ast.Entry` in source.</span>
 
 <span class="sd">        Skip all encountered comments and start parsing at the first :class:`.ast.Message`</span>
 <span class="sd">        or :class:`.ast.Term` start. Return :class:`.ast.Junk` if the parsing is not successful.</span>
@@ -372,7 +372,7 @@
         <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">NumberLiteral</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">maybe_get_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Parse an inline or a block Pattern, or None</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Parse an inline or a block Pattern, or None</span>
 
 <span class="sd">        maybe_get_pattern distinguishes between patterns which start on the</span>
 <span class="sd">        same line as the indentifier (aka inline singleline patterns and inline</span>
@@ -442,7 +442,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">add_span</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">dedent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">common_indent</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Dedent a list of elements by removing the maximum common indent from</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Dedent a list of elements by removing the maximum common indent from</span>
 <span class="sd">        the beginning of text lines. The common indent is calculated in</span>
 <span class="sd">        get_pattern.</span>
 <span class="sd">        &#39;&#39;&#39;</span>

@@ -74,7 +74,7 @@
 
 
 <span class="k">def</span> <span class="nf">scalars_equal</span><span class="p">(</span><span class="n">node1</span><span class="p">,</span> <span class="n">node2</span><span class="p">,</span> <span class="n">ignored_fields</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Compare two nodes which are not lists.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare two nodes which are not lists.&quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">node1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(</span><span class="n">node2</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span>
@@ -86,16 +86,16 @@
 
 
 <div class="viewcode-block" id="BaseNode"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.BaseNode">[docs]</a><span class="k">class</span> <span class="nc">BaseNode</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class for all Fluent AST nodes.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for all Fluent AST nodes.</span>
 
 <span class="sd">    All productions described in the ASDL subclass BaseNode, including Span and</span>
 <span class="sd">    Annotation.  Implements __str__, to_json and traverse.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="BaseNode.clone"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.BaseNode.clone">[docs]</a>    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Create a deep clone of the current node.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a deep clone of the current node.&quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Clone node and its descendants.&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Clone node and its descendants.&quot;&quot;&quot;</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">BaseNode</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
@@ -110,7 +110,7 @@
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="BaseNode.equals"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.BaseNode.equals">[docs]</a>    <span class="k">def</span> <span class="nf">equals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">ignored_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;span&#39;</span><span class="p">]):</span>
-        <span class="sd">&quot;&quot;&quot;Compare two nodes.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compare two nodes.</span>
 
 <span class="sd">        Nodes are deeply compared on a field by field basis. If possible, False</span>
 <span class="sd">        is returned early. When comparing attributes and variants in</span>
@@ -163,7 +163,7 @@
 
 
 <div class="viewcode-block" id="SyntaxNode"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.SyntaxNode">[docs]</a><span class="k">class</span> <span class="nc">SyntaxNode</span><span class="p">(</span><span class="n">BaseNode</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class for AST nodes which can have Spans.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for AST nodes which can have Spans.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">span</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">SyntaxNode</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -180,7 +180,7 @@
 
 
 <div class="viewcode-block" id="Entry"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.Entry">[docs]</a><span class="k">class</span> <span class="nc">Entry</span><span class="p">(</span><span class="n">SyntaxNode</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An abstract base class for useful elements of Resource.body.&quot;&quot;&quot;</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An abstract base class for useful elements of Resource.body.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="Message"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.Message">[docs]</a><span class="k">class</span> <span class="nc">Message</span><span class="p">(</span><span class="n">Entry</span><span class="p">):</span>
@@ -210,7 +210,7 @@
 
 
 <div class="viewcode-block" id="PatternElement"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.PatternElement">[docs]</a><span class="k">class</span> <span class="nc">PatternElement</span><span class="p">(</span><span class="n">SyntaxNode</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An abstract base class for elements of Patterns.&quot;&quot;&quot;</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An abstract base class for elements of Patterns.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="TextElement"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.TextElement">[docs]</a><span class="k">class</span> <span class="nc">TextElement</span><span class="p">(</span><span class="n">PatternElement</span><span class="p">):</span>
@@ -226,11 +226,11 @@
 
 
 <div class="viewcode-block" id="Expression"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.Expression">[docs]</a><span class="k">class</span> <span class="nc">Expression</span><span class="p">(</span><span class="n">SyntaxNode</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An abstract base class for expressions.&quot;&quot;&quot;</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An abstract base class for expressions.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="Literal"><a class="viewcode-back" href="../../../ast.html#fluent.syntax.ast.Literal">[docs]</a><span class="k">class</span> <span class="nc">Literal</span><span class="p">(</span><span class="n">Expression</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An abstract base class for literals.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An abstract base class for literals.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Literal</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>

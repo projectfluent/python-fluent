@@ -43,14 +43,14 @@
 
 
 <div class="viewcode-block" id="parse"><a class="viewcode-back" href="../../reference.html#fluent.syntax.parse">[docs]</a><span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Create an ast.Resource from a Fluent Syntax source.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an ast.Resource from a Fluent Syntax source.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">FluentParser</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="serialize"><a class="viewcode-back" href="../../reference.html#fluent.syntax.serialize">[docs]</a><span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Serialize an ast.Resource to a unicode string.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serialize an ast.Resource to a unicode string.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">serializer</span> <span class="o">=</span> <span class="n">FluentSerializer</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">serializer</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span></div>

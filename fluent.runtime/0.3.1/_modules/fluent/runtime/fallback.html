@@ -47,7 +47,7 @@
 
 
 <div class="viewcode-block" id="FluentLocalization"><a class="viewcode-back" href="../../../reference.html#fluent.runtime.FluentLocalization">[docs]</a><span class="k">class</span> <span class="nc">FluentLocalization</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generic API for Fluent applications.</span>
 
 <span class="sd">    This handles language fallback, bundle creation and string localization.</span>
@@ -109,11 +109,11 @@
 
 
 <div class="viewcode-block" id="AbstractResourceLoader"><a class="viewcode-back" href="../../../reference.html#fluent.runtime.AbstractResourceLoader">[docs]</a><span class="k">class</span> <span class="nc">AbstractResourceLoader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Interface to implement for resource loaders.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="AbstractResourceLoader.resources"><a class="viewcode-back" href="../../../reference.html#fluent.runtime.AbstractResourceLoader.resources">[docs]</a>    <span class="k">def</span> <span class="nf">resources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locale</span><span class="p">,</span> <span class="n">resource_ids</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Yield lists of FluentResource objects, corresponding to</span>
 <span class="sd">        each of the resource_ids.</span>
 <span class="sd">        If there are multiple locations, this may yield multiple lists.</span>
@@ -124,7 +124,7 @@
 
 
 <div class="viewcode-block" id="FluentResourceLoader"><a class="viewcode-back" href="../../../reference.html#fluent.runtime.FluentResourceLoader">[docs]</a><span class="k">class</span> <span class="nc">FluentResourceLoader</span><span class="p">(</span><span class="n">AbstractResourceLoader</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Resource loader to read Fluent files from disk.</span>
 
 <span class="sd">    Different locales are in different locations based on locale code.</span>
@@ -134,7 +134,7 @@
 <span class="sd">    different roots.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">roots</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a resource loader. The roots may be a string for a single</span>
 <span class="sd">        location on disk, or a list of strings.</span>
 <span class="sd">        &quot;&quot;&quot;</span>

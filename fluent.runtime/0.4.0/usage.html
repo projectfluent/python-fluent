@@ -89,12 +89,12 @@ loader.</p>
 </pre></div>
 </div>
 <p>and <code class="docutils literal notranslate"><span class="pre">l10n/de/main.ftl</span></code> with:</p>
-<div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="no">second-string</span><span class="p"> = </span><span class="l">Eine Übersetzung</span><span class="p"></span>
+<div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="no">second-string</span><span class="p"> = </span><span class="l">Eine Übersetzung</span>
 </pre></div>
 </div>
 <p>as well as <code class="docutils literal notranslate"><span class="pre">l10n/en-US/main.ftl</span></code> with:</p>
-<div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="no">my-first-string</span><span class="p"> = </span><span class="l">Fluent can be easy</span><span class="p"></span>
-<span class="no">second-string</span><span class="p"> = </span><span class="l">An original string</span><span class="p"></span>
+<div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="no">my-first-string</span><span class="p"> = </span><span class="l">Fluent can be easy</span>
+<span class="no">second-string</span><span class="p"> = </span><span class="l">An original string</span>
 </pre></div>
 </div>
 <p>As you can see, our first example returned the English string, as that’s on
@@ -233,7 +233,7 @@ string:</p>
 <code class="docutils literal notranslate"><span class="pre">functions</span></code> dictionary to the <code class="docutils literal notranslate"><span class="pre">FluentLocalization</span></code> constructor:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">platform</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">os_name</span><span class="p">():</span>
-<span class="gp">... </span>   <span class="sd">&quot;&quot;&quot;Returns linux/mac/windows/other&quot;&quot;&quot;</span>
+<span class="gp">... </span><span class="w">   </span><span class="sd">&quot;&quot;&quot;Returns linux/mac/windows/other&quot;&quot;&quot;</span>
 <span class="gp">... </span>   <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Linux&#39;</span><span class="p">:</span> <span class="s1">&#39;linux&#39;</span><span class="p">,</span>
 <span class="gp">... </span>           <span class="s1">&#39;Darwin&#39;</span><span class="p">:</span> <span class="s1">&#39;mac&#39;</span><span class="p">,</span>
 <span class="gp">... </span>           <span class="s1">&#39;Windows&#39;</span><span class="p">:</span> <span class="s1">&#39;windows&#39;</span><span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">(),</span> <span class="s1">&#39;other&#39;</span><span class="p">)</span>
@@ -245,10 +245,10 @@ string:</p>
 </div>
 <p>That’s with <code class="docutils literal notranslate"><span class="pre">l10n/en-US/os.ftl</span></code> as:</p>
 <div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="no">welcome</span><span class="p"> = { </span><span class="no">OS</span><span class="p">() -&gt;</span>
-<span class="p">   [</span><span class="na">linux</span><span class="p">]    </span><span class="l">Welcome to Linux</span><span class="p"></span>
-<span class="p">   [</span><span class="na">mac</span><span class="p">]      </span><span class="l">Welcome to Mac</span><span class="p"></span>
-<span class="p">   [</span><span class="na">windows</span><span class="p">]  </span><span class="l">Welcome to Windows</span><span class="p"></span>
-<span class="p">  *[</span><span class="na">other</span><span class="p">]    </span><span class="l">Welcome</span><span class="p"></span>
+<span class="p">   [</span><span class="na">linux</span><span class="p">]    </span><span class="l">Welcome to Linux</span>
+<span class="p">   [</span><span class="na">mac</span><span class="p">]      </span><span class="l">Welcome to Mac</span>
+<span class="p">   [</span><span class="na">windows</span><span class="p">]  </span><span class="l">Welcome to Windows</span>
+<span class="p">  *[</span><span class="na">other</span><span class="p">]    </span><span class="l">Welcome</span>
 <span class="p">  }</span>
 </pre></div>
 </div>

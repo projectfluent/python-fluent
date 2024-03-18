@@ -39,7 +39,7 @@
 for <a class="reference external" href="https://projectfluent.org/">Fluent</a> files in Sphinx.</p>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install fluent.pygments
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>fluent.pygments
 </pre></div>
 </div>
 </div>
@@ -53,18 +53,18 @@ for <a class="reference external" href="https://projectfluent.org/">Fluent</a> f
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="cm">### A resource comment for the whole file</span><span class="p"></span>
+<div class="highlight-fluent notranslate"><div class="highlight"><pre><span></span><span class="cm">### A resource comment for the whole file</span>
 
 <span class="no">my-key</span><span class="p"> = </span><span class="l">Localize </span><span class="p">{ -</span><span class="no">brand-name</span><span class="p"> }</span>
-<span class="p">-</span><span class="no">brand-name</span><span class="p"> = </span><span class="l">Fluent</span><span class="p"></span>
+<span class="p">-</span><span class="no">brand-name</span><span class="p"> = </span><span class="l">Fluent</span>
 
-<span class="cm"># $num is the number of strings to localize</span><span class="p"></span>
+<span class="cm"># $num is the number of strings to localize</span>
 <span class="no">plurals</span><span class="p"> = { </span><span class="nv">$num</span><span class="p"> -&gt;</span>
-<span class="p">  [</span><span class="na">one</span><span class="p">] </span><span class="l">One string</span><span class="p"></span>
-<span class="p"> *[</span><span class="na">other</span><span class="p">] {</span><span class="nv">$num</span><span class="p">}</span><span class="l"> strings</span><span class="p"></span>
+<span class="p">  [</span><span class="na">one</span><span class="p">] </span><span class="l">One string</span>
+<span class="p"> *[</span><span class="na">other</span><span class="p">] {</span><span class="nv">$num</span><span class="p">}</span><span class="l"> strings</span>
 <span class="p">}</span>
 <span class="gr">an error ;-)</span>
-<span class="no">Most-strings</span><span class="p"> = </span><span class="l">are just simple strings.</span><span class="p"></span>
+<span class="no">Most-strings</span><span class="p"> = </span><span class="l">are just simple strings.</span>
 </pre></div>
 </div>
 </div>

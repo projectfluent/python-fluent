@@ -13,7 +13,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          cache: pip
+          cache-dependency-path: |
+            dev-requirements.txt
+            fluent.syntax/setup.py
+            fluent.runtime/setup.py
       - run: python -m pip install -r dev-requirements.txt
       - run: python -m pip install ./fluent.syntax ./fluent.runtime
       - run: python -m flake8
@@ -28,10 +32,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            fluent.syntax/setup.py
+            fluent.runtime/setup.py
       - run: python -m pip install ./fluent.syntax ./fluent.runtime
       - run: python -m unittest discover -s fluent.syntax
       - run: python -m unittest discover -s fluent.runtime
-  baseline:
+
+  # Test compatibility with the oldest Python version we claim to support,
+  # and for fluent.runtime's compatibility with a range of fluent.syntax versions.
+  compatibility:
     runs-on: ubuntu-20.04 # https://github.com/actions/setup-python/issues/544
     strategy:
       matrix:

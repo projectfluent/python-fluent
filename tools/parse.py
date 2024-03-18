@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
 import sys
-
-sys.path.append('./')
 import codecs
 from fluent.syntax import parse
 import json
+
+sys.path.append('./')
 
 
 def read_file(path):

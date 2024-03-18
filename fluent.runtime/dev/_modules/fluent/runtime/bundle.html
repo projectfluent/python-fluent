@@ -38,13 +38,13 @@
           <div class="body" role="main">
             
   <h1>Source code for fluent.runtime.bundle</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">babel</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">babel</span>
 <span class="kn">import</span> <span class="nn">babel.numbers</span>
 <span class="kn">import</span> <span class="nn">babel.plural</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Literal</span>
-
 <span class="kn">from</span> <span class="nn">fluent.syntax</span> <span class="kn">import</span> <span class="n">ast</span> <span class="k">as</span> <span class="n">FTL</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span> <span class="nn">.builtins</span> <span class="kn">import</span> <span class="n">BUILTINS</span>
 <span class="kn">from</span> <span class="nn">.prepare</span> <span class="kn">import</span> <span class="n">Compiler</span>
@@ -54,7 +54,7 @@
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">.types</span> <span class="kn">import</span> <span class="n">FluentNone</span><span class="p">,</span> <span class="n">FluentType</span>
 
-<span class="n">PluralCategory</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;zero&#39;</span><span class="p">,</span> <span class="s1">&#39;one&#39;</span><span class="p">,</span> <span class="s1">&#39;two&#39;</span><span class="p">,</span> <span class="s1">&#39;few&#39;</span><span class="p">,</span> <span class="s1">&#39;many&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">]</span>
+<span class="n">PluralCategory</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;zero&quot;</span><span class="p">,</span> <span class="s2">&quot;one&quot;</span><span class="p">,</span> <span class="s2">&quot;two&quot;</span><span class="p">,</span> <span class="s2">&quot;few&quot;</span><span class="p">,</span> <span class="s2">&quot;many&quot;</span><span class="p">,</span> <span class="s2">&quot;other&quot;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="FluentBundle"><a class="viewcode-back" href="../../../reference.html#fluent.runtime.FluentBundle">[docs]</a><span class="k">class</span> <span class="nc">FluentBundle</span><span class="p">:</span>
@@ -72,10 +72,12 @@
 <span class="sd">    See the documentation of the Fluent syntax for more information.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">locales</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-                 <span class="n">functions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="s1">&#39;FluentType&#39;</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">use_isolating</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">locales</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">functions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="s2">&quot;FluentType&quot;</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">use_isolating</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">locales</span> <span class="o">=</span> <span class="n">locales</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_functions</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">BUILTINS</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">functions</span> <span class="ow">or</span> <span class="p">{})}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_isolating</span> <span class="o">=</span> <span class="n">use_isolating</span>
@@ -83,14 +85,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">FTL</span><span class="o">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">FTL</span><span class="o">.</span><span class="n">Term</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Message</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="c1"># The compiler is not typed, and this cast is only valid for the public API</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_compiler</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Union</span><span class="p">[</span><span class="n">FTL</span><span class="o">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">FTL</span><span class="o">.</span><span class="n">Term</span><span class="p">]],</span> <span class="n">Message</span><span class="p">],</span> <span class="n">Compiler</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compiler</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">Callable</span><span class="p">[[</span><span class="n">Union</span><span class="p">[</span><span class="n">FTL</span><span class="o">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">FTL</span><span class="o">.</span><span class="n">Term</span><span class="p">]],</span> <span class="n">Message</span><span class="p">],</span> <span class="n">Compiler</span><span class="p">()</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_babel_locale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_babel_locale</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_plural_form</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">PluralCategory</span><span class="p">]],</span>
-                                 <span class="n">babel</span><span class="o">.</span><span class="n">plural</span><span class="o">.</span><span class="n">to_python</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">_babel_locale</span><span class="o">.</span><span class="n">plural_form</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ordinal_form</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">PluralCategory</span><span class="p">]],</span>
-                                  <span class="n">babel</span><span class="o">.</span><span class="n">plural</span><span class="o">.</span><span class="n">to_python</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">_babel_locale</span><span class="o">.</span><span class="n">ordinal_form</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plural_form</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">PluralCategory</span><span class="p">]],</span>
+            <span class="n">babel</span><span class="o">.</span><span class="n">plural</span><span class="o">.</span><span class="n">to_python</span><span class="p">,</span>
+        <span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">_babel_locale</span><span class="o">.</span><span class="n">plural_form</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ordinal_form</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">PluralCategory</span><span class="p">]],</span>
+            <span class="n">babel</span><span class="o">.</span><span class="n">plural</span><span class="o">.</span><span class="n">to_python</span><span class="p">,</span>
+        <span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">_babel_locale</span><span class="o">.</span><span class="n">ordinal_form</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">add_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">:</span> <span class="n">FTL</span><span class="o">.</span><span class="n">Resource</span><span class="p">,</span> <span class="n">allow_overrides</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">add_resource</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">:</span> <span class="n">FTL</span><span class="o">.</span><span class="n">Resource</span><span class="p">,</span> <span class="n">allow_overrides</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># TODO - warn/error about duplicates</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">resource</span><span class="o">.</span><span class="n">body</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="p">(</span><span class="n">FTL</span><span class="o">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">FTL</span><span class="o">.</span><span class="n">Term</span><span class="p">)):</span>
@@ -108,7 +118,7 @@
 
     <span class="k">def</span> <span class="nf">_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Message</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">term</span><span class="p">:</span>
-            <span class="n">compiled_id</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="n">entry_id</span>
+            <span class="n">compiled_id</span> <span class="o">=</span> <span class="s2">&quot;-&quot;</span> <span class="o">+</span> <span class="n">entry_id</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">compiled_id</span> <span class="o">=</span> <span class="n">entry_id</span>
         <span class="k">try</span><span class="p">:</span>
@@ -119,10 +129,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span><span class="p">[</span><span class="n">compiled_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiler</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled</span><span class="p">[</span><span class="n">compiled_id</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">format_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                       <span class="n">pattern</span><span class="p">:</span> <span class="n">Pattern</span><span class="p">,</span>
-                       <span class="n">args</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-                       <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;FluentNone&#39;</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="ne">Exception</span><span class="p">]]:</span>
+    <span class="k">def</span> <span class="nf">format_pattern</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="n">Pattern</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;FluentNone&quot;</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="ne">Exception</span><span class="p">]]:</span>
         <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">fluent_args</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="n">argname</span><span class="p">:</span> <span class="n">native_to_fluent</span><span class="p">(</span><span class="n">argvalue</span><span class="p">)</span>
@@ -132,20 +141,20 @@
             <span class="n">fluent_args</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="n">errors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="ne">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">env</span> <span class="o">=</span> <span class="n">ResolverEnvironment</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                                  <span class="n">current</span><span class="o">=</span><span class="n">CurrentEnvironment</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">fluent_args</span><span class="p">),</span>
-                                  <span class="n">errors</span><span class="o">=</span><span class="n">errors</span><span class="p">)</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="n">ResolverEnvironment</span><span class="p">(</span>
+            <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="o">=</span><span class="n">CurrentEnvironment</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">fluent_args</span><span class="p">),</span> <span class="n">errors</span><span class="o">=</span><span class="n">errors</span>
+        <span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">pattern</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="s1">&#39;{???}&#39;</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;{???}&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">errors</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_babel_locale</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">babel</span><span class="o">.</span><span class="n">Locale</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">lc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locales</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">babel</span><span class="o">.</span><span class="n">Locale</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">lc</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">babel</span><span class="o">.</span><span class="n">Locale</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">lc</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">))</span>
             <span class="k">except</span> <span class="n">babel</span><span class="o">.</span><span class="n">UnknownLocaleError</span><span class="p">:</span>
                 <span class="k">continue</span>
         <span class="c1"># TODO - log error</span>

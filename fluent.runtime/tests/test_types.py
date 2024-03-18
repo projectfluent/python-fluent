@@ -5,7 +5,12 @@ from decimal import Decimal
 
 import pytz
 from babel import Locale
-from fluent.runtime.types import FluentDateType, FluentNumber, fluent_date, fluent_number
+from fluent.runtime.types import (
+    FluentDateType,
+    FluentNumber,
+    fluent_date,
+    fluent_number,
+)
 
 
 class TestFluentNumber(unittest.TestCase):

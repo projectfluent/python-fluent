@@ -1,6 +1,4 @@
-from typing import Callable, Union
-
-from typing_extensions import Literal
+from typing import Callable, Literal, Union
 
 from .errors import ParseError
 

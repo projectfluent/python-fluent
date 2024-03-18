@@ -1,14 +1,13 @@
 import warnings
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 import attr
 import pytz
 from babel import Locale
 from babel.dates import format_date, format_time, get_datetime_format, get_timezone
 from babel.numbers import NumberPattern, parse_pattern
-from typing_extensions import Literal
 
 FORMAT_STYLE_DECIMAL = "decimal"
 FORMAT_STYLE_CURRENCY = "currency"

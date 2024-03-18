@@ -1,10 +1,9 @@
-from typing import TYPE_CHECKING, Any, Callable, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, Union, cast
 
 import babel
 import babel.numbers
 import babel.plural
 from fluent.syntax import ast as FTL
-from typing_extensions import Literal
 
 from .builtins import BUILTINS
 from .prepare import Compiler

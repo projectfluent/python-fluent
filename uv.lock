@@ -133,7 +133,6 @@ dependencies = [
     { name = "babel" },
     { name = "fluent-syntax" },
     { name = "pytz" },
-    { name = "typing-extensions" },
 ]
 
 [package.metadata]
@@ -142,19 +141,12 @@ requires-dist = [
     { name = "babel" },
     { name = "fluent-syntax", editable = "fluent.syntax" },
     { name = "pytz" },
-    { name = "typing-extensions", specifier = ">=3.7,<5" },
 ]
 
 [[package]]
 name = "fluent-syntax"
 version = "0.19.0"
 source = { editable = "fluent.syntax" }
-dependencies = [
-    { name = "typing-extensions" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "typing-extensions", specifier = ">=3.7,<5" }]
 
 [[package]]
 name = "isort"

@@ -378,6 +378,14 @@ class Junk(SyntaxNode):
     def add_annotation(self, annot: "Annotation") -> None:
         self.annotations.append(annot)
 
+class SourcePosition(BaseNode):
+    """
+    Represents a zero-indexed row/column position in the source string.
+    """
+    def __init__(self, row_index: int, column_index: int, **kwargs: Any):
+        super().__init__(**kwargs)
+        self.row_index = row_index
+        self.column_index = column_index
 
 class Span(BaseNode):
     def __init__(self, start: Location, end: Location, **kwargs: Any):

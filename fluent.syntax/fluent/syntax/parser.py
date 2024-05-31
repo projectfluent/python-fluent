@@ -111,7 +111,7 @@ class FluentParser:
         return self.get_entry_or_junk(ps)
 
     def get_entry_or_junk(self, ps: FluentParserStream) -> ast.EntryType:
-        entry_start_pos = ps.index
+        entry_start_index = ps.index
 
         try:
             entry = self.get_entry(ps)
@@ -119,17 +119,18 @@ class FluentParser:
             return entry
         except ParseError as err:
             error_index = ps.index
-            ps.skip_to_next_entry_start(entry_start_pos)
-            next_entry_start = ps.index
-            if next_entry_start < error_index:
+
+            ps.skip_to_next_entry_start(entry_start_index)
+            next_entry_start_index = ps.index
+            if next_entry_start_index < error_index:
                 # The position of the error must be inside of the Junk's span.
-                error_index = next_entry_start
+                error_index = next_entry_start_index
 
             # Create a Junk instance
-            slice = ps.string[entry_start_pos:next_entry_start]
+            slice = ps.string[entry_start_index:next_entry_start_index]
             junk = ast.Junk(slice)
             if self.with_spans:
-                junk.add_span(entry_start_pos, next_entry_start)
+                junk.add_span(entry_start_index, next_entry_start_index)
             annot = ast.Annotation(
                 err.code, list(err.args) if err.args else None, err.message
             )

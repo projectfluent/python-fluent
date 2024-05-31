@@ -3,7 +3,7 @@ from typing import Any, Callable, List, Set, TypeVar, Union, cast
 
 from . import ast
 from .errors import ParseError
-from .stream import EOL, FluentParserStream
+from .stream import EOL, FluentParserStream, Location
 
 R = TypeVar("R", bound=ast.SyntaxNode)
 
@@ -15,7 +15,7 @@ def with_span(fn: Callable[..., R]) -> Callable[..., R]:
         if not self.with_spans:
             return fn(self, ps, *args, **kwargs)
 
-        start = ps.index
+        start = ps.current_location
         node = fn(self, ps, *args, **kwargs)
 
         # Don't re-add the span if the node already has it. This may happen
@@ -23,7 +23,7 @@ def with_span(fn: Callable[..., R]) -> Callable[..., R]:
         if node.span is not None:
             return node
 
-        end = ps.index
+        end = ps.current_location
         node.add_span(start, end)
         return node
 
@@ -85,7 +85,7 @@ class FluentParser:
         res = ast.Resource(entries)
 
         if self.with_spans:
-            res.add_span(0, ps.index)
+            res.add_span(0, ps.current_location)
 
         return res
 
@@ -112,6 +112,7 @@ class FluentParser:
 
     def get_entry_or_junk(self, ps: FluentParserStream) -> ast.EntryType:
         entry_start_index = ps.index
+        entry_start_location = ps.current_location
 
         try:
             entry = self.get_entry(ps)
@@ -119,22 +120,23 @@ class FluentParser:
             return entry
         except ParseError as err:
             error_index = ps.index
+            error_location = ps.current_location
 
             ps.skip_to_next_entry_start(entry_start_index)
             next_entry_start_index = ps.index
             if next_entry_start_index < error_index:
                 # The position of the error must be inside of the Junk's span.
-                error_index = next_entry_start_index
+                error_location = ps.current_location
 
             # Create a Junk instance
             slice = ps.string[entry_start_index:next_entry_start_index]
             junk = ast.Junk(slice)
             if self.with_spans:
-                junk.add_span(entry_start_index, next_entry_start_index)
+                junk.add_span(entry_start_location, ps.current_location)
             annot = ast.Annotation(
                 err.code, list(err.args) if err.args else None, err.message
             )
-            annot.add_span(error_index, error_index)
+            annot.add_span(error_location, error_location)
             junk.add_annotation(annot)
             return junk
 
@@ -380,9 +382,9 @@ class FluentParser:
         if is_block:
             # A block pattern is a pattern which starts on a new line. Measure
             # the indent of this first line for the dedentation logic.
-            blank_start = ps.index
+            blank_start = ps.current_location
             first_indent = ps.skip_blank_inline()
-            elements.append(self.Indent(first_indent, blank_start, ps.index))
+            elements.append(self.Indent(first_indent, blank_start, ps.current_location))
             common_indent_length = len(first_indent)
         else:
             # Should get fixed by the subsequent min() operation
@@ -390,14 +392,14 @@ class FluentParser:
 
         while ps.current_char:
             if ps.current_char == EOL:
-                blank_start = ps.index
+                blank_start = ps.current_location
                 blank_lines = ps.peek_blank_block()
                 if ps.is_value_continuation():
                     ps.skip_to_peek()
                     indent = ps.skip_blank_inline()
                     common_indent_length = min(common_indent_length, len(indent))
                     elements.append(
-                        self.Indent(blank_lines + indent, blank_start, ps.index)
+                        self.Indent(blank_lines + indent, blank_start, ps.current_location)
                     )
                     continue
 
@@ -421,7 +423,7 @@ class FluentParser:
         return ast.Pattern(dedented)
 
     class Indent(ast.SyntaxNode):
-        def __init__(self, value: str, start: int, end: int):
+        def __init__(self, value: str, start: Location, end: Location):
             super(FluentParser.Indent, self).__init__()
             self.value = value
             self.add_span(start, end)
@@ -454,8 +456,8 @@ class FluentParser:
                 sum = ast.TextElement(prev.value + element.value)
                 if self.with_spans:
                     sum.add_span(
-                        cast(ast.Span, prev.span).start,
-                        cast(ast.Span, element.span).end,
+                        cast(ast.Span, prev.span).start_location,
+                        cast(ast.Span, element.span).end_location,
                     )
                 trimmed[-1] = sum
                 continue
@@ -466,8 +468,8 @@ class FluentParser:
                 text_element = ast.TextElement(element.value)
                 if self.with_spans:
                     text_element.add_span(
-                        cast(ast.Span, element.span).start,
-                        cast(ast.Span, element.span).end,
+                        cast(ast.Span, element.span).start_location,
+                        cast(ast.Span, element.span).end_location,
                     )
                 element = text_element
 

@@ -3,6 +3,8 @@ import re
 import sys
 from typing import Any, Callable, Dict, List, TypeVar, Union, cast
 
+from .stream import Location
+
 Node = TypeVar("Node", bound="BaseNode")
 ToJsonFn = Callable[[Dict[str, Any]], Any]
 
@@ -121,7 +123,7 @@ class SyntaxNode(BaseNode):
         super().__init__(**kwargs)
         self.span = span
 
-    def add_span(self, start: int, end: int) -> None:
+    def add_span(self, start: Location, end: Location) -> None:
         self.span = Span(start, end)
 
 
@@ -378,10 +380,18 @@ class Junk(SyntaxNode):
 
 
 class Span(BaseNode):
-    def __init__(self, start: int, end: int, **kwargs: Any):
+    def __init__(self, start: Location, end: Location, **kwargs: Any):
         super().__init__(**kwargs)
         self.start = start
         self.end = end
+
+    @property
+    def start_location(self) -> Location:
+        return self.start
+
+    @property
+    def end_location(self) -> Location:
+        return self.end
 
 
 class Annotation(SyntaxNode):

@@ -388,18 +388,47 @@ class SourcePosition(BaseNode):
         self.column_index = column_index
 
 class Span(BaseNode):
-    def __init__(self, start: Location, end: Location, **kwargs: Any):
+    def __init__(
+        self,
+        start: Location | int,
+        end: Location | int,
+        start_position: SourcePosition | None = None,
+        end_position: SourcePosition | None = None,
+        **kwargs: Any,
+    ):
         super().__init__(**kwargs)
-        self.start = start
-        self.end = end
+
+        # We support two forms of arguments to the constructor. This is to allow the parser to use
+        # Location tuples for convenience, but to allow position objects to be passed during json
+        # deserialization
+        start_index, start_position = self._coerce_location_and_position(start, start_position)
+        end_index, end_position = self._coerce_location_and_position(end, end_position)
+
+        self.start = start_index
+        self.end = end_index
+        self.start_position = start_position
+        self.end_position = end_position
+
+    def _coerce_location_and_position(
+        self,
+        location_or_index: Location | int,
+        position: SourcePosition | None,
+    ) -> tuple[int, SourcePosition]:
+        if isinstance(location_or_index, int):
+            assert position is not None, "position must be passed if location is not passed"
+            return location_or_index, position
+        else:
+            assert position is None, "position must not be passed if location is passed"
+            index, row, column = location_or_index
+            return index, SourcePosition(row, column)
 
     @property
     def start_location(self) -> Location:
-        return self.start
+        return self.start, self.start_position.row_index, self.start_position.column_index
 
     @property
     def end_location(self) -> Location:
-        return self.end
+        return self.end, self.end_position.row_index, self.end_position.column_index
 
 
 class Annotation(SyntaxNode):

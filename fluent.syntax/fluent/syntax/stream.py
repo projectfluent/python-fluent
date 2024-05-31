@@ -7,7 +7,9 @@ from .errors import ParseError
 
 # Represents a location in the parser stream (for convenience)
 # - Index
-Location: TypeAlias = int
+# - Row index (in source)
+# - Column index (in source)
+Location: TypeAlias = tuple[int, int, int]
 
 
 class ParserStream:
@@ -38,7 +40,7 @@ class ParserStream:
 
     @property
     def current_location(self) -> Location:
-        return self.index
+        return self.index, self.row_index, self.column_index
 
     @property
     def current_char(self) -> Union[str, None]:

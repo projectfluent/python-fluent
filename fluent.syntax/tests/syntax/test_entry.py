@@ -65,7 +65,21 @@ class TestParseEntry(unittest.TestCase):
                     "arguments": ["="],
                     "code": "E0003",
                     "message": 'Expected token: "="',
-                    "span": {"end": 23, "start": 23, "type": "Span"},
+                    "span": {
+                        "end": 23,
+                        "start": 23,
+                        "end_position": {
+                            "column_index": 4,
+                            "row_index": 1,
+                            "type": "SourcePosition",
+                        },
+                        "start_position": {
+                            "column_index": 4,
+                            "row_index": 1,
+                            "type": "SourcePosition",
+                        },
+                        "type": "Span"
+                    },
                     "type": "Annotation",
                 }
             ],
@@ -111,7 +125,21 @@ class TestParseEntry(unittest.TestCase):
                     "arguments": [" "],
                     "code": "E0003",
                     "message": 'Expected token: " "',
-                    "span": {"end": 21, "start": 21, "type": "Span"},
+                    "span": {
+                        "end": 21,
+                        "start": 21,
+                        "end_position": {
+                            "column_index": 2,
+                            "row_index": 1,
+                            "type": "SourcePosition",
+                        },
+                        "start_position": {
+                            "column_index": 2,
+                            "row_index": 1,
+                            "type": "SourcePosition",
+                        },
+                        "type": "Span",
+                    },
                     "type": "Annotation",
                 }
             ],

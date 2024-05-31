@@ -85,7 +85,7 @@ class FluentParser:
         res = ast.Resource(entries)
 
         if self.with_spans:
-            res.add_span(0, ps.current_location)
+            res.add_span((0, 0, 0), ps.current_location)
 
         return res
 

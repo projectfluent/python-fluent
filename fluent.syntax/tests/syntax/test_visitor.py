@@ -44,6 +44,7 @@ class TestVisitor(unittest.TestCase):
                 "Identifier": 4,
                 "Attribute": 1,
                 "Span": 10,
+                "SourcePosition": 20,
             },
         )
 

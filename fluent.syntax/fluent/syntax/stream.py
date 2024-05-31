@@ -1,8 +1,13 @@
-from typing import Callable, Union
+from typing import Callable, TypeAlias, Union
 
 from typing_extensions import Literal
 
 from .errors import ParseError
+
+
+# Represents a location in the parser stream (for convenience)
+# - Index
+Location: TypeAlias = int
 
 
 class ParserStream:
@@ -30,6 +35,10 @@ class ParserStream:
             return "\n"
 
         return self.get(offset)
+
+    @property
+    def current_location(self) -> Location:
+        return self.index
 
     @property
     def current_char(self) -> Union[str, None]:

@@ -7,13 +7,33 @@
       "span": {
         "type": "Span",
         "start": 0,
-        "end": 36
+        "end": 36,
+        "start_position": {
+          "type": "SourcePosition",
+          "row_index": 0,
+          "column_index": 0
+        },
+        "end_position": {
+          "type": "SourcePosition",
+          "row_index": 0,
+          "column_index": 36
+        }
       }
     }
   ],
   "span": {
     "type": "Span",
     "start": 0,
-    "end": 36
+    "end": 36,
+    "start_position": {
+      "type": "SourcePosition",
+      "row_index": 0,
+      "column_index": 0
+    },
+    "end_position": {
+      "type": "SourcePosition",
+      "row_index": 0,
+      "column_index": 36
+    }
   }
 }

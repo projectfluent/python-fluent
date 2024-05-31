@@ -9,7 +9,17 @@
         "span": {
           "type": "Span",
           "start": 0,
-          "end": 3
+          "end": 3,
+          "start_position": {
+            "type": "SourcePosition",
+            "row_index": 0,
+            "column_index": 0
+          },
+          "end_position": {
+            "type": "SourcePosition",
+            "row_index": 0,
+            "column_index": 3
+          }
         }
       },
       "value": {
@@ -21,14 +31,34 @@
             "span": {
               "type": "Span",
               "start": 6,
-              "end": 11
+              "end": 11,
+              "start_position": {
+                "type": "SourcePosition",
+                "row_index": 0,
+                "column_index": 6
+              },
+              "end_position": {
+                "type": "SourcePosition",
+                "row_index": 0,
+                "column_index": 11
+              }
             }
           }
         ],
         "span": {
           "type": "Span",
           "start": 6,
-          "end": 11
+          "end": 11,
+          "start_position": {
+            "type": "SourcePosition",
+            "row_index": 0,
+            "column_index": 6
+          },
+          "end_position": {
+            "type": "SourcePosition",
+            "row_index": 0,
+            "column_index": 11
+          }
         }
       },
       "attributes": [],
@@ -36,7 +66,17 @@
       "span": {
         "type": "Span",
         "start": 0,
-        "end": 11
+        "end": 11,
+        "start_position": {
+          "type": "SourcePosition",
+          "row_index": 0,
+          "column_index": 0
+        },
+        "end_position": {
+          "type": "SourcePosition",
+          "row_index": 0,
+          "column_index": 11
+        }
       }
     },
     {
@@ -45,13 +85,33 @@
       "span": {
         "type": "Span",
         "start": 13,
-        "end": 43
+        "end": 43,
+        "start_position": {
+          "type": "SourcePosition",
+          "row_index": 2,
+          "column_index": 0
+        },
+        "end_position": {
+          "type": "SourcePosition",
+          "row_index": 2,
+          "column_index": 30
+        }
       }
     }
   ],
   "span": {
     "type": "Span",
     "start": 0,
-    "end": 44
+    "end": 44,
+    "start_position": {
+      "type": "SourcePosition",
+      "row_index": 0,
+      "column_index": 0
+    },
+    "end_position": {
+      "type": "SourcePosition",
+      "row_index": 3,
+      "column_index": 0
+    }
   }
 }

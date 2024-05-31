@@ -12,7 +12,17 @@
           "span": {
             "type": "Span",
             "start": 1,
-            "end": 1
+            "end": 1,
+            "start_position": {
+              "type": "SourcePosition",
+              "row_index": 1,
+              "column_index": 0
+            },
+            "end_position": {
+              "type": "SourcePosition",
+              "row_index": 1,
+              "column_index": 0
+            }
           }
         }
       ],
@@ -20,13 +30,33 @@
       "span": {
         "type": "Span",
         "start": 1,
-        "end": 12
+        "end": 12,
+        "start_position": {
+          "type": "SourcePosition",
+          "row_index": 1,
+          "column_index": 0
+        },
+        "end_position": {
+          "type": "SourcePosition",
+          "row_index": 2,
+          "column_index": 0
+        }
       }
     }
   ],
   "span": {
     "type": "Span",
     "start": 0,
-    "end": 12
+    "end": 12,
+    "start_position": {
+      "type": "SourcePosition",
+      "row_index": 0,
+      "column_index": 0
+    },
+    "end_position": {
+      "type": "SourcePosition",
+      "row_index": 2,
+      "column_index": 1
+    }
   }
 }

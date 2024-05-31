@@ -133,7 +133,8 @@ class FluentParser:
             annot = ast.Annotation(
                 err.code, list(err.args) if err.args else None, err.message
             )
-            annot.add_span(error_index, error_index)
+            if self.with_spans:
+                annot.add_span(error_index, error_index)
             junk.add_annotation(annot)
             return junk
 

@@ -65,7 +65,7 @@ class TestParseEntry(unittest.TestCase):
                     "arguments": ["="],
                     "code": "E0003",
                     "message": 'Expected token: "="',
-                    "span": {"end": 23, "start": 23, "type": "Span"},
+                    "span": None,
                     "type": "Annotation",
                 }
             ],
@@ -111,7 +111,7 @@ class TestParseEntry(unittest.TestCase):
                     "arguments": [" "],
                     "code": "E0003",
                     "message": 'Expected token: " "',
-                    "span": {"end": 21, "start": 21, "type": "Span"},
+                    "span": None,
                     "type": "Annotation",
                 }
             ],

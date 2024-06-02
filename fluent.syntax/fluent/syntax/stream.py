@@ -9,7 +9,11 @@ class ParserStream:
     def __init__(self, string: str):
         self.string = string
         self.index = 0
+        self.row_index = 0
+        self.column_index = 0
         self.peek_offset = 0
+        self._peek_row_offset = 0
+        self._peek_column_offset = 0
 
     def get(self, offset: int) -> Union[str, None]:
         try:
@@ -37,9 +41,19 @@ class ParserStream:
 
     def next(self) -> Union[str, None]:
         self.peek_offset = 0
+        self._peek_row_offset = 0
+        self._peek_column_offset = 0
+
         # Skip over CRLF as if it was a single character.
         if self.get(self.index) == "\r" and self.get(self.index + 1) == "\n":
             self.index += 1
+        # If we have reached a newline reset the position
+        if self.get(self.index) == "\n":
+            self.row_index += 1
+            self.column_index = 0
+        else:
+            self.column_index += 1
+
         self.index += 1
         return self.get(self.index)
 
@@ -50,6 +64,13 @@ class ParserStream:
             and self.get(self.index + self.peek_offset + 1) == "\n"
         ):
             self.peek_offset += 1
+
+        if self.get(self.index + self.peek_offset) == "\n":
+            self._peek_row_offset += 1
+            self._peek_column_offset = 0
+        else:
+            self._peek_column_offset += 1
+
         self.peek_offset += 1
         return self.get(self.index + self.peek_offset)
 
@@ -58,7 +79,17 @@ class ParserStream:
 
     def skip_to_peek(self) -> None:
         self.index += self.peek_offset
+        self.row_index += self._peek_row_offset
+        if self._peek_row_offset:
+            # There have been newlines during the peek, so the column offset is the column index
+            # since the last newline
+            self.column_index = self._peek_column_offset
+        else:
+            self.column_index += self._peek_column_offset
+
         self.peek_offset = 0
+        self._peek_row_offset = 0
+        self._peek_column_offset = 0
 
 
 EOL = "\n"

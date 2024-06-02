@@ -7,7 +7,17 @@
       "span": {
         "type": "Span",
         "start": 0,
-        "end": 298
+        "end": 298,
+        "start_position": {
+          "type": "SourcePosition",
+          "row_index": 0,
+          "column_index": 0
+        },
+        "end_position": {
+          "type": "SourcePosition",
+          "row_index": 5,
+          "column_index": 62
+        }
       }
     },
     {
@@ -23,7 +33,17 @@
           "span": {
             "type": "Span",
             "start": 309,
-            "end": 309
+            "end": 309,
+            "start_position": {
+              "type": "SourcePosition",
+              "row_index": 7,
+              "column_index": 9
+            },
+            "end_position": {
+              "type": "SourcePosition",
+              "row_index": 7,
+              "column_index": 9
+            }
           }
         }
       ],
@@ -31,13 +51,33 @@
       "span": {
         "type": "Span",
         "start": 300,
-        "end": 309
+        "end": 309,
+        "start_position": {
+          "type": "SourcePosition",
+          "row_index": 7,
+          "column_index": 0
+        },
+        "end_position": {
+          "type": "SourcePosition",
+          "row_index": 7,
+          "column_index": 9
+        }
       }
     }
   ],
   "span": {
     "type": "Span",
     "start": 0,
-    "end": 309
+    "end": 309,
+    "start_position": {
+      "type": "SourcePosition",
+      "row_index": 0,
+      "column_index": 0
+    },
+    "end_position": {
+      "type": "SourcePosition",
+      "row_index": 7,
+      "column_index": 9
+    }
   }
 }

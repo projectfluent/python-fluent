@@ -9,7 +9,17 @@
         "span": {
           "type": "Span",
           "start": 10,
-          "end": 15
+          "end": 15,
+          "start_position": {
+            "type": "SourcePosition",
+            "row_index": 4,
+            "column_index": 0
+          },
+          "end_position": {
+            "type": "SourcePosition",
+            "row_index": 4,
+            "column_index": 5
+          }
         }
       },
       "value": {
@@ -21,14 +31,34 @@
             "span": {
               "type": "Span",
               "start": 18,
-              "end": 23
+              "end": 23,
+              "start_position": {
+                "type": "SourcePosition",
+                "row_index": 4,
+                "column_index": 8
+              },
+              "end_position": {
+                "type": "SourcePosition",
+                "row_index": 4,
+                "column_index": 13
+              }
             }
           }
         ],
         "span": {
           "type": "Span",
           "start": 18,
-          "end": 23
+          "end": 23,
+          "start_position": {
+            "type": "SourcePosition",
+            "row_index": 4,
+            "column_index": 8
+          },
+          "end_position": {
+            "type": "SourcePosition",
+            "row_index": 4,
+            "column_index": 13
+          }
         }
       },
       "attributes": [],
@@ -36,13 +66,33 @@
       "span": {
         "type": "Span",
         "start": 10,
-        "end": 23
+        "end": 23,
+        "start_position": {
+          "type": "SourcePosition",
+          "row_index": 4,
+          "column_index": 0
+        },
+        "end_position": {
+          "type": "SourcePosition",
+          "row_index": 4,
+          "column_index": 13
+        }
       }
     }
   ],
   "span": {
     "type": "Span",
     "start": 0,
-    "end": 24
+    "end": 24,
+    "start_position": {
+      "type": "SourcePosition",
+      "row_index": 0,
+      "column_index": 0
+    },
+    "end_position": {
+      "type": "SourcePosition",
+      "row_index": 5,
+      "column_index": 0
+    }
   }
 }

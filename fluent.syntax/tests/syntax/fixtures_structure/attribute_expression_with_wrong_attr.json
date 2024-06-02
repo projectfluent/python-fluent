@@ -14,7 +14,17 @@
           "span": {
             "type": "Span",
             "start": 13,
-            "end": 13
+            "end": 13,
+            "start_position": {
+              "type": "SourcePosition",
+              "row_index": 0,
+              "column_index": 13
+            },
+            "end_position": {
+              "type": "SourcePosition",
+              "row_index": 0,
+              "column_index": 13
+            }
           }
         }
       ],
@@ -22,7 +32,17 @@
       "span": {
         "type": "Span",
         "start": 0,
-        "end": 18
+        "end": 18,
+        "start_position": {
+          "type": "SourcePosition",
+          "row_index": 0,
+          "column_index": 0
+        },
+        "end_position": {
+          "type": "SourcePosition",
+          "row_index": 1,
+          "column_index": 0
+        }
       }
     },
     {
@@ -38,7 +58,17 @@
           "span": {
             "type": "Span",
             "start": 31,
-            "end": 31
+            "end": 31,
+            "start_position": {
+              "type": "SourcePosition",
+              "row_index": 1,
+              "column_index": 13
+            },
+            "end_position": {
+              "type": "SourcePosition",
+              "row_index": 1,
+              "column_index": 13
+            }
           }
         }
       ],
@@ -46,13 +76,33 @@
       "span": {
         "type": "Span",
         "start": 18,
-        "end": 34
+        "end": 34,
+        "start_position": {
+          "type": "SourcePosition",
+          "row_index": 1,
+          "column_index": 0
+        },
+        "end_position": {
+          "type": "SourcePosition",
+          "row_index": 2,
+          "column_index": 0
+        }
       }
     }
   ],
   "span": {
     "type": "Span",
     "start": 0,
-    "end": 34
+    "end": 34,
+    "start_position": {
+      "type": "SourcePosition",
+      "row_index": 0,
+      "column_index": 0
+    },
+    "end_position": {
+      "type": "SourcePosition",
+      "row_index": 2,
+      "column_index": 1
+    }
   }
 }

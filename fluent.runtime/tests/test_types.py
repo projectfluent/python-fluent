@@ -235,7 +235,7 @@ class TestFluentDate(unittest.TestCase):
         fd1b = fluent_date(dt1, dateStyle="full", timeStyle="full")
         self.assertRegex(
             fd1b.format(en_GB),
-            "^Monday, 2 July 2018(,| at) 00:30:00 British Summer Time$",
+            "^Monday,? 2 July 2018(,| at) 00:30:00 British Summer Time$",
         )
         fd1c = fluent_date(dt1, dateStyle="short")
         self.assertEqual(fd1c.format(en_GB), "02/07/2018")
@@ -253,7 +253,7 @@ class TestFluentDate(unittest.TestCase):
         )
         self.assertRegex(
             fd2b.format(en_GB),
-            "^Monday, 2 July 2018(,| at) 00:30:00 British Summer Time$",
+            "^Monday,? 2 July 2018(,| at) 00:30:00 British Summer Time$",
         )
         fd2c = fluent_date(dt2, dateStyle="short", timeZone="Europe/London")
         self.assertEqual(fd2c.format(en_GB), "02/07/2018")

@@ -1,5 +1,6 @@
 import contextlib
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Set, Union, cast
+from collections.abc import Generator
+from typing import TYPE_CHECKING, Any, Union, cast
 
 import attr
 from fluent.syntax import ast as FTL
@@ -42,7 +43,7 @@ class CurrentEnvironment:
     # For Messages, VariableReference nodes are interpreted as external args,
     # but for Terms they are the values explicitly passed using CallExpression
     # syntax. So we have to be able to change 'args' for this purpose.
-    args: Dict[str, Any] = attr.ib(factory=dict)
+    args: dict[str, Any] = attr.ib(factory=dict)
     # This controls whether we need to report an error if a VariableReference
     # refers to an arg that is not present in the args dict.
     error_for_missing_arg: bool = attr.ib(default=True)
@@ -51,9 +52,9 @@ class CurrentEnvironment:
 @attr.s
 class ResolverEnvironment:
     context: "FluentBundle" = attr.ib()
-    errors: List[Exception] = attr.ib()
+    errors: list[Exception] = attr.ib()
     part_count: int = attr.ib(default=0, init=False)
-    active_patterns: Set[FTL.Pattern] = attr.ib(factory=set, init=False)
+    active_patterns: set[FTL.Pattern] = attr.ib(factory=set, init=False)
     current: CurrentEnvironment = attr.ib(factory=CurrentEnvironment)
 
     @contextlib.contextmanager
@@ -72,7 +73,7 @@ class ResolverEnvironment:
         self.current = old_current
 
     def modified_for_term_reference(
-        self, args: Union[Dict[str, Any], None] = None
+        self, args: Union[dict[str, Any], None] = None
     ) -> Any:
         return self.modified(
             args=args if args is not None else {}, error_for_missing_arg=False
@@ -100,13 +101,13 @@ class Literal(BaseResolver):
 class Message(FTL.Entry, BaseResolver):
     id: "Identifier"
     value: Union["Pattern", None]
-    attributes: Dict[str, "Pattern"]
+    attributes: dict[str, "Pattern"]
 
     def __init__(
         self,
         id: "Identifier",
         value: Union["Pattern", None] = None,
-        attributes: Union[List["Attribute"], None] = None,
+        attributes: Union[list["Attribute"], None] = None,
         comment: Any = None,
         **kwargs: Any,
     ):
@@ -121,13 +122,13 @@ class Message(FTL.Entry, BaseResolver):
 class Term(FTL.Entry, BaseResolver):
     id: "Identifier"
     value: "Pattern"
-    attributes: Dict[str, "Pattern"]
+    attributes: dict[str, "Pattern"]
 
     def __init__(
         self,
         id: "Identifier",
         value: "Pattern",
-        attributes: Union[List["Attribute"], None] = None,
+        attributes: Union[list["Attribute"], None] = None,
         comment: Any = None,
         **kwargs: Any,
     ):
@@ -143,7 +144,7 @@ class Pattern(FTL.Pattern, BaseResolver):
     # Prevent messages with too many sub parts, for CPI DOS protection
     MAX_PARTS = 1000
 
-    elements: List[Union["TextElement", "Placeable"]]  # type: ignore
+    elements: list[Union["TextElement", "Placeable"]]  # type: ignore
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -294,7 +295,7 @@ class VariableReference(FTL.VariableReference, BaseResolver):
         if isinstance(arg_val, (FluentType, str)):
             return arg_val
         env.errors.append(
-            TypeError("Unsupported external type: {}, {}".format(name, type(arg_val)))
+            TypeError(f"Unsupported external type: {name}, {type(arg_val)}")
         )
         return FluentNone(name)
 
@@ -306,7 +307,7 @@ class Attribute(FTL.Attribute, BaseResolver):
 
 class SelectExpression(FTL.SelectExpression, BaseResolver):
     selector: "InlineExpression"
-    variants: List["Variant"]  # type: ignore
+    variants: list["Variant"]  # type: ignore
 
     def __call__(self, env: ResolverEnvironment) -> Union[str, FluentNone]:
         key = self.selector(env)
@@ -368,8 +369,8 @@ class Identifier(FTL.Identifier, BaseResolver):
 
 
 class CallArguments(FTL.CallArguments, BaseResolver):
-    positional: List[Union["InlineExpression", Placeable]]  # type: ignore
-    named: List["NamedArgument"]  # type: ignore
+    positional: list[Union["InlineExpression", Placeable]]  # type: ignore
+    named: list["NamedArgument"]  # type: ignore
 
 
 class FunctionReference(FTL.FunctionReference, BaseResolver):
@@ -384,7 +385,7 @@ class FunctionReference(FTL.FunctionReference, BaseResolver):
             function = env.context._functions[function_name]
         except LookupError:
             env.errors.append(
-                FluentReferenceError("Unknown function: {}".format(function_name))
+                FluentReferenceError(f"Unknown function: {function_name}")
             )
             return FluentNone(function_name + "()")
 

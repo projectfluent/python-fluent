@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from .ast import BaseNode, Node
 
@@ -50,7 +50,7 @@ class Transformer(Visitor):
     def generic_visit(self, node: Node) -> Node:  # type: ignore
         for propname, propvalue in vars(node).items():
             if isinstance(propvalue, list):
-                new_vals: List[Any] = []
+                new_vals: list[Any] = []
                 for child in propvalue:
                     new_val = self.visit(child)
                     if new_val is not None:

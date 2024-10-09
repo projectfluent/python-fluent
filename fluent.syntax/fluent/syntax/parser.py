@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable, List, Set, TypeVar, Union, cast
+from typing import Any, Callable, TypeVar, Union, cast
 
 from . import ast
 from .errors import ParseError
@@ -45,7 +45,7 @@ class FluentParser:
         ps = FluentParserStream(source)
         ps.skip_blank_block()
 
-        entries: List[ast.EntryType] = []
+        entries: list[ast.EntryType] = []
         last_comment = None
 
         while ps.current_char:
@@ -236,8 +236,8 @@ class FluentParser:
 
         return ast.Attribute(key, value)
 
-    def get_attributes(self, ps: FluentParserStream) -> List[ast.Attribute]:
-        attrs: List[ast.Attribute] = []
+    def get_attributes(self, ps: FluentParserStream) -> list[ast.Attribute]:
+        attrs: list[ast.Attribute] = []
         ps.peek_blank()
 
         while ps.is_attribute_start():
@@ -299,8 +299,8 @@ class FluentParser:
 
         return ast.Variant(key, value, default_index)
 
-    def get_variants(self, ps: FluentParserStream) -> List[ast.Variant]:
-        variants: List[ast.Variant] = []
+    def get_variants(self, ps: FluentParserStream) -> list[ast.Variant]:
+        variants: list[ast.Variant] = []
         has_default = False
 
         ps.skip_blank()
@@ -376,7 +376,7 @@ class FluentParser:
 
     @with_span
     def get_pattern(self, ps: FluentParserStream, is_block: bool) -> ast.Pattern:
-        elements: List[Any] = []
+        elements: list[Any] = []
         if is_block:
             # A block pattern is a pattern which starts on a new line. Measure
             # the indent of this first line for the dedentation logic.
@@ -422,20 +422,20 @@ class FluentParser:
 
     class Indent(ast.SyntaxNode):
         def __init__(self, value: str, start: int, end: int):
-            super(FluentParser.Indent, self).__init__()
+            super().__init__()
             self.value = value
             self.add_span(start, end)
 
     def dedent(
         self,
-        elements: List[Union[ast.TextElement, ast.Placeable, Indent]],
+        elements: list[Union[ast.TextElement, ast.Placeable, Indent]],
         common_indent: int,
-    ) -> List[Union[ast.TextElement, ast.Placeable]]:
+    ) -> list[Union[ast.TextElement, ast.Placeable]]:
         """Dedent a list of elements by removing the maximum common indent from
         the beginning of text lines. The common indent is calculated in
         get_pattern.
         """
-        trimmed: List[Union[ast.TextElement, ast.Placeable]] = []
+        trimmed: list[Union[ast.TextElement, ast.Placeable]] = []
 
         for element in elements:
             if isinstance(element, ast.Placeable):
@@ -660,9 +660,9 @@ class FluentParser:
 
     @with_span
     def get_call_arguments(self, ps: FluentParserStream) -> ast.CallArguments:
-        positional: List[Union[ast.InlineExpression, ast.Placeable]] = []
-        named: List[ast.NamedArgument] = []
-        argument_names: Set[str] = set()
+        positional: list[Union[ast.InlineExpression, ast.Placeable]] = []
+        named: list[ast.NamedArgument] = []
+        argument_names: set[str] = set()
 
         ps.expect_char("(")
         ps.skip_blank()

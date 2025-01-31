@@ -3,9 +3,18 @@ import os
 import unittest
 from unittest import mock
 
+from . import normalize_path
+
 from fluent.runtime import FluentLocalization, FluentResourceLoader
 
 ISFILE = os.path.isfile
+
+def show_bundle(bundle):
+    for name in ["one", "two", "three", "four", "five"]:
+        if bundle.has_message(name):
+            print(name + ":", bundle.format_pattern(bundle.get_message(name).value))
+        else:
+            print(name + ": Not present")
 
 
 class TestLocalization(unittest.TestCase):
@@ -25,22 +34,28 @@ class TestLocalization(unittest.TestCase):
             "en/one.ftl": "four = exists",
             "en/two.ftl": "five = exists",
         }
-        isfile.side_effect = lambda p: p in data or ISFILE(p)
-        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[p])
+        #isfile.side_effect = lambda p: p in data or ISFILE(p)
+        isfile.side_effect = lambda p: normalize_path(p) in data or ISFILE(p)
+        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
         l10n = FluentLocalization(
             ["de", "fr", "en"], ["one.ftl", "two.ftl"], FluentResourceLoader("{locale}")
         )
+        # Curious
+        print("\ntest_bundles")
         bundles_gen = l10n._bundles()
         bundle_de = next(bundles_gen)
+        show_bundle(bundle_de)
         self.assertEqual(bundle_de.locales[0], "de")
         self.assertTrue(bundle_de.has_message("one"))
         self.assertTrue(bundle_de.has_message("two"))
         bundle_fr = next(bundles_gen)
+        show_bundle(bundle_fr)
         self.assertEqual(bundle_fr.locales[0], "fr")
         self.assertFalse(bundle_fr.has_message("one"))
         self.assertTrue(bundle_fr.has_message("three"))
         self.assertListEqual(list(l10n._bundles())[:2], [bundle_de, bundle_fr])
         bundle_en = next(bundles_gen)
+        show_bundle(bundle_en)
         self.assertEqual(bundle_en.locales[0], "en")
         self.assertEqual(l10n.format_value("one"), "in German")
         self.assertEqual(l10n.format_value("two"), "in German")
@@ -57,8 +72,8 @@ class TestResourceLoader(unittest.TestCase):
             "en/one.ftl": "one = exists",
             "en/two.ftl": "two = exists",
         }
-        isfile.side_effect = lambda p: p in data
-        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[p])
+        isfile.side_effect = lambda p: normalize_path(p) in data
+        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
         loader = FluentResourceLoader("{locale}")
         resources_list = list(loader.resources("en", ["one.ftl", "two.ftl"]))
         self.assertEqual(len(resources_list), 1)
@@ -69,8 +84,8 @@ class TestResourceLoader(unittest.TestCase):
         data = {
             "en/two.ftl": "two = exists",
         }
-        isfile.side_effect = lambda p: p in data
-        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[p])
+        isfile.side_effect = lambda p: normalize_path(p) in data
+        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
         loader = FluentResourceLoader("{locale}")
         resources_list = list(loader.resources("en", ["one.ftl", "two.ftl"]))
         self.assertEqual(len(resources_list), 1)
@@ -79,8 +94,8 @@ class TestResourceLoader(unittest.TestCase):
 
     def test_none_exist(self, codecs_open, isfile):
         data = {}
-        isfile.side_effect = lambda p: p in data
-        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[p])
+        isfile.side_effect = lambda p: normalize_path(p) in data
+        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
         loader = FluentResourceLoader("{locale}")
         resources_list = list(loader.resources("en", ["one.ftl", "two.ftl"]))
         self.assertEqual(len(resources_list), 0)

@@ -9,13 +9,6 @@ from fluent.runtime import FluentLocalization, FluentResourceLoader
 
 ISFILE = os.path.isfile
 
-def show_bundle(bundle):
-    for name in ["one", "two", "three", "four", "five"]:
-        if bundle.has_message(name):
-            print(name + ":", bundle.format_pattern(bundle.get_message(name).value))
-        else:
-            print(name + ": Not present")
-
 
 class TestLocalization(unittest.TestCase):
     def test_init(self):
@@ -41,21 +34,17 @@ class TestLocalization(unittest.TestCase):
             ["de", "fr", "en"], ["one.ftl", "two.ftl"], FluentResourceLoader("{locale}")
         )
         # Curious
-        print("\ntest_bundles")
         bundles_gen = l10n._bundles()
         bundle_de = next(bundles_gen)
-        show_bundle(bundle_de)
         self.assertEqual(bundle_de.locales[0], "de")
         self.assertTrue(bundle_de.has_message("one"))
         self.assertTrue(bundle_de.has_message("two"))
         bundle_fr = next(bundles_gen)
-        show_bundle(bundle_fr)
         self.assertEqual(bundle_fr.locales[0], "fr")
         self.assertFalse(bundle_fr.has_message("one"))
         self.assertTrue(bundle_fr.has_message("three"))
         self.assertListEqual(list(l10n._bundles())[:2], [bundle_de, bundle_fr])
         bundle_en = next(bundles_gen)
-        show_bundle(bundle_en)
         self.assertEqual(bundle_en.locales[0], "en")
         self.assertEqual(l10n.format_value("one"), "in German")
         self.assertEqual(l10n.format_value("two"), "in German")

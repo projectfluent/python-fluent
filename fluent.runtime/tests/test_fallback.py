@@ -27,7 +27,6 @@ class TestLocalization(unittest.TestCase):
             "en/one.ftl": "four = exists",
             "en/two.ftl": "five = exists",
         }
-        #isfile.side_effect = lambda p: p in data or ISFILE(p)
         isfile.side_effect = lambda p: normalize_path(p) in data or ISFILE(p)
         codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
         l10n = FluentLocalization(

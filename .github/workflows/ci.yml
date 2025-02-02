@@ -23,7 +23,9 @@ jobs:
       - run: python -m flake8
       - run: python -m mypy fluent.syntax/fluent fluent.runtime/fluent
   test:
-    runs-on: ubuntu-latest
+    # Workaround Python 3.7 no longer supported https://github.com/actions/setup-python/issues/962#issuecomment-2414454450
+    #runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9, "3.10", 3.11, 3.12, pypy3.9, pypy3.10]

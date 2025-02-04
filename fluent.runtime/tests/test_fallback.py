@@ -10,6 +10,11 @@ from fluent.runtime import FluentLocalization, FluentResourceLoader
 ISFILE = os.path.isfile
 
 
+def patch_io(codecs_open, isfile, data):
+    isfile.side_effect = lambda p: normalize_path(p) in data or ISFILE(p)
+    codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
+
+
 class TestLocalization(unittest.TestCase):
     def test_init(self):
         l10n = FluentLocalization(
@@ -27,8 +32,7 @@ class TestLocalization(unittest.TestCase):
             "en/one.ftl": "four = exists",
             "en/two.ftl": "five = exists",
         }
-        isfile.side_effect = lambda p: normalize_path(p) in data or ISFILE(p)
-        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
+        patch_io(codecs_open, isfile, data)
         l10n = FluentLocalization(
             ["de", "fr", "en"], ["one.ftl", "two.ftl"], FluentResourceLoader("{locale}")
         )
@@ -60,8 +64,7 @@ class TestResourceLoader(unittest.TestCase):
             "en/one.ftl": "one = exists",
             "en/two.ftl": "two = exists",
         }
-        isfile.side_effect = lambda p: normalize_path(p) in data
-        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
+        patch_io(codecs_open, isfile, data)
         loader = FluentResourceLoader("{locale}")
         resources_list = list(loader.resources("en", ["one.ftl", "two.ftl"]))
         self.assertEqual(len(resources_list), 1)
@@ -72,8 +75,7 @@ class TestResourceLoader(unittest.TestCase):
         data = {
             "en/two.ftl": "two = exists",
         }
-        isfile.side_effect = lambda p: normalize_path(p) in data
-        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
+        patch_io(codecs_open, isfile, data)
         loader = FluentResourceLoader("{locale}")
         resources_list = list(loader.resources("en", ["one.ftl", "two.ftl"]))
         self.assertEqual(len(resources_list), 1)
@@ -82,8 +84,7 @@ class TestResourceLoader(unittest.TestCase):
 
     def test_none_exist(self, codecs_open, isfile):
         data = {}
-        isfile.side_effect = lambda p: normalize_path(p) in data
-        codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
+        patch_io(codecs_open, isfile, data)
         loader = FluentResourceLoader("{locale}")
         resources_list = list(loader.resources("en", ["one.ftl", "two.ftl"]))
         self.assertEqual(len(resources_list), 0)

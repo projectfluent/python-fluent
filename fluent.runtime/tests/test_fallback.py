@@ -1,18 +1,7 @@
-import io
-import os
 import unittest
-from unittest import mock
-
-from . import normalize_path
+from .utils import patch_files
 
 from fluent.runtime import FluentLocalization, FluentResourceLoader
-
-ISFILE = os.path.isfile
-
-
-def patch_io(codecs_open, isfile, data):
-    isfile.side_effect = lambda p: normalize_path(p) in data or ISFILE(p)
-    codecs_open.side_effect = lambda p, _, __: io.StringIO(data[normalize_path(p)])
 
 
 class TestLocalization(unittest.TestCase):
@@ -22,17 +11,14 @@ class TestLocalization(unittest.TestCase):
         )
         self.assertTrue(callable(l10n.format_value))
 
-    @mock.patch("os.path.isfile")
-    @mock.patch("codecs.open")
-    def test_bundles(self, codecs_open, isfile):
-        data = {
-            "de/one.ftl": "one = in German",
-            "de/two.ftl": "two = in German",
-            "fr/two.ftl": "three = in French",
-            "en/one.ftl": "four = exists",
-            "en/two.ftl": "five = exists",
-        }
-        patch_io(codecs_open, isfile, data)
+    @patch_files({
+        "de/one.ftl": "one = in German",
+        "de/two.ftl": "two = in German",
+        "fr/two.ftl": "three = in French",
+        "en/one.ftl": "four = exists",
+        "en/two.ftl": "five = exists",
+    })
+    def test_bundles(self):
         l10n = FluentLocalization(
             ["de", "fr", "en"], ["one.ftl", "two.ftl"], FluentResourceLoader("{locale}")
         )
@@ -56,35 +42,30 @@ class TestLocalization(unittest.TestCase):
         self.assertEqual(l10n.format_value("five"), "exists")
 
 
-@mock.patch("os.path.isfile")
-@mock.patch("codecs.open")
 class TestResourceLoader(unittest.TestCase):
-    def test_all_exist(self, codecs_open, isfile):
-        data = {
-            "en/one.ftl": "one = exists",
-            "en/two.ftl": "two = exists",
-        }
-        patch_io(codecs_open, isfile, data)
+    @patch_files({
+        "en/one.ftl": "one = exists",
+        "en/two.ftl": "two = exists",
+    })
+    def test_all_exist(self):
         loader = FluentResourceLoader("{locale}")
         resources_list = list(loader.resources("en", ["one.ftl", "two.ftl"]))
         self.assertEqual(len(resources_list), 1)
         resources = resources_list[0]
         self.assertEqual(len(resources), 2)
 
-    def test_one_exists(self, codecs_open, isfile):
-        data = {
-            "en/two.ftl": "two = exists",
-        }
-        patch_io(codecs_open, isfile, data)
+    @patch_files({
+        "en/two.ftl": "two = exists",
+    })
+    def test_one_exists(self):
         loader = FluentResourceLoader("{locale}")
         resources_list = list(loader.resources("en", ["one.ftl", "two.ftl"]))
         self.assertEqual(len(resources_list), 1)
         resources = resources_list[0]
         self.assertEqual(len(resources), 1)
 
-    def test_none_exist(self, codecs_open, isfile):
-        data = {}
-        patch_io(codecs_open, isfile, data)
+    @patch_files({})
+    def test_none_exist(self):
         loader = FluentResourceLoader("{locale}")
         resources_list = list(loader.resources("en", ["one.ftl", "two.ftl"]))
         self.assertEqual(len(resources_list), 0)

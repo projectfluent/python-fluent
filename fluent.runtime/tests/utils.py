@@ -1,7 +1,4 @@
-"""Utilities for testing.
-
-Import this module before patching libraries.
-"""
+"""Utilities for testing."""
 
 import textwrap
 from pathlib import PurePath

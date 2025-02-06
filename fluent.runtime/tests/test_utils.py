@@ -27,7 +27,7 @@ class TestFileSimulate(unittest.TestCase):
     def assertFileIs(self, filename, expect_contents):
         """
         expect_contents is None: Expect file does not exist
-        expect_contents is a str: Expect file contents to match
+        expect_contents is a str: Expect file to exist and contents to match
         """
         if expect_contents is None:
             self.assertFalse(os.path.isfile(filename),
@@ -35,5 +35,5 @@ class TestFileSimulate(unittest.TestCase):
         else:
             self.assertTrue(os.path.isfile(filename),
                             f"Expected {filename} to exist.")
-            self.assertEqual(codecs.open(filename, "r", "utf-8").read(),
-                             expect_contents)
+            with codecs.open(filename, "r", "utf-8") as f:
+                self.assertEqual(f.read(), expect_contents)

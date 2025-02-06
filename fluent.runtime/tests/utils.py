@@ -18,25 +18,12 @@ def dedent_ftl(text):
 # Supports only relative paths
 # Needed in test_falllback.py because it uses dict + string compare to make a virtual file structure
 def _normalize_path(path):
+    """Note: Does not support absolute paths or paths that
+    contain '.' or '..' parts."""
     path = PurePath(path)
-    if path.is_absolute():
-        raise ValueError("Absolute paths are not supported in file simulation yet. ("
-                         + str(path) + ")")
-    if "." not in path.parts and ".." not in path.parts:
-        return "/".join(PurePath(path).parts)
-    else:
-        res_parts = []
-        length = len(path.parts)
-        i = 0
-        while i < length:
-            if path.parts[i] == ".":
-                i += 1
-            elif i < length - 1 and path.parts[i+1] == "..":
-                i += 2
-            else:
-                res_parts.append(path.parts[i])
-                i += 1
-        return "/".join(res_parts)
+    if path.is_absolute() or "." in path.parts or ".." in path.parts:
+        raise ValueError(f"Unsupported path: {path}")
+    return "/".join(path.parts)
 
 
 def patch_files(files: dict):

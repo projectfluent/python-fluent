@@ -22,6 +22,9 @@ class TestFileSimulate(unittest.TestCase):
             self.assertFileIs("en\\two.txt", "Two")
             self.assertFileIs("en/three.txt", None)
             self.assertFileIs("en\\three.txt", None)
+
+            with self.assertRaises(ValueError):
+                os.path.isfile("en/")
         patch_me(10, "b")
 
     def assertFileIs(self, filename, expect_contents):

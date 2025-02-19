@@ -22,7 +22,6 @@ class TestLocalization(unittest.TestCase):
         l10n = FluentLocalization(
             ["de", "fr", "en"], ["one.ftl", "two.ftl"], FluentResourceLoader("{locale}")
         )
-        # Curious
         bundles_gen = l10n._bundles()
         bundle_de = next(bundles_gen)
         self.assertEqual(bundle_de.locales[0], "de")

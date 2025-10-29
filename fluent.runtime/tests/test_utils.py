@@ -1,7 +1,6 @@
 import unittest
 from .utils import patch_files
 import os
-import codecs
 
 
 class TestFileSimulate(unittest.TestCase):
@@ -38,5 +37,5 @@ class TestFileSimulate(unittest.TestCase):
         else:
             self.assertTrue(os.path.isfile(filename),
                             f"Expected {filename} to exist.")
-            with codecs.open(filename, "r", "utf-8") as f:
+            with open(filename, "r", encoding="utf-8") as f:
                 self.assertEqual(f.read(), expect_contents)

@@ -42,9 +42,14 @@ def patch_files(files: dict):
 
     def then(func):
         @mock.patch("os.path.isfile", side_effect=lambda p: _normalize_file_path(p) in files)
-        @mock.patch("codecs.open", side_effect=lambda p, _, __: StringIO(files[_normalize_file_path(p)]))
+        @mock.patch(
+            "builtins.open",
+            side_effect=lambda p, *a, **kw: StringIO(files[_normalize_file_path(p)]),
+        )
         @functools.wraps(func)  # Make ret look like func to later decorators
         def ret(*args, **kwargs):
             func(*args[:-2], **kwargs)
+
         return ret
+
     return then

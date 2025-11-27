@@ -13,6 +13,7 @@ from typing import (
 )
 
 from fluent.syntax import FluentParser
+from typing_extensions import NamedTuple
 
 from .bundle import FluentBundle
 
@@ -20,6 +21,11 @@ if TYPE_CHECKING:
     from fluent.syntax.ast import Resource
 
     from .types import FluentType
+
+
+class FormattedMessage(NamedTuple):
+    message: Union[str, None]
+    attributes: Dict[str, str]
 
 
 class FluentLocalization:
@@ -47,6 +53,35 @@ class FluentLocalization:
         self.functions = functions
         self._bundle_cache: List[FluentBundle] = []
         self._bundle_it = self._iterate_bundles()
+
+    def format_message(
+        self, msg_id: str, args: Union[Dict[str, Any], None] = None
+    ) -> FormattedMessage:
+        for bundle in self._bundles():
+            if not bundle.has_message(msg_id):
+                continue
+            msg = bundle.get_message(msg_id)
+            formatted_attrs = None
+            if msg.attributes:
+                formatted_attrs = {
+                    attr: cast(
+                        str,
+                        bundle.format_pattern(msg.attributes[attr], args)[0],
+                    )
+                    for attr in msg.attributes
+                }
+            if not msg.value and formatted_attrs is None:
+                continue
+            elif not msg.value and formatted_attrs:
+                val = None
+            else:
+                val, _errors = bundle.format_pattern(msg.value, args)
+            return FormattedMessage(
+                # Never FluentNone when format_pattern called externally
+                cast(str, val),
+                formatted_attrs if formatted_attrs else {},
+            )
+        return FormattedMessage(msg_id, {})
 
     def format_value(
         self, msg_id: str, args: Union[Dict[str, Any], None] = None

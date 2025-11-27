@@ -272,6 +272,25 @@ instances to indicate an error or missing data. Otherwise they should
 return unicode strings, or instances of a ``FluentType`` subclass as
 above.
 
+Attributes
+~~~~~~~~~~
+When rendering UI elements, it's handy to have a single translation that
+contains everything you need in one variable. For example, a Web
+Component confirm window with an OK button, a Cancel button, and a
+message.
+
+.. code-block:: python
+    >>> l10n = DemoLocalization("""
+    ...     order-cancel-window = Are you sure you want to cancel the order #{ $order }?
+    ...         .ok = Yes
+    ...         .cancel = No
+    """)
+    >>> message, attributes = l10n.format_message("order-cancel-window", {'order': 123})
+    >>> message
+    'Are you sure you want to cancel the order #123?'
+    >>> attributes
+    {'ok': 'Yes', 'cancel': 'No'}
+
 Known limitations and bugs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -61,25 +61,21 @@ class FluentLocalization:
             if not bundle.has_message(msg_id):
                 continue
             msg = bundle.get_message(msg_id)
-            formatted_attrs = None
-            if msg.attributes:
-                formatted_attrs = {
-                    attr: cast(
-                        str,
-                        bundle.format_pattern(msg.attributes[attr], args)[0],
-                    )
-                    for attr in msg.attributes
-                }
-            if not msg.value and formatted_attrs is None:
-                continue
-            elif not msg.value and formatted_attrs:
+            formatted_attrs = {
+                attr: cast(
+                    str,
+                    bundle.format_pattern(msg.attributes[attr], args)[0],
+                )
+                for attr in msg.attributes
+            }
+            if not msg.value:
                 val = None
             else:
                 val, _errors = bundle.format_pattern(msg.value, args)
             return FormattedMessage(
                 # Never FluentNone when format_pattern called externally
                 cast(str, val),
-                formatted_attrs if formatted_attrs else {},
+                formatted_attrs,
             )
         return FormattedMessage(msg_id, {})
 

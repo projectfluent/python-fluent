@@ -275,21 +275,35 @@ above.
 Attributes
 ~~~~~~~~~~
 When rendering UI elements, it's handy to have a single translation that
-contains everything you need in one variable. For example, a Web
-Component confirm window with an OK button, a Cancel button, and a
-message.
+contains everything you need in one variable. For example, a HTML
+form input may have a value, but also a placeholder attribute, aria-label
+attribute, and maybe a title attribute.
 
 .. code-block:: python
     >>> l10n = DemoLocalization("""
-    ...     order-cancel-window = Are you sure you want to cancel the order #{ $order }?
-    ...         .ok = Yes
-    ...         .cancel = No
+    ...     login-input = Predefined value
+    ...         .placeholder = { $email }
+    ...         .aria-label = Login input value
+    ...         .title = Type your login email
     """)
-    >>> message, attributes = l10n.format_message("order-cancel-window", {'order': 123})
+    >>> message, attributes = l10n.format_message(
+            "login-input", {"placeholder": "email@example.com"}
+        )
     >>> message
-    'Are you sure you want to cancel the order #123?'
+    'Predefined value'
     >>> attributes
-    {'ok': 'Yes', 'cancel': 'No'}
+    {'placeholder': 'email@example.com', 'aria-label': 'Login input value', 'title': 'Type your login email'}
+  
+You can also use the formatted message without unpacking it.
+
+.. code-block:: python
+    >>> fmt_msg = l10n.format_message(
+            "login-input", {"placeholder": "email@example.com"}
+        )
+    >>> fmt_msg.message
+    'Predefined value'
+    >>> fmt_msg.attributes
+    {'placeholder': 'email@example.com', 'aria-label': 'Login input value', 'title': 'Type your login email'}
 
 Known limitations and bugs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

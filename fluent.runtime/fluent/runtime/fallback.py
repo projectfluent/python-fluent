@@ -13,7 +13,7 @@ from typing import (
 )
 
 from fluent.syntax import FluentParser
-from typing_extensions import NamedTuple
+from typing import NamedTuple
 
 from .bundle import FluentBundle
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class FormattedMessage(NamedTuple):
-    message: Union[str, None]
+    value: Union[str, None]
     attributes: Dict[str, str]
 
 
@@ -57,42 +57,44 @@ class FluentLocalization:
     def format_message(
         self, msg_id: str, args: Union[Dict[str, Any], None] = None
     ) -> FormattedMessage:
-        for bundle in self._bundles():
-            if not bundle.has_message(msg_id):
-                continue
-            msg = bundle.get_message(msg_id)
-            formatted_attrs = {
-                attr: cast(
-                    str,
-                    bundle.format_pattern(msg.attributes[attr], args)[0],
-                )
-                for attr in msg.attributes
-            }
-            if not msg.value:
-                val = None
-            else:
-                val, _errors = bundle.format_pattern(msg.value, args)
-            return FormattedMessage(
-                # Never FluentNone when format_pattern called externally
-                cast(str, val),
-                formatted_attrs,
+        bundle, msg = next((
+            (bundle, bundle.get_message(msg_id))
+            for bundle in self._bundles()
+            if bundle.has_message(msg_id)
+        ), (None, None))
+        if not msg:
+            return FormattedMessage(msg_id, {})
+        formatted_attrs = {
+            attr: cast(
+                str,
+                bundle.format_pattern(msg.attributes[attr], args)[0],
             )
-        return FormattedMessage(msg_id, {})
+            for attr in msg.attributes
+        }
+        if not msg.value:
+            val = None
+        else:
+            val, _errors = bundle.format_pattern(msg.value, args)
+        return FormattedMessage(
+            # Never FluentNone when format_pattern called externally
+            cast(str, val),
+            formatted_attrs,
+        )
 
     def format_value(
         self, msg_id: str, args: Union[Dict[str, Any], None] = None
     ) -> str:
-        for bundle in self._bundles():
-            if not bundle.has_message(msg_id):
-                continue
-            msg = bundle.get_message(msg_id)
-            if not msg.value:
-                continue
-            val, _errors = bundle.format_pattern(msg.value, args)
-            return cast(
-                str, val
-            )  # Never FluentNone when format_pattern called externally
-        return msg_id
+        bundle, msg = next((
+            (bundle, bundle.get_message(msg_id))
+            for bundle in self._bundles()
+            if bundle.has_message(msg_id)
+        ), (None, None))
+        if not msg or not msg.value:
+            return msg_id
+        val, _errors = bundle.format_pattern(msg.value, args)
+        return cast(
+            str, val
+        )  # Never FluentNone when format_pattern called externally
 
     def _create_bundle(self, locales: List[str]) -> FluentBundle:
         return self.bundle_class(

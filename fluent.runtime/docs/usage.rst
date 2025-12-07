@@ -286,10 +286,10 @@ attribute, and maybe a title attribute.
     ...         .aria-label = Login input value
     ...         .title = Type your login email
     """)
-    >>> message, attributes = l10n.format_message(
-            "login-input", {"placeholder": "email@example.com"}
+    >>> value, attributes = l10n.format_message(
+            "login-input", {"email": "email@example.com"}
         )
-    >>> message
+    >>> value
     'Predefined value'
     >>> attributes
     {'placeholder': 'email@example.com', 'aria-label': 'Login input value', 'title': 'Type your login email'}
@@ -298,9 +298,9 @@ You can also use the formatted message without unpacking it.
 
 .. code-block:: python
     >>> fmt_msg = l10n.format_message(
-            "login-input", {"placeholder": "email@example.com"}
+            "login-input", {"email": "email@example.com"}
         )
-    >>> fmt_msg.message
+    >>> fmt_msg.value
     'Predefined value'
     >>> fmt_msg.attributes
     {'placeholder': 'email@example.com', 'aria-label': 'Login input value', 'title': 'Type your login email'}

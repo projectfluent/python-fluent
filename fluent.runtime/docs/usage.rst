@@ -280,15 +280,16 @@ form input may have a value, but also a placeholder attribute, aria-label
 attribute, and maybe a title attribute.
 
 .. code-block:: python
+
     >>> l10n = DemoLocalization("""
-    ...     login-input = Predefined value
-    ...         .placeholder = { $email }
-    ...         .aria-label = Login input value
-    ...         .title = Type your login email
-    """)
+    ... login-input = Predefined value
+    ...     .placeholder = { $email }
+    ...     .aria-label = Login input value
+    ...     .title = Type your login email
+    ... """)
     >>> value, attributes = l10n.format_message(
-            "login-input", {"email": "email@example.com"}
-        )
+    ...     "login-input", {"email": "email@example.com"}
+    ... )
     >>> value
     'Predefined value'
     >>> attributes
@@ -297,9 +298,10 @@ attribute, and maybe a title attribute.
 You can also use the formatted message without unpacking it.
 
 .. code-block:: python
+
     >>> fmt_msg = l10n.format_message(
-            "login-input", {"email": "email@example.com"}
-        )
+    ...     "login-input", {"email": "email@example.com"}
+    ... )
     >>> fmt_msg.value
     'Predefined value'
     >>> fmt_msg.attributes

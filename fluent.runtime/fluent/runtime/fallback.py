@@ -62,7 +62,7 @@ class FluentLocalization:
             for bundle in self._bundles()
             if bundle.has_message(msg_id)
         ), (None, None))
-        if not msg:
+        if not bundle or not msg:
             return FormattedMessage(msg_id, {})
         formatted_attrs = {
             attr: cast(
@@ -89,7 +89,7 @@ class FluentLocalization:
             for bundle in self._bundles()
             if bundle.has_message(msg_id)
         ), (None, None))
-        if not msg or not msg.value:
+        if not bundle or not msg or not msg.value:
             return msg_id
         val, _errors = bundle.format_pattern(msg.value, args)
         return cast(

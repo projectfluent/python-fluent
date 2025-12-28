@@ -35,7 +35,7 @@ class FluentBundle:
     def __init__(
         self,
         locales: List[str],
-        functions: Union[Dict[str, Callable[[Any], "FluentType"]], None] = None,
+        functions: Union[Dict[str, Callable[..., "FluentType"]], None] = None,
         use_isolating: bool = True,
     ):
         self.locales = locales

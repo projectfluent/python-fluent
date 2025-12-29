@@ -24,7 +24,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04, windows-2022]
-        python-version: [3.7, 3.8, 3.9, "3.10", 3.11, 3.12, pypy3.9, pypy3.10]
+        python-version: [3.8, 3.9, "3.10", 3.11, 3.12, pypy3.9, pypy3.10]
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
@@ -34,10 +34,9 @@ jobs:
       - run: uv run python -m unittest discover -s fluent.syntax
       - run: uv run python -m unittest discover -s fluent.runtime
 
-  # Test compatibility with the oldest Python version we claim to support,
-  # and for fluent.runtime's compatibility with a range of fluent.syntax versions.
+  # Test fluent.runtime's compatibility with a range of fluent.syntax versions.
   compatibility:
-    runs-on: ubuntu-20.04 # https://github.com/actions/setup-python/issues/544
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         fluent-syntax:
@@ -49,7 +48,8 @@ jobs:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
         with:
-          python-version: 3.6
+          python-version: 3.8
+      - run: uv venv --python 3.8
       - run: uv pip install ${{ matrix.fluent-syntax }}
       - run: uv pip install ./fluent.runtime
       - run: uv run python -m unittest discover -s fluent.runtime

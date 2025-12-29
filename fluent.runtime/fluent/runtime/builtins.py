@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict
+from typing import Callable, Dict
 
 from .types import FluentType, fluent_date, fluent_number
 

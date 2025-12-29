@@ -6,7 +6,7 @@ NUMBER = fluent_number
 DATETIME = fluent_date
 
 
-BUILTINS: Dict[str, Callable[[Any], FluentType]] = {
+BUILTINS: Dict[str, Callable[..., FluentType]] = {
     "NUMBER": NUMBER,
     "DATETIME": DATETIME,
 }

@@ -350,7 +350,7 @@ class FluentDateType(FluentType):
             raise TypeError("timeStyle option can only be specified for datetime or time instances, not date instance")
 
         if 'dateStyle' in kwargs and not isinstance(self, (datetime, date)):
-            raise TypeError("dateStyle option can only be specified for datetime or time instances, not date instance")
+            raise TypeError("dateStyle option can only be specified for datetime or date instances, not time instance")
 
         self.options = merge_options(
             DateFormatOptions, getattr(dt_obj, "options", None), kwargs
@@ -369,9 +369,9 @@ class FluentDateType(FluentType):
         ts = self.options.timeStyle
         if ds is None:
             if ts is None and not isinstance(selftz, time):
-                return format_date(selftz, format='medium', locale=locale)
+                return format_date(selftz, format="medium", locale=locale)
             else:
-                return format_time(selftz, format=ts or 'short', locale=locale)
+                return format_time(selftz, format=ts or "short", locale=locale)
         elif ts is None:
             return format_date(selftz, format=ds, locale=locale)
 
@@ -409,9 +409,14 @@ class FluentDate(FluentDateType, date):
 
 class FluentTime(FluentDateType, time):
     @classmethod
-    def from_time(cls, dt_obj: time, **kwargs)  -> 'FluentTime':
-        obj = cls(dt_obj.hour, dt_obj.minute, dt_obj.second,
-                  dt_obj.microsecond, tzinfo=dt_obj.tzinfo)
+    def from_time(cls, dt_obj: time, **kwargs) -> "FluentTime":
+        obj = cls(
+            dt_obj.hour,
+            dt_obj.minute,
+            dt_obj.second,
+            dt_obj.microsecond,
+            tzinfo=dt_obj.tzinfo
+        )
         obj._init_options(dt_obj, kwargs)
         return obj
 

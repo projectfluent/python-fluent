@@ -1,14 +1,13 @@
 from fluent.syntax import ast as FTL
 from fluent.syntax import parse
-
 from pygments.lexer import Lexer
 from pygments.token import Token
 
 
 class FluentLexer(Lexer):
-    name = 'Fluent Lexer'
-    aliases = ['fluent', 'ftl']
-    filenames = ['*.ftl']
+    name = "Fluent Lexer"
+    aliases = ["fluent", "ftl"]
+    filenames = ["*.ftl"]
 
     def get_tokens_unprocessed(self, text):
         last_end = 0
@@ -24,15 +23,15 @@ class FluentLexer(Lexer):
 
 
 ATOMIC = {
-    'Comment': Token.Comment.Multiline,
-    'GroupComment': Token.Comment.Multiline,
-    'ResourceComment': Token.Comment.Multiline,
-    'Identifier': Token.Name.Constant,
-    'TextElement': Token.Literal,
-    'NumberLiteral': Token.Literal.Number,
-    'StringLiteral': Token.Literal.String,
-    'VariableReference': Token.Name.Variable,
-    'Junk': Token.Generic.Error,
+    "Comment": Token.Comment.Multiline,
+    "GroupComment": Token.Comment.Multiline,
+    "ResourceComment": Token.Comment.Multiline,
+    "Identifier": Token.Name.Constant,
+    "TextElement": Token.Literal,
+    "NumberLiteral": Token.Literal.Number,
+    "StringLiteral": Token.Literal.String,
+    "VariableReference": Token.Name.Variable,
+    "Junk": Token.Generic.Error,
 }
 
 
@@ -57,16 +56,21 @@ class Tokenizer:
         if nodename in ATOMIC:
             yield self._token(node, ATOMIC[nodename])
         else:
-            tokenize = getattr(self, f'tokenize_{nodename}', self.generic_tokenize)
+            tokenize = getattr(self, f"tokenize_{nodename}", self.generic_tokenize)
             yield from tokenize(node)
 
     def generic_tokenize(self, node):
         children = [
-            child for child in vars(node).values()
+            child
+            for child in vars(node).values()
             if isinstance(child, (FTL.SyntaxNode, list)) and child != []
         ]
         children.sort(
-            key=lambda child: child.span.start if isinstance(child, FTL.SyntaxNode) else child[0].span.start
+            key=lambda child: (
+                child.span.start
+                if isinstance(child, FTL.SyntaxNode)
+                else child[0].span.start
+            )
         )
         for child in children:
             yield from self.tokenize(child)
@@ -80,5 +84,5 @@ class Tokenizer:
             node,
             node.span.start,
             token,
-            self.text[node.span.start:node.span.end],
+            self.text[node.span.start : node.span.end],
         )

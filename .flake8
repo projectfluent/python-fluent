@@ -1,0 +1,4 @@
+[flake8]
+exclude=.tox
+extend-ignore = E203
+max-line-length=120

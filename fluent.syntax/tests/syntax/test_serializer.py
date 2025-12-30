@@ -1,8 +1,8 @@
 import unittest
 
-from tests.syntax import dedent_ftl
 from fluent.syntax import FluentParser, FluentSerializer
 from fluent.syntax.serializer import serialize_expression, serialize_variant_key
+from tests.syntax import dedent_ftl
 
 
 class TestSerializeResource(unittest.TestCase):
@@ -16,10 +16,10 @@ class TestSerializeResource(unittest.TestCase):
     def test_invalid_resource(self):
         serializer = FluentSerializer()
 
-        with self.assertRaisesRegex(Exception, 'Unknown resource type'):
+        with self.assertRaisesRegex(Exception, "Unknown resource type"):
             serializer.serialize(None)
 
-        with self.assertRaisesRegex(Exception, 'Unknown resource type'):
+        with self.assertRaisesRegex(Exception, "Unknown resource type"):
             serializer.serialize(object())
 
     def test_simple_message(self):
@@ -454,10 +454,10 @@ class TestSerializeExpression(unittest.TestCase):
         return serialize_expression(expr)
 
     def test_invalid_expression(self):
-        with self.assertRaisesRegex(Exception, 'Unknown expression type'):
+        with self.assertRaisesRegex(Exception, "Unknown expression type"):
             serialize_expression(None)
 
-        with self.assertRaisesRegex(Exception, 'Unknown expression type'):
+        with self.assertRaisesRegex(Exception, "Unknown expression type"):
             serialize_expression(object())
 
     def test_string_expression(self):
@@ -470,25 +470,25 @@ class TestSerializeExpression(unittest.TestCase):
         input = """\
             foo = { 3 }
         """
-        self.assertEqual(self.pretty_expr(input), '3')
+        self.assertEqual(self.pretty_expr(input), "3")
 
     def test_message_reference(self):
         input = """\
             foo = { msg }
         """
-        self.assertEqual(self.pretty_expr(input), 'msg')
+        self.assertEqual(self.pretty_expr(input), "msg")
 
     def test_variable_reference(self):
         input = """\
             foo = { $ext }
         """
-        self.assertEqual(self.pretty_expr(input), '$ext')
+        self.assertEqual(self.pretty_expr(input), "$ext")
 
     def test_attribute_expression(self):
         input = """\
             foo = { msg.attr }
         """
-        self.assertEqual(self.pretty_expr(input), 'msg.attr')
+        self.assertEqual(self.pretty_expr(input), "msg.attr")
 
     def test_call_expression(self):
         input = """\
@@ -503,7 +503,7 @@ class TestSerializeExpression(unittest.TestCase):
                    *[one] One
                 }
         """
-        self.assertEqual(self.pretty_expr(input), '$num ->\n   *[one] One\n')
+        self.assertEqual(self.pretty_expr(input), "$num ->\n   *[one] One\n")
 
 
 class TestSerializeVariantKey(unittest.TestCase):
@@ -515,10 +515,10 @@ class TestSerializeVariantKey(unittest.TestCase):
         return serialize_variant_key(variants[index].key)
 
     def test_invalid_expression(self):
-        with self.assertRaisesRegex(Exception, 'Unknown variant key type'):
+        with self.assertRaisesRegex(Exception, "Unknown variant key type"):
             serialize_variant_key(None)
 
-        with self.assertRaisesRegex(Exception, 'Unknown variant key type'):
+        with self.assertRaisesRegex(Exception, "Unknown variant key type"):
             serialize_variant_key(object())
 
     def test_identifiers(self):
@@ -528,8 +528,8 @@ class TestSerializeVariantKey(unittest.TestCase):
                *[other] Other
             }
         """
-        self.assertEqual(self.pretty_variant_key(input, 0), 'one')
-        self.assertEqual(self.pretty_variant_key(input, 1), 'other')
+        self.assertEqual(self.pretty_variant_key(input, 0), "one")
+        self.assertEqual(self.pretty_variant_key(input, 1), "other")
 
     def test_number_literals(self):
         input = """\
@@ -540,7 +540,7 @@ class TestSerializeVariantKey(unittest.TestCase):
                 [007] James
             }
         """
-        self.assertEqual(self.pretty_variant_key(input, 0), '-123456789')
-        self.assertEqual(self.pretty_variant_key(input, 1), '0')
-        self.assertEqual(self.pretty_variant_key(input, 2), '3.14')
-        self.assertEqual(self.pretty_variant_key(input, 3), '007')
+        self.assertEqual(self.pretty_variant_key(input, 0), "-123456789")
+        self.assertEqual(self.pretty_variant_key(input, 1), "0")
+        self.assertEqual(self.pretty_variant_key(input, 2), "3.14")
+        self.assertEqual(self.pretty_variant_key(input, 3), "007")

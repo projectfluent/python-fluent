@@ -274,6 +274,38 @@ instances to indicate an error or missing data. Otherwise they should
 return unicode strings, or instances of a <code class="docutils literal notranslate"><span class="pre">FluentType</span></code> subclass as
 above.</p>
 </div>
+<div class="section" id="attributes">
+<h3>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h3>
+<p>When rendering UI elements, it’s handy to have a single translation that
+contains everything you need in one variable. For example, a HTML
+form input may have a value, but also a placeholder attribute, aria-label
+attribute, and maybe a title attribute.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l10n</span> <span class="o">=</span> <span class="n">DemoLocalization</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="gp">... </span><span class="s2">login-input = Predefined value</span>
+<span class="gp">... </span><span class="s2">    .placeholder = { $email }</span>
+<span class="gp">... </span><span class="s2">    .aria-label = Login input value</span>
+<span class="gp">... </span><span class="s2">    .title = Type your login email</span>
+<span class="gp">... </span><span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">value</span><span class="p">,</span> <span class="n">attributes</span> <span class="o">=</span> <span class="n">l10n</span><span class="o">.</span><span class="n">format_message</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">&quot;login-input&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="s2">&quot;email@example.com&quot;</span><span class="p">}</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">value</span>
+<span class="go">&#39;Predefined value&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">attributes</span>
+<span class="go">{&#39;placeholder&#39;: &#39;email@example.com&#39;, &#39;aria-label&#39;: &#39;Login input value&#39;, &#39;title&#39;: &#39;Type your login email&#39;}</span>
+</pre></div>
+</div>
+<p>You can also use the formatted message without unpacking it.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fmt_msg</span> <span class="o">=</span> <span class="n">l10n</span><span class="o">.</span><span class="n">format_message</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">&quot;login-input&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="s2">&quot;email@example.com&quot;</span><span class="p">}</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fmt_msg</span><span class="o">.</span><span class="n">value</span>
+<span class="go">&#39;Predefined value&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fmt_msg</span><span class="o">.</span><span class="n">attributes</span>
+<span class="go">{&#39;placeholder&#39;: &#39;email@example.com&#39;, &#39;aria-label&#39;: &#39;Login input value&#39;, &#39;title&#39;: &#39;Type your login email&#39;}</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="known-limitations-and-bugs">
 <h3>Known limitations and bugs<a class="headerlink" href="#known-limitations-and-bugs" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">

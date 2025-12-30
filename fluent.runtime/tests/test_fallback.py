@@ -12,11 +12,25 @@ class TestLocalization(unittest.TestCase):
         self.assertTrue(callable(l10n.format_value))
 
     @patch_files({
-        "de/one.ftl": "one = in German",
-        "de/two.ftl": "two = in German",
-        "fr/two.ftl": "three = in French",
-        "en/one.ftl": "four = exists",
-        "en/two.ftl": "five = exists",
+        "de/one.ftl": """one = in German
+            .foo = one in German
+        """,
+        "de/two.ftl": """two = in German
+            .foo = two in German
+        """,
+        "fr/two.ftl": """three = in French
+            .foo = three in French
+        """,
+        "en/one.ftl": """four = exists
+            .foo = four in English
+        """,
+        "en/two.ftl": """
+five = exists
+    .foo = five in English
+bar =
+    .foo = bar in English
+baz = baz in English
+        """,
     })
     def test_bundles(self):
         l10n = FluentLocalization(
@@ -39,6 +53,41 @@ class TestLocalization(unittest.TestCase):
         self.assertEqual(l10n.format_value("three"), "in French")
         self.assertEqual(l10n.format_value("four"), "exists")
         self.assertEqual(l10n.format_value("five"), "exists")
+        self.assertEqual(l10n.format_value("bar"), "bar")
+        self.assertEqual(l10n.format_value("baz"), "baz in English")
+        self.assertEqual(l10n.format_value("not-exists"), "not-exists")
+        self.assertEqual(
+            tuple(l10n.format_message("one")),
+            ("in German", {"foo": "one in German"}),
+        )
+        self.assertEqual(
+            tuple(l10n.format_message("two")),
+            ("in German", {"foo": "two in German"}),
+        )
+        self.assertEqual(
+            tuple(l10n.format_message("three")),
+            ("in French", {"foo": "three in French"}),
+        )
+        self.assertEqual(
+            tuple(l10n.format_message("four")),
+            ("exists", {"foo": "four in English"}),
+        )
+        self.assertEqual(
+            tuple(l10n.format_message("five")),
+            ("exists", {"foo": "five in English"}),
+        )
+        self.assertEqual(
+            tuple(l10n.format_message("bar")),
+            (None, {"foo": "bar in English"}),
+        )
+        self.assertEqual(
+            tuple(l10n.format_message("baz")),
+            ("baz in English", {}),
+        )
+        self.assertEqual(
+            tuple(l10n.format_message("not-exists")),
+            ("not-exists", {}),
+        )
 
 
 class TestResourceLoader(unittest.TestCase):

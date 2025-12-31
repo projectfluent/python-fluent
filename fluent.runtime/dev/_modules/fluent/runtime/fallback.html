@@ -40,17 +40,8 @@
   <h1>Source code for fluent.runtime.fallback</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">codecs</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
-    <span class="n">Any</span><span class="p">,</span>
-    <span class="n">Callable</span><span class="p">,</span>
-    <span class="n">Dict</span><span class="p">,</span>
-    <span class="n">Generator</span><span class="p">,</span>
-    <span class="n">List</span><span class="p">,</span>
-    <span class="n">Type</span><span class="p">,</span>
-    <span class="n">Union</span><span class="p">,</span>
-    <span class="n">cast</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Generator</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
 
 <span class="kn">from</span> <span class="nn">fluent.syntax</span> <span class="kn">import</span> <span class="n">FluentParser</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NamedTuple</span>
@@ -65,7 +56,7 @@
 
 <div class="viewcode-block" id="FormattedMessage"><a class="viewcode-back" href="../../../reference.html#fluent.runtime.FormattedMessage">[docs]</a><span class="k">class</span> <span class="nc">FormattedMessage</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
     <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-    <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span></div>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="FluentLocalization"><a class="viewcode-back" href="../../../reference.html#fluent.runtime.FluentLocalization">[docs]</a><span class="k">class</span> <span class="nc">FluentLocalization</span><span class="p">:</span>
@@ -78,12 +69,12 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">locales</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">resource_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">locales</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">resource_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">resource_loader</span><span class="p">:</span> <span class="s2">&quot;AbstractResourceLoader&quot;</span><span class="p">,</span>
         <span class="n">use_isolating</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">bundle_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">FluentBundle</span><span class="p">]</span> <span class="o">=</span> <span class="n">FluentBundle</span><span class="p">,</span>
-        <span class="n">functions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="s2">&quot;FluentType&quot;</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">bundle_class</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">FluentBundle</span><span class="p">]</span> <span class="o">=</span> <span class="n">FluentBundle</span><span class="p">,</span>
+        <span class="n">functions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="s2">&quot;FluentType&quot;</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">locales</span> <span class="o">=</span> <span class="n">locales</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resource_ids</span> <span class="o">=</span> <span class="n">resource_ids</span>
@@ -91,11 +82,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">use_isolating</span> <span class="o">=</span> <span class="n">use_isolating</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bundle_class</span> <span class="o">=</span> <span class="n">bundle_class</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">functions</span> <span class="o">=</span> <span class="n">functions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_bundle_cache</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FluentBundle</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bundle_cache</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FluentBundle</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_bundle_it</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterate_bundles</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">format_message</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">msg_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">msg_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FormattedMessage</span><span class="p">:</span>
         <span class="n">bundle</span><span class="p">,</span> <span class="n">msg</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span>
             <span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="n">bundle</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="n">msg_id</span><span class="p">))</span>
@@ -122,7 +113,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">format_value</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">msg_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">msg_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">bundle</span><span class="p">,</span> <span class="n">msg</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span>
             <span class="p">(</span><span class="n">bundle</span><span class="p">,</span> <span class="n">bundle</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="n">msg_id</span><span class="p">))</span>
@@ -136,7 +127,7 @@
             <span class="nb">str</span><span class="p">,</span> <span class="n">val</span>
         <span class="p">)</span>  <span class="c1"># Never FluentNone when format_pattern called externally</span>
 
-    <span class="k">def</span> <span class="nf">_create_bundle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locales</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FluentBundle</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_create_bundle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locales</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FluentBundle</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bundle_class</span><span class="p">(</span>
             <span class="n">locales</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">functions</span><span class="p">,</span> <span class="n">use_isolating</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_isolating</span>
         <span class="p">)</span>
@@ -168,8 +159,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="AbstractResourceLoader.resources"><a class="viewcode-back" href="../../../reference.html#fluent.runtime.AbstractResourceLoader.resources">[docs]</a>    <span class="k">def</span> <span class="nf">resources</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">resource_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="s2">&quot;Resource&quot;</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">resource_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Resource&quot;</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Yield lists of FluentResource objects, corresponding to</span>
 <span class="sd">        each of the resource_ids.</span>
@@ -191,7 +182,7 @@
 <span class="sd">    different roots.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">roots</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">roots</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a resource loader. The roots may be a string for a single</span>
 <span class="sd">        location on disk, or a list of strings.</span>
@@ -199,10 +190,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">roots</span> <span class="o">=</span> <span class="p">[</span><span class="n">roots</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">roots</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">roots</span>
 
 <div class="viewcode-block" id="FluentResourceLoader.resources"><a class="viewcode-back" href="../../../reference.html#fluent.runtime.FluentResourceLoader.resources">[docs]</a>    <span class="k">def</span> <span class="nf">resources</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">resource_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="s2">&quot;Resource&quot;</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">resource_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="s2">&quot;Resource&quot;</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="k">for</span> <span class="n">root</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">roots</span><span class="p">:</span>
-            <span class="n">resources</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">resources</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">resource_id</span> <span class="ow">in</span> <span class="n">resource_ids</span><span class="p">:</span>
                 <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">localize_path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">resource_id</span><span class="p">),</span> <span class="n">locale</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>

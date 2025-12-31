@@ -1,7 +1,7 @@
 [project]
 name = "python-fluent"
 version = "0"
-requires-python = ">= 3.8.1"
+requires-python = ">= 3.9"
 dependencies = [
   "fluent.syntax",
   "black ~= 24.0",

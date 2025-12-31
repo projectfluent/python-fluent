@@ -1,10 +1,10 @@
 import json
 import re
 import sys
-from typing import Any, Callable, Dict, List, TypeVar, Union, cast
+from typing import Any, Callable, TypeVar, Union, cast
 
 Node = TypeVar("Node", bound="BaseNode")
-ToJsonFn = Callable[[Dict[str, Any]], Any]
+ToJsonFn = Callable[[dict[str, Any]], Any]
 
 
 def to_json(value: Any, fn: Union[ToJsonFn, None] = None) -> Any:
@@ -29,7 +29,7 @@ def from_json(value: Any) -> Any:
         return value
 
 
-def scalars_equal(node1: Any, node2: Any, ignored_fields: List[str]) -> bool:
+def scalars_equal(node1: Any, node2: Any, ignored_fields: list[str]) -> bool:
     """Compare two nodes which are not lists."""
 
     if type(node1) is not type(node2):
@@ -66,7 +66,7 @@ class BaseNode:
             **{name: visit(value) for name, value in vars(self).items()}
         )
 
-    def equals(self, other: "BaseNode", ignored_fields: List[str] = ["span"]) -> bool:
+    def equals(self, other: "BaseNode", ignored_fields: list[str] = ["span"]) -> bool:
         """Compare two nodes.
 
         Nodes are deeply compared on a field by field basis. If possible, False
@@ -126,7 +126,7 @@ class SyntaxNode(BaseNode):
 
 
 class Resource(SyntaxNode):
-    def __init__(self, body: Union[List["EntryType"], None] = None, **kwargs: Any):
+    def __init__(self, body: Union[list["EntryType"], None] = None, **kwargs: Any):
         super().__init__(**kwargs)
         self.body = body or []
 
@@ -140,7 +140,7 @@ class Message(Entry):
         self,
         id: "Identifier",
         value: Union["Pattern", None] = None,
-        attributes: Union[List["Attribute"], None] = None,
+        attributes: Union[list["Attribute"], None] = None,
         comment: Union["Comment", None] = None,
         **kwargs: Any
     ):
@@ -156,7 +156,7 @@ class Term(Entry):
         self,
         id: "Identifier",
         value: "Pattern",
-        attributes: Union[List["Attribute"], None] = None,
+        attributes: Union[list["Attribute"], None] = None,
         comment: Union["Comment", None] = None,
         **kwargs: Any
     ):
@@ -169,7 +169,7 @@ class Term(Entry):
 
 class Pattern(SyntaxNode):
     def __init__(
-        self, elements: List[Union["TextElement", "Placeable"]], **kwargs: Any
+        self, elements: list[Union["TextElement", "Placeable"]], **kwargs: Any
     ):
         super().__init__(**kwargs)
         self.elements = elements
@@ -206,12 +206,12 @@ class Literal(Expression):
         super().__init__(**kwargs)
         self.value = value
 
-    def parse(self) -> Dict[str, Any]:
+    def parse(self) -> dict[str, Any]:
         return {"value": self.value}
 
 
 class StringLiteral(Literal):
-    def parse(self) -> Dict[str, str]:
+    def parse(self) -> dict[str, str]:
         def from_escape_sequence(matchobj: Any) -> str:
             c, codepoint4, codepoint6 = matchobj.groups()
             if c:
@@ -233,7 +233,7 @@ class StringLiteral(Literal):
 
 
 class NumberLiteral(Literal):
-    def parse(self) -> Dict[str, Union[float, int]]:
+    def parse(self) -> dict[str, Union[float, int]]:
         value = float(self.value)
         decimal_position = self.value.find(".")
         precision = 0
@@ -283,7 +283,7 @@ class FunctionReference(Expression):
 
 class SelectExpression(Expression):
     def __init__(
-        self, selector: "InlineExpression", variants: List["Variant"], **kwargs: Any
+        self, selector: "InlineExpression", variants: list["Variant"], **kwargs: Any
     ):
         super().__init__(**kwargs)
         self.selector = selector
@@ -293,8 +293,8 @@ class SelectExpression(Expression):
 class CallArguments(SyntaxNode):
     def __init__(
         self,
-        positional: Union[List[Union["InlineExpression", Placeable]], None] = None,
-        named: Union[List["NamedArgument"], None] = None,
+        positional: Union[list[Union["InlineExpression", Placeable]], None] = None,
+        named: Union[list["NamedArgument"], None] = None,
         **kwargs: Any
     ):
         super().__init__(**kwargs)
@@ -366,7 +366,7 @@ class Junk(SyntaxNode):
     def __init__(
         self,
         content: Union[str, None] = None,
-        annotations: Union[List["Annotation"], None] = None,
+        annotations: Union[list["Annotation"], None] = None,
         **kwargs: Any
     ):
         super().__init__(**kwargs)
@@ -388,7 +388,7 @@ class Annotation(SyntaxNode):
     def __init__(
         self,
         code: str,
-        arguments: Union[List[Any], None] = None,
+        arguments: Union[list[Any], None] = None,
         message: Union[str, None] = None,
         **kwargs: Any
     ):

@@ -1,4 +1,3 @@
-import codecs
 import os
 from collections.abc import Generator
 from typing import TYPE_CHECKING, Any, Callable, Union, cast
@@ -158,7 +157,8 @@ class FluentResourceLoader(AbstractResourceLoader):
                 path = self.localize_path(os.path.join(root, resource_id), locale)
                 if not os.path.isfile(path):
                     continue
-                content = codecs.open(path, "r", "utf-8").read()
+                with open(path, "r", encoding="utf-8", newline="\n") as file:
+                    content = file.read()
                 resources.append(FluentParser().parse(content))
             if resources:
                 yield resources

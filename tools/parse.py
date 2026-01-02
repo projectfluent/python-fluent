@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import codecs
 import json
 import sys
 
@@ -10,7 +9,7 @@ sys.path.append("./")
 
 
 def read_file(path):
-    with codecs.open(path, "r", encoding="utf-8") as file:
+    with open(path, "r", encoding="utf-8", newline="\n") as file:
         text = file.read()
     return text
 

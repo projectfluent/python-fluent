@@ -1,28 +1,25 @@
-import unittest
-
 from fluent.syntax.parser import FluentParser
-from tests.syntax import dedent_ftl
+
+from . import dedent_ftl
 
 
-class TestEntryEqualToSelf(unittest.TestCase):
-    def setUp(self):
-        self.parser = FluentParser()
+def parse_ftl_entry(string):
+    return FluentParser().parse_entry(dedent_ftl(string))
 
-    def parse_ftl_entry(self, string):
-        return self.parser.parse_entry(dedent_ftl(string))
 
+class TestEntryEqualToSelf:
     def test_same_simple_message(self):
-        message1 = self.parse_ftl_entry(
+        message1 = parse_ftl_entry(
             """\
             foo = Foo
         """
         )
 
-        self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.clone()))
+        assert message1.equals(message1)
+        assert message1.equals(message1.clone())
 
     def test_same_selector_message(self):
-        message1 = self.parse_ftl_entry(
+        message1 = parse_ftl_entry(
             """\
             foo =
                 { $num ->
@@ -35,32 +32,32 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """
         )
 
-        self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.clone()))
+        assert message1.equals(message1)
+        assert message1.equals(message1.clone())
 
     def test_same_complex_placeable_message(self):
-        message1 = self.parse_ftl_entry(
+        message1 = parse_ftl_entry(
             """\
             foo = Foo { NUMBER($num, style: "decimal") } Bar
         """
         )
 
-        self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.clone()))
+        assert message1.equals(message1)
+        assert message1.equals(message1.clone())
 
     def test_same_message_with_attribute(self):
-        message1 = self.parse_ftl_entry(
+        message1 = parse_ftl_entry(
             """\
             foo =
                 .attr = Attr
         """
         )
 
-        self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.clone()))
+        assert message1.equals(message1)
+        assert message1.equals(message1.clone())
 
     def test_same_message_with_attributes(self):
-        message1 = self.parse_ftl_entry(
+        message1 = parse_ftl_entry(
             """\
             foo =
                 .attr1 = Attr 1
@@ -68,36 +65,30 @@ class TestEntryEqualToSelf(unittest.TestCase):
         """
         )
 
-        self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.clone()))
+        assert message1.equals(message1)
+        assert message1.equals(message1.clone())
 
     def test_same_junk(self):
-        message1 = self.parse_ftl_entry(
+        message1 = parse_ftl_entry(
             """\
             foo = Foo {
         """
         )
 
-        self.assertTrue(message1.equals(message1))
-        self.assertTrue(message1.equals(message1.clone()))
+        assert message1.equals(message1)
+        assert message1.equals(message1.clone())
 
 
-class TestNonEquals(unittest.TestCase):
-    def setUp(self):
-        self.parser = FluentParser()
-
-    def parse_ftl_entry(self, string):
-        return self.parser.parse_entry(dedent_ftl(string))
-
+class TestNonEquals:
     def test_attributes(self):
-        message1 = self.parse_ftl_entry(
+        message1 = parse_ftl_entry(
             """\
             foo =
                 .attr1 = Attr1
                 .attr2 = Attr2
         """
         )
-        message2 = self.parse_ftl_entry(
+        message2 = parse_ftl_entry(
             """\
             foo =
                 .attr2 = Attr2
@@ -105,10 +96,10 @@ class TestNonEquals(unittest.TestCase):
         """
         )
 
-        self.assertFalse(message1.equals(message2))
+        assert not message1.equals(message2)
 
     def test_variants(self):
-        message1 = self.parse_ftl_entry(
+        message1 = parse_ftl_entry(
             """\
             foo =
                 { $num ->
@@ -117,7 +108,7 @@ class TestNonEquals(unittest.TestCase):
                 }
         """
         )
-        message2 = self.parse_ftl_entry(
+        message2 = parse_ftl_entry(
             """\
             foo =
                 { $num ->
@@ -127,10 +118,10 @@ class TestNonEquals(unittest.TestCase):
         """
         )
 
-        self.assertFalse(message1.equals(message2))
+        assert not message1.equals(message2)
 
     def test_variants_with_numbers(self):
-        message1 = self.parse_ftl_entry(
+        message1 = parse_ftl_entry(
             """\
             foo =
                 { $num ->
@@ -139,7 +130,7 @@ class TestNonEquals(unittest.TestCase):
                 }
         """
         )
-        message2 = self.parse_ftl_entry(
+        message2 = parse_ftl_entry(
             """\
             foo =
                 { $num ->
@@ -149,10 +140,10 @@ class TestNonEquals(unittest.TestCase):
         """
         )
 
-        self.assertFalse(message1.equals(message2))
+        assert not message1.equals(message2)
 
 
-class TestEqualWithSpans(unittest.TestCase):
+class TestEqualWithSpans:
     def test_default_behavior(self):
         parser = FluentParser()
 
@@ -165,7 +156,7 @@ class TestEqualWithSpans(unittest.TestCase):
         messages = [(parser.parse_entry(a), parser.parse_entry(b)) for a, b in strings]
 
         for a, b in messages:
-            self.assertTrue(a.equals(b))
+            assert a.equals(b)
 
     def test_parser_without_spans(self):
         parser = FluentParser(with_spans=False)
@@ -179,7 +170,7 @@ class TestEqualWithSpans(unittest.TestCase):
         messages = [(parser.parse_entry(a), parser.parse_entry(b)) for a, b in strings]
 
         for a, b in messages:
-            self.assertTrue(a.equals(b))
+            assert a.equals(b)
 
     def test_equals_with_spans(self):
         parser = FluentParser()
@@ -192,7 +183,7 @@ class TestEqualWithSpans(unittest.TestCase):
         messages = [(parser.parse_entry(a), parser.parse_entry(b)) for a, b in strings]
 
         for a, b in messages:
-            self.assertTrue(a.equals(b, ignored_fields=None))
+            assert a.equals(b, ignored_fields=None)
 
     def test_parser_without_spans_equals_with_spans(self):
         parser = FluentParser(with_spans=False)
@@ -207,7 +198,7 @@ class TestEqualWithSpans(unittest.TestCase):
         messages = [(parser.parse_entry(a), parser.parse_entry(b)) for a, b in strings]
 
         for a, b in messages:
-            self.assertTrue(a.equals(b, ignored_fields=None))
+            assert a.equals(b, ignored_fields=None)
 
     def test_differ_with_spans(self):
         parser = FluentParser()
@@ -220,49 +211,43 @@ class TestEqualWithSpans(unittest.TestCase):
         messages = [(parser.parse_entry(a), parser.parse_entry(b)) for a, b in strings]
 
         for a, b in messages:
-            self.assertFalse(a.equals(b, ignored_fields=None))
+            assert not a.equals(b, ignored_fields=None)
 
 
-class TestIgnoredFields(unittest.TestCase):
-    def setUp(self):
-        self.parser = FluentParser()
-
-    def parse_ftl_entry(self, string):
-        return self.parser.parse_entry(dedent_ftl(string))
-
+class TestIgnoredFields:
     def test_ignore_value(self):
-        a = self.parse_ftl_entry("foo = Foo")
-        b = self.parse_ftl_entry("foo = Bar")
+        a = parse_ftl_entry("foo = Foo")
+        b = parse_ftl_entry("foo = Bar")
 
-        self.assertTrue(a.equals(b, ignored_fields=["value"]))
+        assert a.equals(b, ignored_fields=["value"])
 
     def test_ignore_value_span(self):
-        a = self.parse_ftl_entry("foo = Foo")
-        b = self.parse_ftl_entry("foo = Foobar")
+        a = parse_ftl_entry("foo = Foo")
+        b = parse_ftl_entry("foo = Foobar")
 
-        self.assertTrue(a.equals(b, ignored_fields=["span", "value"]))
-        self.assertFalse(a.equals(b, ignored_fields=["value"]))
+        assert a.equals(b, ignored_fields=["span", "value"])
+        assert not a.equals(b, ignored_fields=["value"])
 
     def test_ignore_comments(self):
-        a = self.parse_ftl_entry(
+        a = parse_ftl_entry(
             """\
             # Comment A
             foo = Foo
         """
         )
-        b = self.parse_ftl_entry(
+        b = parse_ftl_entry(
             """\
             # Comment B
             foo = Foo
         """
         )
-        c = self.parse_ftl_entry(
+        c = parse_ftl_entry(
             """\
             # Comment CC
             foo = Foo
         """
         )
 
-        self.assertTrue(a.equals(b, ignored_fields=["comment"]))
-        self.assertFalse(a.equals(c, ignored_fields=["comment"]))
-        self.assertTrue(a.equals(c, ignored_fields=["comment", "span"]))
+        assert a.equals(b, ignored_fields=["comment"])
+        assert not a.equals(c, ignored_fields=["comment"])
+        assert a.equals(c, ignored_fields=["comment", "span"])

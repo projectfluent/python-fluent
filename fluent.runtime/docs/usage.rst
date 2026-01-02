@@ -272,6 +272,41 @@ instances to indicate an error or missing data. Otherwise they should
 return unicode strings, or instances of a ``FluentType`` subclass as
 above.
 
+Attributes
+~~~~~~~~~~
+When rendering UI elements, it's handy to have a single translation that
+contains everything you need in one variable. For example, a HTML
+form input may have a value, but also a placeholder attribute, aria-label
+attribute, and maybe a title attribute.
+
+.. code-block:: python
+
+    >>> l10n = DemoLocalization("""
+    ... login-input = Predefined value
+    ...     .placeholder = { $email }
+    ...     .aria-label = Login input value
+    ...     .title = Type your login email
+    ... """)
+    >>> value, attributes = l10n.format_message(
+    ...     "login-input", {"email": "email@example.com"}
+    ... )
+    >>> value
+    'Predefined value'
+    >>> attributes
+    {'placeholder': 'email@example.com', 'aria-label': 'Login input value', 'title': 'Type your login email'}
+  
+You can also use the formatted message without unpacking it.
+
+.. code-block:: python
+
+    >>> fmt_msg = l10n.format_message(
+    ...     "login-input", {"email": "email@example.com"}
+    ... )
+    >>> fmt_msg.value
+    'Predefined value'
+    >>> fmt_msg.attributes
+    {'placeholder': 'email@example.com', 'aria-label': 'Login input value', 'title': 'Type your login email'}
+
 Known limitations and bugs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -2,7 +2,7 @@ from fluent.syntax import FluentParser
 from fluent.syntax.ast import Resource
 
 from .bundle import FluentBundle
-from .fallback import AbstractResourceLoader, FluentLocalization, FluentResourceLoader
+from .fallback import AbstractResourceLoader, FluentLocalization, FluentResourceLoader, FormattedMessage
 
 __all__ = [
     "FluentLocalization",
@@ -10,6 +10,7 @@ __all__ = [
     "FluentResourceLoader",
     "FluentResource",
     "FluentBundle",
+    "FormattedMessage",
 ]
 
 

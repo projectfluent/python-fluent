@@ -1,6 +1,27 @@
+[project]
+name = "python-fluent"
+version = "0"
+requires-python = ">= 3.9"
+dependencies = [
+  "fluent.syntax",
+  "black ~= 24.0",
+  "flake8 ~= 7.0",
+  "isort ~= 5.0",
+  "mypy ~= 1.0",
+  "types-babel",
+  "types-pytz",
+]
+
 [tool.isort]
 line_length = 120
-skip_glob = ".tox"
 
 [tool.mypy]
+explicit_package_bases = true
+mypy_path = ['./fluent.syntax']
 strict = true
+
+[tool.uv.sources]
+fluent-syntax = { workspace = true, editable = true }
+
+[tool.uv.workspace]
+members = ["fluent.runtime", "fluent.syntax"]

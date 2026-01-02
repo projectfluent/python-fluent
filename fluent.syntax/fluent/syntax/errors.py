@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Union
 
 
 class ParseError(Exception):
@@ -8,15 +8,15 @@ class ParseError(Exception):
         self.message = get_error_message(code, args)
 
 
-def get_error_message(code: str, args: Tuple[Union[str, None], ...]) -> str:
+def get_error_message(code: str, args: tuple[Union[str, None], ...]) -> str:
     if code == "E0001":
         return "Generic error"
     if code == "E0002":
         return "Expected an entry start"
     if code == "E0003":
-        return 'Expected token: "{}"'.format(args[0])
+        return f'Expected token: "{args[0]}"'
     if code == "E0004":
-        return 'Expected a character from range: "{}"'.format(args[0])
+        return f'Expected a character from range: "{args[0]}"'
     if code == "E0005":
         msg = 'Expected message "{}" to have a value or attributes'
         return msg.format(args[0])
@@ -58,9 +58,9 @@ def get_error_message(code: str, args: Tuple[Union[str, None], ...]) -> str:
     if code == "E0024":
         return "Cannot access variants of a message."
     if code == "E0025":
-        return "Unknown escape sequence: \\{}.".format(args[0])
+        return f"Unknown escape sequence: \\{args[0]}."
     if code == "E0026":
-        return "Invalid Unicode escape sequence: {}.".format(args[0])
+        return f"Invalid Unicode escape sequence: {args[0]}."
     if code == "E0027":
         return "Unbalanced closing brace in TextElement."
     if code == "E0028":

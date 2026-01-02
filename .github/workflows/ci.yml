@@ -5,46 +5,38 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
         with:
-          cache: pip
-          cache-dependency-path: |
-            dev-requirements.txt
-            fluent.syntax/setup.py
-            fluent.runtime/setup.py
-      - run: python -m pip install -r dev-requirements.txt
-      - run: python -m pip install ./fluent.syntax ./fluent.runtime
-      - run: python -m flake8
-      - run: python -m mypy fluent.syntax/fluent fluent.runtime/fluent
+          python-version: 3.9
+      - uses: actions/setup-python@v6
+      - run: uv sync --dev --all-packages
+      - run: uv run python -m flake8
+      - run: uv run mypy fluent.syntax/fluent fluent.runtime/fluent
   test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, windows-2022]
-        python-version: [3.7, 3.8, 3.9, "3.10", 3.11, 3.12, pypy3.9, pypy3.10]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: |
-            fluent.syntax/setup.py
-            fluent.runtime/setup.py
-      - run: python -m pip install ./fluent.syntax ./fluent.runtime
-      - run: python -m unittest discover -s fluent.syntax
-      - run: python -m unittest discover -s fluent.runtime
+      - run: uv sync --dev --all-packages
+      - run: uv run python -m unittest discover -s fluent.syntax
+      - run: uv run python -m unittest discover -s fluent.runtime
 
-  # Test compatibility with the oldest Python version we claim to support,
-  # and for fluent.runtime's compatibility with a range of fluent.syntax versions.
+  # Test fluent.runtime's compatibility with a range of fluent.syntax versions.
   compatibility:
-    runs-on: ubuntu-20.04 # https://github.com/actions/setup-python/issues/544
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         fluent-syntax:
@@ -53,10 +45,11 @@ jobs:
           - fluent.syntax==0.18.1 six
           - fluent.syntax==0.17.0 six
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
         with:
-          python-version: 3.6
-      - run: python -m pip install ${{ matrix.fluent-syntax }}
-      - run: python -m pip install ./fluent.runtime
-      - run: python -m unittest discover -s fluent.runtime
+          python-version: 3.12
+      - run: uv venv
+      - run: uv pip install ${{ matrix.fluent-syntax }}
+      - run: uv pip install ./fluent.runtime
+      - run: uv run python -m unittest discover -s fluent.runtime

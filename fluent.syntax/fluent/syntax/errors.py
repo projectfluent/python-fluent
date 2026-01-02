@@ -38,7 +38,7 @@ def get_error_message(code: str, args: tuple[Union[str, None], ...]) -> str:
     if code == "E0013":
         return "Expected variant key"
     if code == "E0014":
-        return "Expected literal"
+        return "Expected literal or variable reference"
     if code == "E0015":
         return "Only one variant can be marked as default (*)"
     if code == "E0016":

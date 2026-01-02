@@ -23,6 +23,7 @@ class TestParameterizedTerms:
                     thing-with-arg = { -thing(article: "indefinite") }
                     thing-positional-arg = { -thing("foo") }
                     thing-fallback = { -thing(article: "somethingelse") }
+                    thing-variable-arg = { -thing(article: $art) }
                     bad-term = { -missing() }
                     """
                 )
@@ -63,6 +64,13 @@ class TestParameterizedTerms:
             bundle.get_message("thing-fallback").value, {}
         )
         assert val == "the thing"
+        assert errs == []
+
+    def test_variable_named_arg(self, bundle):
+        val, errs = bundle.format_pattern(
+            bundle.get_message("thing-variable-arg").value, {"art": "indefinite"}
+        )
+        assert val == "a thing"
         assert errs == []
 
     def test_no_implicit_access_to_external_args(self, bundle):

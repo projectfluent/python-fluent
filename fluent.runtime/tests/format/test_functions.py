@@ -143,6 +143,7 @@ class TestKeywordArgs:
                     pass-kwarg1     = { MYFUNC("a", kwarg1: 1) }
                     pass-kwarg2     = { MYFUNC("a", kwarg2: "other") }
                     pass-kwargs     = { MYFUNC("a", kwarg1: 1, kwarg2: "other") }
+                    pass-user-kwarg = { MYFUNC("a", kwarg1: $foo) }
                     pass-user-arg   = { MYFUNC($arg) }
                     """
                 )
@@ -169,6 +170,20 @@ class TestKeywordArgs:
         val, errs = bundle.format_pattern(bundle.get_message("pass-kwargs").value, {})
         assert args_passed == [("a", 1, "other")]
         assert len(errs) == 0
+
+    def test_pass_user_kwarg(self, args_passed, bundle):
+        val, errs = bundle.format_pattern(
+            bundle.get_message("pass-user-kwarg").value, {"foo": 42}
+        )
+        assert args_passed == [("a", 42, "default")]
+        assert len(errs) == 0
+
+    def test_missing_kwarg(self, args_passed, bundle):
+        val, errs = bundle.format_pattern(
+            bundle.get_message("pass-user-kwarg").value, {}
+        )
+        assert args_passed == [("a", FluentNone("foo"), "default")]
+        assert len(errs) == 1
 
     def test_missing_arg(self, args_passed, bundle):
         val, errs = bundle.format_pattern(bundle.get_message("pass-user-arg").value, {})

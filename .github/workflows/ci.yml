@@ -31,8 +31,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: uv sync --dev --all-packages
-      - run: uv run python -m unittest discover -s fluent.syntax
-      - run: uv run python -m unittest discover -s fluent.runtime
+      - run: uv run pytest fluent.syntax
+      - run: uv run pytest fluent.runtime
 
   # Test fluent.runtime's compatibility with a range of fluent.syntax versions.
   compatibility:
@@ -52,4 +52,4 @@ jobs:
       - run: uv venv
       - run: uv pip install ${{ matrix.fluent-syntax }}
       - run: uv pip install ./fluent.runtime
-      - run: uv run python -m unittest discover -s fluent.runtime
+      - run: uv run pytest fluent.runtime

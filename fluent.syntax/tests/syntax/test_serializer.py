@@ -1,11 +1,11 @@
-import unittest
-
+import pytest
 from fluent.syntax import FluentParser, FluentSerializer
 from fluent.syntax.serializer import serialize_expression, serialize_variant_key
-from tests.syntax import dedent_ftl
+
+from . import dedent_ftl
 
 
-class TestSerializeResource(unittest.TestCase):
+class TestSerializeResource:
     @staticmethod
     def pretty_ftl(text):
         parser = FluentParser()
@@ -16,30 +16,30 @@ class TestSerializeResource(unittest.TestCase):
     def test_invalid_resource(self):
         serializer = FluentSerializer()
 
-        with self.assertRaisesRegex(Exception, "Unknown resource type"):
+        with pytest.raises(Exception, match="Unknown resource type"):
             serializer.serialize(None)
 
-        with self.assertRaisesRegex(Exception, "Unknown resource type"):
+        with pytest.raises(Exception, match="Unknown resource type"):
             serializer.serialize(object())
 
     def test_simple_message(self):
         input = """\
             foo = Foo
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_simple_term(self):
         input = """\
             -foo = Foo
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_two_simple_messages(self):
         input = """\
             foo = Foo
             bar = Bar
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_block_multiline(self):
         input = """\
@@ -47,7 +47,7 @@ class TestSerializeResource(unittest.TestCase):
                 Foo
                 Bar
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_inline_multiline(self):
         input = """\
@@ -59,43 +59,43 @@ class TestSerializeResource(unittest.TestCase):
                 Foo
                 Bar
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
+        assert self.pretty_ftl(input) == dedent_ftl(output)
 
     def test_message_reference(self):
         input = """\
             foo = Foo { bar }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_term_reference(self):
         input = """\
             foo = Foo { -bar }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_variable_reference(self):
         input = """\
             foo = Foo { $bar }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_number_element(self):
         input = """\
             foo = Foo { 1 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_string_element(self):
         input = """\
             foo = Foo { "bar" }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_attribute_expression(self):
         input = """\
             foo = Foo { bar.baz }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_comment_resource(self):
         input = """\
@@ -104,7 +104,7 @@ class TestSerializeResource(unittest.TestCase):
 
             foo = Foo
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_comment_message(self):
         input = """\
@@ -114,7 +114,7 @@ class TestSerializeResource(unittest.TestCase):
             #
             bar = Bar
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_comment_group(self):
         input = """\
@@ -131,7 +131,7 @@ class TestSerializeResource(unittest.TestCase):
 
             baz = Baz
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_comment_standalone(self):
         input = """\
@@ -141,7 +141,7 @@ class TestSerializeResource(unittest.TestCase):
 
             bar = Bar
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_multiline_starting_inline(self):
         input = """\
@@ -153,14 +153,14 @@ class TestSerializeResource(unittest.TestCase):
                 Foo
                 Bar
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
+        assert self.pretty_ftl(input) == dedent_ftl(output)
 
     def test_multiline_starting_inline_with_special_char(self):
         input = """\
             foo = *Foo
                 Bar
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_multiline_with_placeable(self):
         input = """\
@@ -168,14 +168,14 @@ class TestSerializeResource(unittest.TestCase):
                 Foo { bar }
                 Baz
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_attribute(self):
         input = """\
             foo =
                 .attr = Foo Attr
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_attribute_multiline(self):
         input = """\
@@ -184,7 +184,7 @@ class TestSerializeResource(unittest.TestCase):
                     Foo Attr
                     Continued
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_two_attributes(self):
         input = """\
@@ -192,7 +192,7 @@ class TestSerializeResource(unittest.TestCase):
                 .attr-a = Foo Attr A
                 .attr-b = Foo Attr B
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_value_and_attributes(self):
         input = """\
@@ -200,7 +200,7 @@ class TestSerializeResource(unittest.TestCase):
                 .attr-a = Foo Attr A
                 .attr-b = Foo Attr B
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_multiline_value_and_attributes(self):
         input = """\
@@ -210,7 +210,7 @@ class TestSerializeResource(unittest.TestCase):
                 .attr-a = Foo Attr A
                 .attr-b = Foo Attr B
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_select_expression(self):
         input = """\
@@ -220,7 +220,7 @@ class TestSerializeResource(unittest.TestCase):
                     [b] B
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_variant_multiline(self):
         input = """\
@@ -231,7 +231,7 @@ class TestSerializeResource(unittest.TestCase):
                         BBB
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_variant_multiline_first_inline(self):
         input = """\
@@ -249,7 +249,7 @@ class TestSerializeResource(unittest.TestCase):
                         BBB
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
+        assert self.pretty_ftl(input) == dedent_ftl(output)
 
     def test_variant_key_number(self):
         input = """\
@@ -258,7 +258,7 @@ class TestSerializeResource(unittest.TestCase):
                    *[1] 1
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_select_expression_in_block_value(self):
         input = """\
@@ -268,7 +268,7 @@ class TestSerializeResource(unittest.TestCase):
                     [b] B
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_select_expression_in_inline_value(self):
         input = """\
@@ -284,7 +284,7 @@ class TestSerializeResource(unittest.TestCase):
                     [b] B
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(output))
+        assert self.pretty_ftl(input) == dedent_ftl(output)
 
     def test_select_expression_in_inline_value_starting_with_special_char(self):
         input = """\
@@ -293,7 +293,7 @@ class TestSerializeResource(unittest.TestCase):
                     [b] B
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_select_expression_in_multi_multiline(self):
         input = """\
@@ -304,7 +304,7 @@ class TestSerializeResource(unittest.TestCase):
                     [b] B
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_select_expression_nested(self):
         input = """\
@@ -316,7 +316,7 @@ class TestSerializeResource(unittest.TestCase):
                         }
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_selector_variable_reference(self):
         input = """\
@@ -325,7 +325,7 @@ class TestSerializeResource(unittest.TestCase):
                    *[a] A
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_selector_number_expression(self):
         input = """\
@@ -334,7 +334,7 @@ class TestSerializeResource(unittest.TestCase):
                    *[a] A
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_selector_string_expression(self):
         input = """\
@@ -343,7 +343,7 @@ class TestSerializeResource(unittest.TestCase):
                    *[a] A
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_selector_attribute_expression(self):
         input = """\
@@ -352,100 +352,100 @@ class TestSerializeResource(unittest.TestCase):
                    *[a] A
                 }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_call_expression(self):
         input = """\
             foo = { FOO() }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_call_expression_with_string_expression(self):
         input = """\
             foo = { FOO("bar") }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_call_expression_with_number_expression(self):
         input = """\
             foo = { FOO(1) }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_call_expression_with_message_reference(self):
         input = """\
             foo = { FOO(bar) }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_call_expression_with_variable_reference(self):
         input = """\
             foo = { FOO($bar) }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_call_expression_with_two_positional_arguments(self):
         input = """\
             foo = { FOO(bar, baz) }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_call_expression_with_named_argument_number(self):
         input = """\
             foo = { FOO(bar: 1) }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_call_expression_with_named_argument_string(self):
         input = """\
             foo = { FOO(bar: "bar") }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_call_expression_with_two_named_arguments(self):
         input = """\
             foo = { FOO(bar: "bar", baz: "baz") }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_call_expression_with_positional_and_named_arguments(self):
         input = """\
             foo = { FOO(bar, 1, baz: "baz") }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_macro_call(self):
         input = """\
             foo = { -term() }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_nested_placeables(self):
         input = """\
             foo = {{ FOO() }}
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_backslash_in_text(self):
         input = """\
             foo = \\{ placeable }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_escaped_special_in_string_literal(self):
         input = """\
             foo = { "Escaped \\" quote" }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
     def test_escaped_unicode_sequence(self):
         input = """\
             foo = { "\\u0065" }
         """
-        self.assertEqual(self.pretty_ftl(input), dedent_ftl(input))
+        assert self.pretty_ftl(input) == dedent_ftl(input)
 
 
-class TestSerializeExpression(unittest.TestCase):
+class TestSerializeExpression:
     @staticmethod
     def pretty_expr(text):
         parser = FluentParser()
@@ -454,47 +454,47 @@ class TestSerializeExpression(unittest.TestCase):
         return serialize_expression(expr)
 
     def test_invalid_expression(self):
-        with self.assertRaisesRegex(Exception, "Unknown expression type"):
+        with pytest.raises(Exception, match="Unknown expression type"):
             serialize_expression(None)
 
-        with self.assertRaisesRegex(Exception, "Unknown expression type"):
+        with pytest.raises(Exception, match="Unknown expression type"):
             serialize_expression(object())
 
     def test_string_expression(self):
         input = """\
             foo = { "str" }
         """
-        self.assertEqual(self.pretty_expr(input), '"str"')
+        assert self.pretty_expr(input) == '"str"'
 
     def test_number_expression(self):
         input = """\
             foo = { 3 }
         """
-        self.assertEqual(self.pretty_expr(input), "3")
+        assert self.pretty_expr(input) == "3"
 
     def test_message_reference(self):
         input = """\
             foo = { msg }
         """
-        self.assertEqual(self.pretty_expr(input), "msg")
+        assert self.pretty_expr(input) == "msg"
 
     def test_variable_reference(self):
         input = """\
             foo = { $ext }
         """
-        self.assertEqual(self.pretty_expr(input), "$ext")
+        assert self.pretty_expr(input) == "$ext"
 
     def test_attribute_expression(self):
         input = """\
             foo = { msg.attr }
         """
-        self.assertEqual(self.pretty_expr(input), "msg.attr")
+        assert self.pretty_expr(input) == "msg.attr"
 
     def test_call_expression(self):
         input = """\
             foo = { BUILTIN(3.14, kwarg: "value") }
         """
-        self.assertEqual(self.pretty_expr(input), 'BUILTIN(3.14, kwarg: "value")')
+        assert self.pretty_expr(input) == 'BUILTIN(3.14, kwarg: "value")'
 
     def test_select_expression(self):
         input = """\
@@ -503,10 +503,10 @@ class TestSerializeExpression(unittest.TestCase):
                    *[one] One
                 }
         """
-        self.assertEqual(self.pretty_expr(input), "$num ->\n   *[one] One\n")
+        assert self.pretty_expr(input) == "$num ->\n   *[one] One\n"
 
 
-class TestSerializeVariantKey(unittest.TestCase):
+class TestSerializeVariantKey:
     @staticmethod
     def pretty_variant_key(text, index):
         parser = FluentParser()
@@ -515,10 +515,10 @@ class TestSerializeVariantKey(unittest.TestCase):
         return serialize_variant_key(variants[index].key)
 
     def test_invalid_expression(self):
-        with self.assertRaisesRegex(Exception, "Unknown variant key type"):
+        with pytest.raises(Exception, match="Unknown variant key type"):
             serialize_variant_key(None)
 
-        with self.assertRaisesRegex(Exception, "Unknown variant key type"):
+        with pytest.raises(Exception, match="Unknown variant key type"):
             serialize_variant_key(object())
 
     def test_identifiers(self):
@@ -528,8 +528,8 @@ class TestSerializeVariantKey(unittest.TestCase):
                *[other] Other
             }
         """
-        self.assertEqual(self.pretty_variant_key(input, 0), "one")
-        self.assertEqual(self.pretty_variant_key(input, 1), "other")
+        assert self.pretty_variant_key(input, 0) == "one"
+        assert self.pretty_variant_key(input, 1) == "other"
 
     def test_number_literals(self):
         input = """\
@@ -540,7 +540,7 @@ class TestSerializeVariantKey(unittest.TestCase):
                 [007] James
             }
         """
-        self.assertEqual(self.pretty_variant_key(input, 0), "-123456789")
-        self.assertEqual(self.pretty_variant_key(input, 1), "0")
-        self.assertEqual(self.pretty_variant_key(input, 2), "3.14")
-        self.assertEqual(self.pretty_variant_key(input, 3), "007")
+        assert self.pretty_variant_key(input, 0) == "-123456789"
+        assert self.pretty_variant_key(input, 1) == "0"
+        assert self.pretty_variant_key(input, 2) == "3.14"
+        assert self.pretty_variant_key(input, 3) == "007"

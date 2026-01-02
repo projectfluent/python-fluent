@@ -1,58 +1,36 @@
-import json
-import os
-import unittest
+from json import loads
+from os import listdir
+from os.path import dirname, join, splitext
+
+import pytest
 
 from fluent.syntax import parse
 
-
-def read_file(path):
-    with open(path, "r", encoding="utf-8", newline="\n") as file:
-        text = file.read()
-    return text
-
-
-fixtures = os.path.join(os.path.dirname(__file__), "fixtures_reference")
+fixtures_dir = join(dirname(__file__), "fixtures_reference")
+fixture_names = [
+    fp[0] for fn in listdir(fixtures_dir) if (fp := splitext(fn))[1] == ".ftl"
+]
 
 
-class TestReferenceMeta(type):
-    def __new__(mcs, name, bases, attrs):
+@pytest.mark.parametrize("name", fixture_names)
+def test_reference(name):
+    if name in ("leading_dots",):
+        pytest.skip("Known difference between reference and tooling parsers")
 
-        def remove_untested(obj):
-            if obj["type"] == "Junk":
-                obj["annotations"] = []
-            if "span" in obj:
-                del obj["span"]
-            return obj
+    ftl_path = join(fixtures_dir, name + ".ftl")
+    ast_path = join(fixtures_dir, name + ".json")
 
-        def gen_test(file_name):
-            def test(self):
-                ftl_path = os.path.join(fixtures, file_name + ".ftl")
-                ast_path = os.path.join(fixtures, file_name + ".json")
+    with open(ftl_path, "r", encoding="utf-8", newline="\n") as file:
+        ast = parse(file.read())
+    with open(ast_path, "r", encoding="utf-8", newline="\n") as file:
+        expected = loads(file.read())
 
-                source = read_file(ftl_path)
-                expected = read_file(ast_path)
-
-                ast = parse(source)
-                self.assertEqual(ast.to_json(remove_untested), json.loads(expected))
-
-            return test
-
-        for f in os.listdir(fixtures):
-            file_name, ext = os.path.splitext(f)
-
-            if ext != ".ftl":
-                continue
-
-            # Skip fixtures which are known to differ between the reference
-            # parser and the tooling parser.
-            if file_name in ("leading_dots", "variant_lists"):
-                continue
-
-            test_name = f"test_{file_name}"
-            attrs[test_name] = gen_test(file_name)
-
-        return type.__new__(mcs, name, bases, attrs)
+    assert ast.to_json(remove_untested) == expected
 
 
-class TestReference(unittest.TestCase, metaclass=TestReferenceMeta):
-    maxDiff = None
+def remove_untested(obj):
+    if obj["type"] == "Junk":
+        obj["annotations"] = []
+    if "span" in obj:
+        del obj["span"]
+    return obj

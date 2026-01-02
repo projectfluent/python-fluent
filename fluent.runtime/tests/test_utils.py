@@ -1,41 +1,30 @@
 import unittest
 from .utils import patch_files
-import os
+from os.path import isdir, isfile, join
 
 
 class TestFileSimulate(unittest.TestCase):
     def test_basic(self):
-        @patch_files({
-            "the.txt": "The",
-            "en/one.txt": "One",
-            "en/two.txt": "Two"
-        })
-        def patch_me(a, b):
+        @patch_files(
+            {
+                "the.txt": "The",
+                "en": {
+                    "one.txt": "One",
+                    "two.txt": "Two",
+                },
+            }
+        )
+        def patch_me(a, b, root):
             self.assertEqual(a, 10)
             self.assertEqual(b, "b")
-            self.assertFileIs(os.path.basename(__file__), None)
-            self.assertFileIs("the.txt", "The")
-            self.assertFileIs("en/one.txt", "One")
-            self.assertFileIs("en\\one.txt", "One")
-            self.assertFileIs("en/two.txt", "Two")
-            self.assertFileIs("en\\two.txt", "Two")
-            self.assertFileIs("en/three.txt", None)
-            self.assertFileIs("en\\three.txt", None)
+            with open(join(root, "the.txt")) as f:
+                self.assertEqual(f.read(), "The")
+            with open(join(root, "en", "one.txt")) as f:
+                self.assertEqual(f.read(), "One")
+            with open(join(root, "en", "two.txt")) as f:
+                self.assertEqual(f.read(), "Two")
+            self.assertTrue(isdir(join(root, "en")))
+            self.assertFalse(isfile(join(root, "none.txt")))
+            self.assertFalse(isfile(join(root, "en", "three.txt")))
 
-            with self.assertRaises(ValueError):
-                os.path.isfile("en/")
         patch_me(10, "b")
-
-    def assertFileIs(self, filename, expect_contents):
-        """
-        expect_contents is None: Expect file does not exist
-        expect_contents is a str: Expect file to exist and contents to match
-        """
-        if expect_contents is None:
-            self.assertFalse(os.path.isfile(filename),
-                             f"Expected {filename} to not exist.")
-        else:
-            self.assertTrue(os.path.isfile(filename),
-                            f"Expected {filename} to exist.")
-            with open(filename, "r", encoding="utf-8") as f:
-                self.assertEqual(f.read(), expect_contents)

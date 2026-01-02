@@ -9,7 +9,7 @@ class ParseError(Exception):
 
 
 def get_error_message(code: str, args: tuple[Union[str, None], ...]) -> str:
-    if code == "E00001":
+    if code == "E0001":
         return "Generic error"
     if code == "E0002":
         return "Expected an entry start"

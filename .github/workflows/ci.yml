@@ -33,6 +33,7 @@ jobs:
       - run: uv sync --dev --all-packages
       - run: uv run pytest fluent.syntax
       - run: uv run pytest fluent.runtime
+      - run: uv run pytest fluent.pygments
 
   # Test fluent.runtime's compatibility with a range of fluent.syntax versions.
   compatibility:

@@ -1,20 +1,15 @@
-import unittest
-
 from fluent.pygments.lexer import FluentLexer
 from pygments.token import Token
 
 
-class LexerTest(unittest.TestCase):
-    def setUp(self):
-        self.lexer = FluentLexer()
-
+class TestLexer:
     def test_comment(self):
         fragment = "# comment\n"
         tokens = [
             (Token.Comment.Multiline, "# comment"),
             (Token.Punctuation, "\n"),
         ]
-        self.assertEqual(tokens, list(self.lexer.get_tokens(fragment)))
+        assert list(FluentLexer().get_tokens(fragment)) == tokens
 
     def test_message(self):
         fragment = "msg = some value\n"
@@ -24,7 +19,7 @@ class LexerTest(unittest.TestCase):
             (Token.Literal, "some value"),
             (Token.Punctuation, "\n"),
         ]
-        self.assertEqual(tokens, list(self.lexer.get_tokens(fragment)))
+        assert list(FluentLexer().get_tokens(fragment)) == tokens
 
     def test_message_with_comment(self):
         fragment = "# good comment\nmsg = some value\n"
@@ -36,4 +31,4 @@ class LexerTest(unittest.TestCase):
             (Token.Literal, "some value"),
             (Token.Punctuation, "\n"),
         ]
-        self.assertEqual(tokens, list(self.lexer.get_tokens(fragment)))
+        assert list(FluentLexer().get_tokens(fragment)) == tokens

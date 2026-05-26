@@ -1,9 +1,9 @@
-import unittest
 from collections import defaultdict
 
 from fluent.syntax import ast, visitor
 from fluent.syntax.parser import FluentParser
-from tests.syntax import dedent_ftl
+
+from . import dedent_ftl
 
 
 class MockVisitor(visitor.Visitor):
@@ -19,55 +19,52 @@ class MockVisitor(visitor.Visitor):
         self.pattern_calls += 1
 
 
-class TestVisitor(unittest.TestCase):
+class TestVisitor:
     def test_resource(self):
         resource = FluentParser().parse(
             dedent_ftl(
                 """\
-        one = Message
-        # Comment
-        two = Messages
-        three = Messages with
-            .an = Attribute
-        """
+                one = Message
+                # Comment
+                two = Messages
+                three = Messages with
+                    .an = Attribute
+                """
             )
         )
         mv = MockVisitor()
         mv.visit(resource)
-        self.assertEqual(mv.pattern_calls, 4)
-        self.assertDictEqual(
-            mv.calls,
-            {
-                "Resource": 1,
-                "Comment": 1,
-                "Message": 3,
-                "Identifier": 4,
-                "Attribute": 1,
-                "Span": 10,
-            },
-        )
+        assert mv.pattern_calls == 4
+        assert mv.calls == {
+            "Resource": 1,
+            "Comment": 1,
+            "Message": 3,
+            "Identifier": 4,
+            "Attribute": 1,
+            "Span": 10,
+        }
 
 
-class TestTransformer(unittest.TestCase):
-    def test(self):
+class TestTransformer:
+    def test_transformer(self):
         resource = FluentParser().parse(
             dedent_ftl(
                 """\
-        one = Message
-        two = Messages
-        three = Has a
-            .an = Message string in the Attribute
-        """
+                one = Message
+                two = Messages
+                three = Has a
+                    .an = Message string in the Attribute
+                """
             )
         )
         prior_res_id = id(resource)
         prior_msg_id = id(resource.body[1].value)
         backup = resource.clone()
         transformed = ReplaceTransformer("Message", "Term").visit(resource)
-        self.assertEqual(prior_res_id, id(transformed))
-        self.assertEqual(prior_msg_id, id(transformed.body[1].value))
-        self.assertFalse(transformed.equals(backup))
-        self.assertEqual(transformed.body[1].value.elements[0].value, "Terms")
+        assert prior_res_id == id(transformed)
+        assert prior_msg_id == id(transformed.body[1].value)
+        assert not transformed.equals(backup)
+        assert transformed.body[1].value.elements[0].value == "Terms"
 
 
 class WordCounter:

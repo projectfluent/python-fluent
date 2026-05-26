@@ -1,21 +1,19 @@
-import unittest
+import pytest
 
 from fluent.syntax.ast import from_json
 from fluent.syntax.parser import FluentParser
 from fluent.syntax.serializer import FluentSerializer
-from tests.syntax import dedent_ftl
+
+from . import dedent_ftl
 
 
-class TestParseEntry(unittest.TestCase):
-    maxDiff = None
+class TestParseEntry:
+    @pytest.fixture
+    def parser(self):
+        return FluentParser(with_spans=False)
 
-    def setUp(self):
-        self.parser = FluentParser(with_spans=False)
-
-    def test_simple_message(self):
-        input = """\
-            foo = Foo
-        """
+    def test_simple_message(self, parser):
+        input = "foo = Foo\n"
         output = {
             "comment": None,
             "value": {
@@ -29,10 +27,10 @@ class TestParseEntry(unittest.TestCase):
             "id": {"span": None, "type": "Identifier", "name": "foo"},
         }
 
-        message = self.parser.parse_entry(dedent_ftl(input))
-        self.assertEqual(message.to_json(), output)
+        message = parser.parse_entry(dedent_ftl(input))
+        assert message.to_json() == output
 
-    def test_ignore_attached_comment(self):
+    def test_ignore_attached_comment(self, parser):
         input = """\
             # Attached Comment
             foo = Foo
@@ -50,10 +48,10 @@ class TestParseEntry(unittest.TestCase):
             "span": None,
         }
 
-        message = self.parser.parse_entry(dedent_ftl(input))
-        self.assertEqual(message.to_json(), output)
+        message = parser.parse_entry(dedent_ftl(input))
+        assert message.to_json() == output
 
-    def test_return_junk(self):
+    def test_return_junk(self, parser):
         input = """\
             # Attached Comment
             junk
@@ -73,10 +71,10 @@ class TestParseEntry(unittest.TestCase):
             "type": "Junk",
         }
 
-        message = self.parser.parse_entry(dedent_ftl(input))
-        self.assertEqual(message.to_json(), output)
+        message = parser.parse_entry(dedent_ftl(input))
+        assert message.to_json() == output
 
-    def test_ignore_all_valid_comments(self):
+    def test_ignore_all_valid_comments(self, parser):
         input = """\
             # Attached Comment
             ## Group Comment
@@ -96,10 +94,10 @@ class TestParseEntry(unittest.TestCase):
             "id": {"name": "foo", "span": None, "type": "Identifier"},
         }
 
-        message = self.parser.parse_entry(dedent_ftl(input))
-        self.assertEqual(message.to_json(), output)
+        message = parser.parse_entry(dedent_ftl(input))
+        assert message.to_json() == output
 
-    def test_do_not_ignore_invalid_comments(self):
+    def test_do_not_ignore_invalid_comments(self, parser):
         input = """\
         # Attached Comment
         ##Invalid Comment
@@ -119,14 +117,11 @@ class TestParseEntry(unittest.TestCase):
             "type": "Junk",
         }
 
-        message = self.parser.parse_entry(dedent_ftl(input))
-        self.assertEqual(message.to_json(), output)
+        message = parser.parse_entry(dedent_ftl(input))
+        assert message.to_json() == output
 
 
-class TestSerializeEntry(unittest.TestCase):
-    def setUp(self):
-        self.serializer = FluentSerializer()
-
+class TestSerializeEntry:
     def test_simple_message(self):
         input = {
             "comment": None,
@@ -142,5 +137,5 @@ class TestSerializeEntry(unittest.TestCase):
             foo = Foo
         """
 
-        message = self.serializer.serialize_entry(from_json(input))
-        self.assertEqual(message, dedent_ftl(output))
+        message = FluentSerializer().serialize_entry(from_json(input))
+        assert message == dedent_ftl(output)

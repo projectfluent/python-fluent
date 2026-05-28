@@ -1,6 +1,6 @@
 import re
 import warnings
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 
 import pytest
@@ -151,6 +151,7 @@ class TestFluentNumber:
 
 a_date = date(2018, 2, 1)
 a_datetime = datetime(2018, 2, 1, 14, 15, 16, 123456, tzinfo=pytz.UTC)
+a_time = time(10, 31, 00, 333, tzinfo=pytz.UTC)
 
 
 class TestFluentDate:
@@ -161,6 +162,16 @@ class TestFluentDate:
         assert fd.year == a_date.year
         assert fd.month == a_date.month
         assert fd.day == a_date.day
+
+    def test_time(self):
+        fd = fluent_date(a_time)
+        assert isinstance(fd, time)
+        assert isinstance(fd, FluentDateType)
+        assert fd.hour == a_time.hour
+        assert fd.minute == a_time.minute
+        assert fd.second == a_time.second
+        assert fd.microsecond == a_time.microsecond
+        assert fd.tzinfo == a_time.tzinfo
 
     def test_datetime(self):
         fd = fluent_date(a_datetime)
@@ -175,12 +186,26 @@ class TestFluentDate:
         assert fd.microsecond == a_datetime.microsecond
         assert fd.tzinfo == a_datetime.tzinfo
 
-    def test_format_defaults(self):
+    def test_date_format_defaults(self):
         fd = fluent_date(a_date)
         en_US = Locale.parse("en_US")
         en_GB = Locale.parse("en_GB")
         assert fd.format(en_GB) == "1 Feb 2018"
         assert fd.format(en_US) == "Feb 1, 2018"
+
+    def test_time_format_defaults(self):
+        fd = fluent_date(a_time)
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        assert fd.format(en_GB) == '10:31'
+        assert re.search('^10:31\\sAM$', fd.format(en_US))
+
+    def test_datetime_format_defaults(self):
+        fd = fluent_date(a_datetime)
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        assert fd.format(en_GB) == '1 Feb 2018'
+        assert re.search('Feb 1, 2018', fd.format(en_US))
 
     def test_dateStyle_date(self):
         fd = fluent_date(a_date, dateStyle="long")
@@ -202,6 +227,13 @@ class TestFluentDate:
         en_GB = Locale.parse("en_GB")
         assert re.search("^2:15\\sPM$", fd.format(en_US))
         assert fd.format(en_GB) == "14:15"
+
+    def test_timeStyle_time(self):
+        fd = fluent_date(a_datetime.time(), timeStyle='short')
+        en_US = Locale.parse('en_US')
+        en_GB = Locale.parse('en_GB')
+        assert re.search('^2:15\\sPM$', fd.format(en_US))
+        assert fd.format(en_GB) == '14:15'
 
     def test_dateStyle_and_timeStyle_datetime(self):
         fd = fluent_date(a_datetime, timeStyle="short", dateStyle="short")
@@ -255,6 +287,14 @@ class TestFluentDate:
         assert fd2c.format(en_GB) == "02/07/2018"
         fd2d = fluent_date(dt1, timeStyle="short", timeZone="Europe/London")
         assert fd2d.format(en_GB) == "00:30"
+
+        ft = fluent_date(a_time, timeZone="UTC")
+        assert ft.format(en_GB) == "10:31"
+        ft = fluent_date(a_time, timeZone="Europe/London")
+        with pytest.raises(TypeError):
+            ft.format(en_GB)
+        ft = fluent_date(time(10, 31, 00, 333), timeZone="Europe/London")
+        assert ft.format(en_GB) == "10:31"
 
     def test_allow_unsupported_options(self):
         # We are just checking that these don't raise exceptions

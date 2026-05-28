@@ -1,5 +1,5 @@
 import warnings
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Any, Literal, TypeVar, Union, cast
 
@@ -344,13 +344,12 @@ class FluentDateType(FluentType):
     # some Python implementation (e.g. PyPy) implement some methods.
     # So we leave those alone, and implement another `_init_options`
     # which is called from other constructors.
-    def _init_options(
-        self, dt_obj: Union[date, datetime], kwargs: dict[str, Any]
-    ) -> None:
-        if "timeStyle" in kwargs and not isinstance(self, datetime):
-            raise TypeError(
-                "timeStyle option can only be specified for datetime instances, not date instance"
-            )
+    def _init_options(self, dt_obj: Union[date, datetime, time], kwargs: dict[str, Any]) -> None:
+        if 'timeStyle' in kwargs and not isinstance(self, (datetime, time)):
+            raise TypeError("timeStyle option can only be specified for datetime or time instances, not date instance")
+
+        if 'dateStyle' in kwargs and not isinstance(self, (datetime, date)):
+            raise TypeError("dateStyle option can only be specified for datetime or date instances, not time instance")
 
         self.options = merge_options(
             DateFormatOptions, getattr(dt_obj, "options", None), kwargs
@@ -360,7 +359,7 @@ class FluentDateType(FluentType):
                 warnings.warn(f"FluentDateType option {k} is not yet supported")
 
     def format(self, locale: Locale) -> str:
-        if isinstance(self, datetime):
+        if isinstance(self, (datetime, time)):
             selftz = _ensure_datetime_tzinfo(self, tzinfo=self.options.timeZone)
         else:
             selftz = cast(datetime, self)
@@ -368,11 +367,13 @@ class FluentDateType(FluentType):
         ds = self.options.dateStyle
         ts = self.options.timeStyle
         if ds is None:
-            if ts is None:
+            if ts is None and not isinstance(selftz, time):
                 return format_date(selftz, format="medium", locale=locale)
             else:
-                return format_time(selftz, format=ts, locale=locale)
-        elif ts is None:
+                return format_time(selftz, format=ts or "short", locale=locale)
+        assert not isinstance(selftz, time)
+
+        if ts is None:
             return format_date(selftz, format=ds, locale=locale)
 
         # Both date and time. Logic copied from babel.dates.format_datetime,
@@ -387,15 +388,26 @@ class FluentDateType(FluentType):
         )
 
 
-def _ensure_datetime_tzinfo(dt: datetime, tzinfo: Union[str, None] = None) -> datetime:
+def _ensure_datetime_tzinfo(dt: Union[datetime, time], tzinfo: Union[str, None] = None) -> Union[datetime, time]:
     """
-    Ensure the datetime passed has an attached tzinfo.
+    Ensure the datetime or time passed has an attached tzinfo.
     """
-    # Adapted from babel's function.
+    if isinstance(dt, datetime):
+        # Adapted from babel's function.
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=pytz.UTC)
+        if tzinfo is not None:
+            dt = dt.astimezone(get_timezone(tzinfo))
+        return dt
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=pytz.UTC)
-    if tzinfo is not None:
-        dt = dt.astimezone(get_timezone(tzinfo))
+        tz = get_timezone(tzinfo) if tzinfo is not None else pytz.UTC
+        return dt.replace(tzinfo=tz)
+    elif tzinfo is not None:
+        tz = get_timezone(tzinfo)
+        if tz != dt.tzinfo:
+            print(dt.tzinfo, tz)
+            raise TypeError("timezone conversion not supported for time values")
+
     return dt
 
 
@@ -403,6 +415,20 @@ class FluentDate(FluentDateType, date):
     @classmethod
     def from_date(cls, dt_obj: date, **kwargs: Any) -> "FluentDate":
         obj = cls(dt_obj.year, dt_obj.month, dt_obj.day)
+        obj._init_options(dt_obj, kwargs)
+        return obj
+
+
+class FluentTime(FluentDateType, time):
+    @classmethod
+    def from_time(cls, dt_obj: time, **kwargs: Any) -> "FluentTime":
+        obj = cls(
+            dt_obj.hour,
+            dt_obj.minute,
+            dt_obj.second,
+            dt_obj.microsecond,
+            tzinfo=dt_obj.tzinfo
+        )
         obj._init_options(dt_obj, kwargs)
         return obj
 
@@ -425,12 +451,14 @@ class FluentDateTime(FluentDateType, datetime):
 
 
 def fluent_date(
-    dt: Union[date, datetime, FluentDateType, FluentNone], **kwargs: Any
+    dt: Union[date, datetime, time, FluentDateType, FluentNone], **kwargs: Any
 ) -> Union[FluentDateType, FluentNone]:
     if isinstance(dt, FluentDateType) and not kwargs:
         return dt
     if isinstance(dt, datetime):
         return FluentDateTime.from_date_time(dt, **kwargs)
+    elif isinstance(dt, time):
+        return FluentTime.from_time(dt, **kwargs)
     elif isinstance(dt, date):
         return FluentDate.from_date(dt, **kwargs)
     elif isinstance(dt, FluentNone):

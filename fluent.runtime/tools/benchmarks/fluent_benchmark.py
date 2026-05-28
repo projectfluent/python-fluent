@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # This should be run using pytest
 
-from __future__ import unicode_literals
 
 import sys
 
@@ -48,7 +47,7 @@ def fluent_template(bundle):
     )
 
 
-class TestBenchmark(object):
+class TestBenchmark:
     def test_template(self, fluent_bundle, benchmark):
         benchmark(lambda: fluent_template(fluent_bundle))
 

@@ -1,14 +1,13 @@
 import warnings
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Any, Dict, Type, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 import attr
 import pytz
 from babel import Locale
 from babel.dates import format_date, format_time, get_datetime_format, get_timezone
 from babel.numbers import NumberPattern, parse_pattern
-from typing_extensions import Literal
 
 FORMAT_STYLE_DECIMAL = "decimal"
 FORMAT_STYLE_CURRENCY = "currency"
@@ -106,7 +105,7 @@ class FluentNumber(FluentType):
         return self._init(value, kwargs)
 
     def _init(
-        self, value: Union[int, float, Decimal, "FluentNumber"], kwargs: Dict[str, Any]
+        self, value: Union[int, float, Decimal, "FluentNumber"], kwargs: dict[str, Any]
     ) -> "FluentNumber":
         self.options = merge_options(
             NumberFormatOptions,
@@ -211,7 +210,7 @@ Options = TypeVar("Options", bound=Union[NumberFormatOptions, "DateFormatOptions
 
 
 def merge_options(
-    options_class: Type[Options], base: Union[Options, None], kwargs: Dict[str, Any]
+    options_class: type[Options], base: Union[Options, None], kwargs: dict[str, Any]
 ) -> Options:
     """
     Given an 'options_class', an optional 'base' object to copy from,
@@ -345,7 +344,7 @@ class FluentDateType(FluentType):
     # some Python implementation (e.g. PyPy) implement some methods.
     # So we leave those alone, and implement another `_init_options`
     # which is called from other constructors.
-    def _init_options(self, dt_obj: Union[date, datetime], kwargs: Dict[str, Any]) -> None:
+    def _init_options(self, dt_obj: Union[date, datetime, time], kwargs: dict[str, Any]) -> None:
         if 'timeStyle' in kwargs and not isinstance(self, (datetime, time)):
             raise TypeError("timeStyle option can only be specified for datetime or time instances, not date instance")
 
@@ -409,7 +408,7 @@ class FluentDate(FluentDateType, date):
 
 class FluentTime(FluentDateType, time):
     @classmethod
-    def from_time(cls, dt_obj: time, **kwargs) -> "FluentTime":
+    def from_time(cls, dt_obj: time, **kwargs: Any) -> "FluentTime":
         obj = cls(
             dt_obj.hour,
             dt_obj.minute,
@@ -439,7 +438,7 @@ class FluentDateTime(FluentDateType, datetime):
 
 
 def fluent_date(
-    dt: Union[date, datetime, FluentDateType, FluentNone], **kwargs: Any
+    dt: Union[date, datetime, time, FluentDateType, FluentNone], **kwargs: Any
 ) -> Union[FluentDateType, FluentNone]:
     if isinstance(dt, FluentDateType) and not kwargs:
         return dt
@@ -452,6 +451,4 @@ def fluent_date(
     elif isinstance(dt, FluentNone):
         return dt
     else:
-        raise TypeError(
-            "Can't use fluent_date with object {} of type {}".format(dt, type(dt))
-        )
+        raise TypeError(f"Can't use fluent_date with object {dt} of type {type(dt)}")

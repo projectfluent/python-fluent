@@ -1,0 +1,5 @@
+{
+  "python.autoComplete.extraPaths": ["./fluent.syntax"],
+  "python.analysis.extraPaths": ["./fluent.syntax"],
+  "mypy-type-checker.ignorePatterns": ["**/tests/**"]
+}

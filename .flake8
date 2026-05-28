@@ -1,4 +1,4 @@
 [flake8]
-exclude=.tox
+exclude=.venv
 extend-ignore = E203
 max-line-length=120

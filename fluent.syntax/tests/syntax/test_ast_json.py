@@ -1,27 +1,21 @@
-import unittest
-
 from fluent.syntax.ast import from_json
 from fluent.syntax.parser import FluentParser
-from tests.syntax import dedent_ftl
+
+from . import dedent_ftl
 
 
-class TestASTJSON(unittest.TestCase):
-    maxDiff = None
-
-    def setUp(self):
-        self.parser = FluentParser()
-
+class TestASTJSON:
     def test_simple_resource(self):
         input = """\
             foo = Foo
         """
 
-        ast1 = self.parser.parse(dedent_ftl(input))
+        ast1 = FluentParser().parse(dedent_ftl(input))
         json1 = ast1.to_json()
         ast2 = from_json(json1)
         json2 = ast2.to_json()
 
-        self.assertEqual(json1, json2)
+        assert json1 == json2
 
     def test_complex_resource(self):
         input = """\
@@ -47,21 +41,21 @@ class TestASTJSON(unittest.TestCase):
                 } post.
         """
 
-        ast1 = self.parser.parse(dedent_ftl(input))
+        ast1 = FluentParser().parse(dedent_ftl(input))
         json1 = ast1.to_json()
         ast2 = from_json(json1)
         json2 = ast2.to_json()
 
-        self.assertEqual(json1, json2)
+        assert json1 == json2
 
     def test_syntax_error(self):
         input = """\
             foo = Foo {
         """
 
-        ast1 = self.parser.parse(dedent_ftl(input))
+        ast1 = FluentParser().parse(dedent_ftl(input))
         json1 = ast1.to_json()
         ast2 = from_json(json1)
         json2 = ast2.to_json()
 
-        self.assertEqual(json1, json2)
+        assert json1 == json2

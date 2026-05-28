@@ -288,6 +288,14 @@ class TestFluentDate:
         fd2d = fluent_date(dt1, timeStyle="short", timeZone="Europe/London")
         assert fd2d.format(en_GB) == "00:30"
 
+        ft = fluent_date(a_time, timeZone="UTC")
+        assert ft.format(en_GB) == "10:31"
+        ft = fluent_date(a_time, timeZone="Europe/London")
+        with pytest.raises(TypeError):
+            ft.format(en_GB)
+        ft = fluent_date(time(10, 31, 00, 333), timeZone="Europe/London")
+        assert ft.format(en_GB) == "10:31"
+
     def test_allow_unsupported_options(self):
         # We are just checking that these don't raise exceptions
         with warnings.catch_warnings():

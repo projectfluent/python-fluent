@@ -371,7 +371,9 @@ class FluentDateType(FluentType):
                 return format_date(selftz, format="medium", locale=locale)
             else:
                 return format_time(selftz, format=ts or "short", locale=locale)
-        elif ts is None:
+        assert not isinstance(selftz, time)
+
+        if ts is None:
             return format_date(selftz, format=ds, locale=locale)
 
         # Both date and time. Logic copied from babel.dates.format_datetime,
@@ -388,13 +390,24 @@ class FluentDateType(FluentType):
 
 def _ensure_datetime_tzinfo(dt: Union[datetime, time], tzinfo: Union[str, None] = None) -> Union[datetime, time]:
     """
-    Ensure the datetime passed has an attached tzinfo.
+    Ensure the datetime or time passed has an attached tzinfo.
     """
-    # Adapted from babel's function.
+    if isinstance(dt, datetime):
+        # Adapted from babel's function.
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=pytz.UTC)
+        if tzinfo is not None:
+            dt = dt.astimezone(get_timezone(tzinfo))
+        return dt
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=pytz.UTC)
-    if tzinfo is not None:
-        dt = dt.astimezone(get_timezone(tzinfo))
+        tz = get_timezone(tzinfo) if tzinfo is not None else pytz.UTC
+        return dt.replace(tzinfo=tz)
+    elif tzinfo is not None:
+        tz = get_timezone(tzinfo)
+        if tz != dt.tzinfo:
+            print(dt.tzinfo, tz)
+            raise TypeError("timezone conversion not supported for time values")
+
     return dt
 
 

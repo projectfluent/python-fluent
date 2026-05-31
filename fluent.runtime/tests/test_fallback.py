@@ -78,6 +78,40 @@ class TestLocalization:
         assert tuple(l10n.format_message("baz")) == ("baz in English", {})
         assert tuple(l10n.format_message("not-exists")) == ("not-exists", {})
 
+    def test_format_value_is_thread_safe(self, tmp_path):
+        # Regression test for issue #221: concurrent format_value() calls used
+        # to race on the shared _bundle_it generator and raise
+        # "ValueError: generator already executing".
+        import threading
+
+        build_file_tree(
+            tmp_path,
+            {
+                "en": {"one.ftl": "hello = world\n"},
+            },
+        )
+        l10n = FluentLocalization(
+            ["en"], ["one.ftl"], FluentResourceLoader(join(tmp_path, "{locale}"))
+        )
+        errors: list[BaseException] = []
+        start = threading.Event()
+
+        def worker():
+            start.wait()
+            try:
+                for _ in range(50):
+                    assert l10n.format_value("hello") == "world"
+            except BaseException as exc:
+                errors.append(exc)
+
+        threads = [threading.Thread(target=worker) for _ in range(8)]
+        for t in threads:
+            t.start()
+        start.set()
+        for t in threads:
+            t.join()
+        assert errors == []
+
 
 class TestResourceLoader:
     def test_all_exist(self, tmp_path):

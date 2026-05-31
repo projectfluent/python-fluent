@@ -1,4 +1,5 @@
 import os
+import threading
 from collections.abc import Generator
 from typing import TYPE_CHECKING, Any, Callable, Union, cast
 
@@ -43,6 +44,7 @@ class FluentLocalization:
         self.functions = functions
         self._bundle_cache: list[FluentBundle] = []
         self._bundle_it = self._iterate_bundles()
+        self._bundle_it_lock = threading.Lock()
 
     def format_message(
         self, msg_id: str, args: Union[dict[str, Any], None] = None
@@ -95,10 +97,14 @@ class FluentLocalization:
         bundle_pointer = 0
         while True:
             if bundle_pointer == len(self._bundle_cache):
-                try:
-                    self._bundle_cache.append(next(self._bundle_it))
-                except StopIteration:
-                    return
+                with self._bundle_it_lock:
+                    # Re-check under the lock: another thread may have
+                    # extended the cache while we were waiting.
+                    if bundle_pointer == len(self._bundle_cache):
+                        try:
+                            self._bundle_cache.append(next(self._bundle_it))
+                        except StopIteration:
+                            return
             yield self._bundle_cache[bundle_pointer]
             bundle_pointer += 1
 

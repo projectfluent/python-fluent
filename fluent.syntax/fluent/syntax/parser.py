@@ -653,7 +653,7 @@ class FluentParser:
             ps.next()
             ps.skip_blank()
 
-            value = self.get_literal(ps)
+            value = self.get_named_argument_value(ps)
             return ast.NamedArgument(exp.id, value)
 
         raise ParseError("E0009")
@@ -717,11 +717,15 @@ class FluentParser:
         return ast.StringLiteral(value)
 
     @with_span
-    def get_literal(
+    def get_named_argument_value(
         self, ps: FluentParserStream
-    ) -> Union[ast.NumberLiteral, ast.StringLiteral]:
+    ) -> Union[ast.NumberLiteral, ast.StringLiteral, ast.VariableReference]:
         if ps.is_number_start():
             return self.get_number(ps)
         if ps.current_char == '"':
             return self.get_string(ps)
+        if ps.current_char == "$":
+            ps.next()
+            id = self.get_identifier(ps)
+            return ast.VariableReference(id)
         raise ParseError("E0014")

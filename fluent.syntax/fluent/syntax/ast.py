@@ -327,7 +327,7 @@ class NamedArgument(SyntaxNode):
     def __init__(
         self,
         name: "Identifier",
-        value: Union[NumberLiteral, StringLiteral],
+        value: Union[NumberLiteral, StringLiteral, VariableReference],
         **kwargs: Any
     ):
         super().__init__(**kwargs)

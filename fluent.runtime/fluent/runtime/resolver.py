@@ -398,7 +398,7 @@ class FunctionReference(FTL.FunctionReference, BaseResolver):
 
 class NamedArgument(FTL.NamedArgument, BaseResolver):
     name: Identifier
-    value: Union[NumberLiteral, StringLiteral]
+    value: Union[NumberLiteral, StringLiteral, VariableReference]
 
 
 InlineExpression = Union[

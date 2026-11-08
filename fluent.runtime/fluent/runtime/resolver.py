@@ -161,7 +161,17 @@ class Pattern(FTL.Pattern, BaseResolver):
             raise ValueError(
                 "Too many parts in message (> {}), " "aborting.".format(self.MAX_PARTS)
             )
-        retval = "".join(resolve(element(env), env) for element in elements)
+        # Text written directly in the pattern is not subject to the
+        # MAX_PART_LENGTH limit, which protects against placeable expansion.
+        # Placeables have already resolved (and checked) their own value.
+        retval = "".join(
+            (
+                element(env)
+                if isinstance(element, (Literal, Placeable))
+                else resolve(element(env), env)
+            )
+            for element in elements
+        )
         env.part_count += len(elements)
         env.active_patterns.remove(self)
         return retval
@@ -174,9 +184,18 @@ def resolve(fluentish: Any, env: ResolverEnvironment) -> Any:
         if len(fluentish) > MAX_PART_LENGTH:
             raise ValueError(
                 "Too many characters in placeable "
-                "({}, max allowed is {})".format(len(fluentish), Pattern.MAX_PARTS)
+                "({}, max allowed is {})".format(len(fluentish), MAX_PART_LENGTH)
             )
     return fluentish
+
+
+def resolve_expression(expression: BaseResolver, env: ResolverEnvironment) -> Any:
+    value = expression(env)
+    if isinstance(expression, SelectExpression) and isinstance(value, str):
+        # The selected variant is a pattern of the same message, which has
+        # already been resolved with its placeables subject to MAX_PART_LENGTH.
+        return value
+    return resolve(value, env)
 
 
 class TextElement(FTL.TextElement, Literal):
@@ -190,7 +209,7 @@ class Placeable(FTL.Placeable, BaseResolver):
     expression: Union["InlineExpression", "Placeable", "SelectExpression"]
 
     def __call__(self, env: ResolverEnvironment) -> Any:
-        inner = resolve(self.expression(env), env)
+        inner = resolve_expression(self.expression, env)
         if not env.context.use_isolating:
             return inner
         return "\u2068" + inner + "\u2069"
@@ -200,7 +219,7 @@ class NeverIsolatingPlaceable(FTL.Placeable, BaseResolver):
     expression: Union["InlineExpression", Placeable, "SelectExpression"]
 
     def __call__(self, env: ResolverEnvironment) -> Any:
-        inner = resolve(self.expression(env), env)
+        inner = resolve_expression(self.expression, env)
         return inner
 
 
